@@ -351,6 +351,91 @@
     border: 2px dashed rgba(251, 247, 240, 0.35);
   }
 
+  /* ─── Kitty pixel sprite (256×256, frames 32×32) ─── */
+  .kitty-sprite-wrap {
+    width: var(--kitty-size, 48px);
+    height: var(--kitty-size, 48px);
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+  }
+
+  .kitty-sprite-wrap--flip {
+    transform: scaleX(-1);
+  }
+
+  .kitty-sprite {
+    --kitty-row: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/kitty-sprite.png');
+    background-repeat: no-repeat;
+    background-size: calc(var(--kitty-size) * 8) calc(var(--kitty-size) * 8);
+    background-position: 0 calc(var(--kitty-row) * var(--kitty-size) * -1);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* Helpers — Y fijado por --kitty-row, solo anima X */
+  @keyframes kitty-x8 {
+    from {
+      background-position: 0 calc(var(--kitty-row) * var(--kitty-size) * -1);
+    }
+    to {
+      background-position: calc(var(--kitty-size) * -8) calc(var(--kitty-row) * var(--kitty-size) * -1);
+    }
+  }
+
+  @keyframes kitty-x4 {
+    from {
+      background-position: 0 calc(var(--kitty-row) * var(--kitty-size) * -1);
+    }
+    to {
+      background-position: calc(var(--kitty-size) * -4) calc(var(--kitty-row) * var(--kitty-size) * -1);
+    }
+  }
+
+  @keyframes kitty-x4-flip {
+    from {
+      background-position: calc(var(--kitty-size) * -3) calc(var(--kitty-row) * var(--kitty-size) * -1);
+    }
+    to {
+      background-position: 0 calc(var(--kitty-row) * var(--kitty-size) * -1);
+    }
+  }
+
+  @keyframes kitty-x2 {
+    from {
+      background-position: 0 calc(var(--kitty-row) * var(--kitty-size) * -1);
+    }
+    to {
+      background-position: calc(var(--kitty-size) * -2) calc(var(--kitty-row) * var(--kitty-size) * -1);
+    }
+  }
+
+  .kitty-sprite--idle {
+    animation: kitty-x8 1.4s steps(8) infinite;
+  }
+
+  .kitty-sprite--look {
+    animation: kitty-x4 0.6s steps(4) 1 both;
+  }
+
+  .kitty-sprite-wrap--flip .kitty-sprite--look {
+    animation-name: kitty-x4-flip;
+  }
+
+  .kitty-sprite--nod {
+    animation: kitty-x2 0.38s steps(2) 3 both;
+  }
+
+  .kitty-sprite--stretch {
+    animation: kitty-x2 0.45s steps(2) 2 both;
+  }
+
+  .kitty-sprite--static {
+    animation: none;
+  }
+
   /* ─── Editorial / Taganga layer ─── */
 
   .taganga-bg-fixed {

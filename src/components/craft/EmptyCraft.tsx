@@ -1,4 +1,4 @@
-import { CraftCat } from '@/components/craft/CraftCat'
+import { KittySprite } from '@/components/craft/KittySprite'
 import { cn } from '@/lib/utils'
 
 interface EmptyCraftProps {
@@ -16,7 +16,7 @@ export function EmptyCraft({ emoji, title, subtitle, className }: EmptyCraftProp
         {emoji ? (
           <span className="text-4xl block mb-2 animate-float-gentle">{emoji}</span>
         ) : (
-          <CraftCat variant="sleep" className="w-20 h-14 mx-auto mb-2 animate-float-gentle" />
+          <KittySprite anim="static" size={72} flip={false} playful={false} className="mx-auto mb-2 animate-float-gentle" />
         )}
         <p className="font-display text-base font-semibold text-ink">{title}</p>
         {subtitle && (

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
-import { CraftCat } from '@/components/craft/CraftCat'
 import { CollageSticker } from '@/components/editorial/CollageSticker'
 import { MarqueeBand } from '@/components/editorial/MarqueeBand'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { SyncPendingSticker } from '@/components/editorial/EditorialScreenHeader'
+import { KittySprite } from '@/components/craft/KittySprite'
 import { formatCOP, formatCOPEditorial } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
@@ -44,7 +44,7 @@ export function EditorialStage({ pulseKey = 0, pendingCount = 0 }: EditorialStag
                 </h1>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <CraftCat variant="peek" className="w-14 h-10 text-white opacity-95 drop-shadow-md" />
+                <KittySprite size={76} pulseKey={pulseKey} className="opacity-95" />
                 <SyncPendingSticker count={pendingCount} />
               </div>
             </div>

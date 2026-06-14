@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CraftCat } from '@/components/craft/CraftCat'
+import { KittySprite, kittyAnimFromVariant, kittyPlayfulFromVariant } from '@/components/craft/KittySprite'
 import { CollageSticker } from '@/components/editorial/CollageSticker'
 import { MarqueeBand } from '@/components/editorial/MarqueeBand'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
@@ -40,9 +40,10 @@ export function EditorialScreenHeader({
               )}
             </div>
             <div className="flex flex-col items-end gap-2">
-              <CraftCat
-                variant={catVariant}
-                className="w-12 h-9 text-white opacity-95 drop-shadow-md"
+              <KittySprite
+                size={catVariant === 'sit' ? 60 : 68}
+                anim={kittyAnimFromVariant(catVariant)}
+                playful={kittyPlayfulFromVariant(catVariant)}
               />
               {sticker}
             </div>
