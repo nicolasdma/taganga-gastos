@@ -1,0 +1,215 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import { ReceiptGroupRow } from '@/components/ReceiptGroupRow'
+import { EmptyCraft } from '@/components/craft/EmptyCraft'
+import { formatCOP } from '@/lib/currency'
+import { formatExpenseLabel } from '@/lib/expenseDisplay'
+import {
+  excludedAmountClass,
+  excludedBadgeClass,
+  excludedLabelClass,
+  excludedRowClass,
+  isExpenseExcluded,
+} from '@/lib/expenseExcluded'
+import type { EditableExpense } from '@/lib/expenseTypes'
+import { groupExpensesForList, type ReceiptItemLike } from '@/lib/receiptGroups'
+import {
+  loadOutbox,
+  loadReceiptOutbox,
+  OUTBOX_CHANGED,
+  removeFromOutbox,
+  removeReceiptGroupFromOutbox,
+} from '@/lib/outbox'
+import { pendingReceiptToListRows } from '@/hooks/useReceiptSave'
+import { cn } from '@/lib/utils'
+
+interface RecentExpensesProps {
+  limit?: number
+  onEdit?: (expense: EditableExpense) => void
+  onPendingRemoved?: () => void
+}
+
+export function RecentExpenses({ limit = 8, onEdit, onPendingRemoved }: RecentExpensesProps) {
+  const expenses = useQuery(api.expenses.recentExpenses, { limit: limit + 20 })
+  const [outboxTick, setOutboxTick] = useState(0)
+
+  useEffect(() => {
+    const update = () => setOutboxTick((t) => t + 1)
+    window.addEventListener(OUTBOX_CHANGED, update)
+    return () => window.removeEventListener(OUTBOX_CHANGED, update)
+  }, [])
+
+  const pending = useMemo(() => {
+    void outboxTick
+    return loadOutbox()
+  }, [outboxTick])
+
+  const pendingReceipts = useMemo(() => {
+    void outboxTick
+    return loadReceiptOutbox()
+  }, [outboxTick])
+
+  const pendingClientIds = new Set(pending.map((p) => p.clientId))
+
+  const merged = useMemo(() => {
+    if (!expenses) return null
+
+    const pendingRows: ReceiptItemLike[] = pending.map((p) => ({
+      _id: p.clientId,
+      amount: p.amount,
+      categoryId: p.categoryId,
+      itemId: p.itemId,
+      itemEmoji: p.itemEmoji,
+      itemLabel: p.itemLabel,
+      sessionId: p.sessionId,
+      receiptGroupId: p.receiptGroupId,
+      store: p.store,
+      excluded: false,
+      pending: true,
+    }))
+
+    const pendingReceiptRows = pendingReceipts.flatMap(pendingReceiptToListRows)
+
+    const serverRows: ReceiptItemLike[] = expenses
+      .filter((e) => !e.clientId || !pendingClientIds.has(e.clientId))
+      .map((e) => ({
+        _id: e._id,
+        amount: e.amount,
+        categoryId: e.categoryId,
+        itemId: e.itemId,
+        itemEmoji: e.itemEmoji,
+        itemLabel: e.itemLabel,
+        sessionId: e.sessionId,
+        receiptGroupId: e.receiptGroupId,
+        store: e.store,
+        excluded: e.excluded,
+        pending: false,
+      }))
+
+    const all = [...pendingReceiptRows, ...pendingRows, ...serverRows]
+    const rows = groupExpensesForList(all)
+
+    return rows.slice(0, limit)
+  }, [expenses, pending, pendingReceipts, pendingClientIds, limit])
+
+  const handlePendingDelete = (clientId: string) => {
+    if (!window.confirm('¿Quitar este gasto pendiente de sincronización?')) return
+    removeFromOutbox(clientId)
+    onPendingRemoved?.()
+  }
+
+  const handlePendingReceiptDelete = (receiptGroupId: string) => {
+    removeReceiptGroupFromOutbox(receiptGroupId)
+    onPendingRemoved?.()
+  }
+
+  if (!merged) {
+    return (
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-12 rounded-xl bg-muted/40 animate-pulse" />
+        ))}
+      </div>
+    )
+  }
+
+  if (merged.length === 0) {
+    return (
+      <EmptyCraft
+        title="Sin gastos aún"
+        subtitle="Usá acceso rápido, el + de barro, o escaneá un ticket 🐾"
+      />
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {merged.map((row) => {
+        if (row.type === 'receipt') {
+          return (
+            <ReceiptGroupRow
+              key={row.group.key}
+              group={row.group}
+              defaultExpanded={false}
+              onEditExpense={(expense) => onEdit?.(expense)}
+              onPendingDelete={handlePendingReceiptDelete}
+            />
+          )
+        }
+
+        if (row.type === 'session') {
+          return (
+            <ReceiptGroupRow
+              key={row.group.key}
+              group={{
+                ...row.group,
+                receiptGroupId: row.group.sessionId,
+              }}
+              defaultExpanded={false}
+              onEditExpense={(expense) => onEdit?.(expense)}
+            />
+          )
+        }
+
+        const expense = row.expense
+        const { emoji, label } = formatExpenseLabel(expense)
+        const excluded = isExpenseExcluded(expense.excluded)
+        const canEdit = !expense.pending && onEdit
+
+        return (
+          <button
+            key={expense._id}
+            type="button"
+            disabled={!canEdit && !expense.pending}
+            onClick={() => {
+              if (expense.pending) {
+                handlePendingDelete(expense._id)
+                return
+              }
+              onEdit?.({
+                _id: expense._id as EditableExpense['_id'],
+                amount: expense.amount,
+                categoryId: expense.categoryId,
+                itemId: expense.itemId,
+                itemEmoji: expense.itemEmoji,
+                itemLabel: expense.itemLabel,
+                sessionId: expense.sessionId,
+                store: expense.store,
+                excluded: expense.excluded,
+              })
+            }}
+            className={cn(
+              'w-full flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left',
+              'transition-all active:translate-y-px',
+              excluded
+                ? excludedRowClass(true)
+                : 'row-porcelain',
+              expense.pending && 'opacity-70 border-dashed',
+              canEdit && !excluded && 'active:opacity-90',
+              expense.pending && 'active:bg-red-500/5'
+            )}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xl shrink-0">{emoji}</span>
+              <span className={cn('text-sm font-semibold truncate', excludedLabelClass(excluded))}>
+                {label}
+              </span>
+              {excluded && (
+                <span className={excludedBadgeClass()}>
+                  No cuenta
+                </span>
+              )}
+              {expense.pending && (
+                <span className="text-[10px] text-amber-600 shrink-0">⏳ tap quitar</span>
+              )}
+            </div>
+            <span className={cn('text-sm font-extrabold font-tabular shrink-0', excludedAmountClass(excluded))}>
+              {formatCOP(expense.amount)}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}

@@ -1,0 +1,193 @@
+import { useMemo } from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import type { Doc } from '../../convex/_generated/dataModel'
+import { BottomSheet } from '@/components/BottomSheet'
+import { ReceiptGroupRow } from '@/components/ReceiptGroupRow'
+import { formatCOP } from '@/lib/currency'
+import { formatExpenseLabel } from '@/lib/expenseDisplay'
+import {
+  excludedAmountClass,
+  excludedBadgeClass,
+  excludedLabelClass,
+  excludedRowClass,
+  isExpenseExcluded,
+} from '@/lib/expenseExcluded'
+import type { EditableExpense } from '@/lib/expenseTypes'
+import { groupExpensesForList, type ReceiptItemLike } from '@/lib/receiptGroups'
+import { formatDisplayDate } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+
+interface DayDetailSheetProps {
+  date: string | null
+  onClose: () => void
+  onEditExpense: (expense: EditableExpense) => void
+}
+
+type Expense = Doc<'expenses'>
+
+
+function countedTotal(items: Array<{ amount: number; excluded?: boolean }>) {
+  return items.filter((e) => !e.excluded).reduce((s, e) => s + e.amount, 0)
+}
+
+function toListItem(expense: Expense): ReceiptItemLike {
+  return {
+    _id: expense._id,
+    amount: expense.amount,
+    categoryId: expense.categoryId,
+    itemId: expense.itemId,
+    itemEmoji: expense.itemEmoji,
+    itemLabel: expense.itemLabel,
+    sessionId: expense.sessionId,
+    receiptGroupId: expense.receiptGroupId,
+    store: expense.store,
+    excluded: expense.excluded,
+  }
+}
+
+function sessionGroupToReceiptGroup(group: Extract<ReturnType<typeof groupExpensesForList>[number], { type: 'session' }>['group']) {
+  return {
+    key: group.key,
+    receiptGroupId: group.sessionId,
+    store: group.store,
+    categoryId: group.categoryId,
+    total: group.total,
+    items: group.items,
+  }
+}
+
+function StandaloneRow({
+  expense,
+  onEditExpense,
+}: {
+  expense: ReceiptItemLike
+  onEditExpense: (expense: EditableExpense) => void
+}) {
+  const { emoji, label } = formatExpenseLabel(expense)
+  const excluded = isExpenseExcluded(expense.excluded)
+
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        onEditExpense({
+          _id: expense._id as EditableExpense['_id'],
+          amount: expense.amount,
+          categoryId: expense.categoryId,
+          itemId: expense.itemId,
+          itemEmoji: expense.itemEmoji,
+          itemLabel: expense.itemLabel,
+          sessionId: expense.sessionId,
+          store: expense.store,
+          excluded: expense.excluded,
+        })
+      }
+      className={cn(
+        'w-full flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 shadow-sm text-left active:opacity-90',
+        excluded ? excludedRowClass(true) : 'bg-card border-border/60 active:bg-muted/30'
+      )}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-xl shrink-0">{emoji}</span>
+        <span className={cn('text-sm font-semibold truncate', excludedLabelClass(excluded))}>
+          {label}
+        </span>
+        {excluded && (
+          <span className={excludedBadgeClass()}>No cuenta</span>
+        )}
+      </div>
+      <span className={cn('text-sm font-extrabold font-tabular shrink-0', excludedAmountClass(excluded))}>
+        {formatCOP(expense.amount)}
+      </span>
+    </button>
+  )
+}
+
+export function DayDetailSheet({ date, onClose, onEditExpense }: DayDetailSheetProps) {
+  const expenses = useQuery(
+    api.expenses.expensesForDay,
+    date ? { date } : 'skip'
+  )
+
+  const dayTotal = useMemo(
+    () => (expenses ? countedTotal(expenses) : 0),
+    [expenses]
+  )
+
+  const rows = useMemo(
+    () => (expenses ? groupExpensesForList(expenses.map(toListItem)) : []),
+    [expenses]
+  )
+
+  return (
+    <BottomSheet open={!!date} onClose={onClose}>
+      {date && (
+        <div className="pb-4">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+            {formatDisplayDate(date)}
+          </p>
+          <p
+            className={cn(
+              'text-3xl font-extrabold font-tabular text-foreground tracking-tight mb-4',
+              expenses === undefined && 'animate-pulse text-muted-foreground'
+            )}
+          >
+            {expenses === undefined ? '—' : formatCOP(dayTotal)}
+          </p>
+
+          {expenses === undefined ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 rounded-xl bg-muted/40 animate-pulse" />
+              ))}
+            </div>
+          ) : expenses.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Sin gastos este día
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {rows.map((row) => {
+                if (row.type === 'receipt') {
+                  return (
+                    <ReceiptGroupRow
+                      key={row.group.key}
+                      group={row.group}
+                      defaultExpanded
+                      onEditExpense={onEditExpense}
+                    />
+                  )
+                }
+                if (row.type === 'session') {
+                  return (
+                    <ReceiptGroupRow
+                      key={row.group.key}
+                      group={sessionGroupToReceiptGroup(row.group)}
+                      defaultExpanded
+                      onEditExpense={(expense) => {
+                        const original = row.group.items.find((i) => i._id === expense._id)
+                        if (original?.sessionId) {
+                          onEditExpense({ ...expense, sessionId: original.sessionId })
+                        } else {
+                          onEditExpense(expense)
+                        }
+                      }}
+                    />
+                  )
+                }
+                return (
+                  <StandaloneRow
+                    key={row.expense._id}
+                    expense={row.expense}
+                    onEditExpense={onEditExpense}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </BottomSheet>
+  )
+}
