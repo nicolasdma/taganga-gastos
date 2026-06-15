@@ -81,5 +81,6 @@ export function pendingReceiptToListRows(group: PendingReceiptGroup) {
     receiptGroupId: group.receiptGroupId,
     excluded: false as const,
     pending: true as const,
+    createdAt: group.createdAt,
   }))
 }

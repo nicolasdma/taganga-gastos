@@ -230,6 +230,105 @@
       0 6px 14px -6px rgba(26, 39, 68, 0.12);
   }
 
+  .expense-section-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0 0.85rem;
+  }
+
+  .expense-section-header--day:first-child {
+    padding-top: 0;
+  }
+
+  .expense-section-header--moment {
+    padding-top: 0.65rem;
+    padding-bottom: 0.55rem;
+  }
+
+  .expense-section-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.85rem 0.4rem;
+    border-radius: 999px;
+    border: 2px solid hsl(218 24% 78%);
+    background: linear-gradient(
+      168deg,
+      hsl(40 62% 99%) 0%,
+      hsl(38 50% 95%) 55%,
+      hsl(36 44% 92%) 100%
+    );
+    box-shadow:
+      inset 0 2px 0 hsl(40 75% 100%),
+      0 3px 0 hsl(218 18% 84%),
+      0 8px 18px -8px rgba(26, 39, 68, 0.18);
+  }
+
+  .expense-section-pill--day {
+    border-color: var(--cobalt-glaze);
+    border-width: 2.5px;
+    padding-inline: 1rem;
+  }
+
+  .expense-section-pill--moment {
+    padding-inline: 0.9rem;
+  }
+
+  .expense-section-pill--sage {
+    border-color: hsl(100 20% 68%);
+    background: linear-gradient(168deg, hsl(95 40% 97%) 0%, hsl(100 24% 90%) 100%);
+  }
+
+  .expense-section-pill--clay {
+    border-color: hsl(16 40% 74%);
+    background: linear-gradient(168deg, hsl(22 55% 97%) 0%, hsl(16 42% 90%) 100%);
+  }
+
+  .expense-section-pill--cobalt {
+    border-color: hsl(218 36% 72%);
+    background: linear-gradient(168deg, hsl(218 42% 97%) 0%, hsl(218 30% 90%) 100%);
+  }
+
+  .expense-section-thread {
+    width: min(100%, 12rem);
+    height: 2px;
+    border-radius: 99px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--stitch) 0,
+      var(--stitch) 6px,
+      transparent 6px,
+      transparent 11px
+    );
+    opacity: 0.55;
+    transform: rotate(-0.3deg);
+  }
+
+  .expense-rows-nest {
+    position: relative;
+    padding: 0.35rem 0.15rem 0.15rem;
+  }
+
+  .expense-rows-nest::before {
+    content: '';
+    position: absolute;
+    inset: 0 0.35rem auto;
+    top: 0;
+    bottom: 0.5rem;
+    width: 2px;
+    border-radius: 99px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      hsl(218 22% 82% / 0.55) 12%,
+      hsl(218 22% 82% / 0.35) 88%,
+      transparent 100%
+    );
+    transform: rotate(0.5deg);
+  }
+
   .chip-tile {
     background: linear-gradient(185deg, hsl(40 52% 98%) 0%, hsl(36 40% 92%) 100%);
     border: 2px solid hsl(218 20% 84%);

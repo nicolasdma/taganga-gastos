@@ -13,6 +13,7 @@ export interface ReceiptItemLike {
   receiptGroupId?: string
   excluded?: boolean
   pending?: boolean
+  createdAt?: number
 }
 
 export interface ReceiptGroup {

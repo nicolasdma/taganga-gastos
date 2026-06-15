@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
+import { ExpenseTimeStamp } from '@/components/ExpenseTimeMeta'
 import {
   excludedAmountClass,
   excludedLabelClass,
@@ -42,6 +43,8 @@ export function ReceiptGroupRow({
   const [expanded, setExpanded] = useState(defaultExpanded)
   const { emoji, title, subtitle } = receiptGroupTitle(group)
   const itemCount = group.items.length
+  const groupTimes = group.items.map((item) => item.createdAt).filter((ts): ts is number => ts != null)
+  const groupTime = groupTimes.length > 0 ? Math.max(...groupTimes) : undefined
 
   const handleHeaderClick = () => {
     if (group.pending && onPendingDelete) {
@@ -73,9 +76,16 @@ export function ReceiptGroupRow({
               {subtitle ? ` · ${subtitle}` : ''}
             </span>
             {!expanded && (
-              <span className="text-[10px] text-muted-foreground">
-                {itemCount} ítem{itemCount !== 1 ? 's' : ''}
-                {group.pending ? ' · ⏳ tap quitar' : ''}
+              <span className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-stitch font-display font-semibold">
+                  {itemCount} ítem{itemCount !== 1 ? 's' : ''}
+                </span>
+                {groupTime != null && <ExpenseTimeStamp createdAt={groupTime} />}
+                {group.pending && (
+                  <span className="text-[10px] text-amber-700 font-display font-semibold">
+                    ⏳ tap quitar
+                  </span>
+                )}
               </span>
             )}
           </div>
@@ -111,10 +121,15 @@ export function ReceiptGroupRow({
                   excluded && 'text-red-700/80'
                 )}
               >
-                <span className={cn('truncate text-left', excludedLabelClass(excluded))}>
-                  {itemEmoji} {label}
-                  {excluded ? ' · no cuenta' : ''}
-                </span>
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className={cn('truncate text-left', excludedLabelClass(excluded))}>
+                    {itemEmoji} {label}
+                    {excluded ? ' · no cuenta' : ''}
+                  </span>
+                  {item.createdAt != null && (
+                    <ExpenseTimeStamp createdAt={item.createdAt} className="shrink-0" />
+                  )}
+                </div>
                 <span
                   className={cn('font-semibold font-tabular shrink-0', excludedAmountClass(excluded))}
                 >

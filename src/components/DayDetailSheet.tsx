@@ -5,7 +5,9 @@ import type { Doc } from '../../convex/_generated/dataModel'
 import { BottomSheet } from '@/components/BottomSheet'
 import { ReceiptGroupRow } from '@/components/ReceiptGroupRow'
 import { formatCOP } from '@/lib/currency'
+import { ExpenseTimeOfDaySectionHeader, ExpenseTimeStamp } from '@/components/ExpenseTimeMeta'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
+import { groupListRowsByTimeOfDay } from '@/lib/expenseTime'
 import {
   excludedAmountClass,
   excludedBadgeClass,
@@ -42,7 +44,9 @@ function toListItem(expense: Expense): ReceiptItemLike {
     sessionId: expense.sessionId,
     receiptGroupId: expense.receiptGroupId,
     store: expense.store,
+    note: expense.note,
     excluded: expense.excluded,
+    createdAt: expense.createdAt,
   }
 }
 
@@ -90,9 +94,14 @@ function StandaloneRow({
     >
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-xl shrink-0">{emoji}</span>
-        <span className={cn('text-sm font-semibold truncate', excludedLabelClass(excluded))}>
-          {label}
-        </span>
+        <div className="min-w-0">
+          <span className={cn('text-sm font-semibold truncate block', excludedLabelClass(excluded))}>
+            {label}
+          </span>
+          {expense.createdAt != null && (
+            <ExpenseTimeStamp createdAt={expense.createdAt} />
+          )}
+        </div>
         {excluded && (
           <span className={excludedBadgeClass()}>No cuenta</span>
         )}
@@ -118,6 +127,11 @@ export function DayDetailSheet({ date, onClose, onEditExpense }: DayDetailSheetP
   const rows = useMemo(
     () => (expenses ? groupExpensesForList(expenses.map(toListItem)) : []),
     [expenses]
+  )
+
+  const timeSections = useMemo(
+    () => groupListRowsByTimeOfDay(rows),
+    [rows]
   )
 
   return (
@@ -148,42 +162,53 @@ export function DayDetailSheet({ date, onClose, onEditExpense }: DayDetailSheetP
             </p>
           ) : (
             <div className="space-y-2">
-              {rows.map((row) => {
-                if (row.type === 'receipt') {
-                  return (
-                    <ReceiptGroupRow
-                      key={row.group.key}
-                      group={row.group}
-                      defaultExpanded
-                      onEditExpense={onEditExpense}
-                    />
-                  )
-                }
-                if (row.type === 'session') {
-                  return (
-                    <ReceiptGroupRow
-                      key={row.group.key}
-                      group={sessionGroupToReceiptGroup(row.group)}
-                      defaultExpanded
-                      onEditExpense={(expense) => {
-                        const original = row.group.items.find((i) => i._id === expense._id)
-                        if (original?.sessionId) {
-                          onEditExpense({ ...expense, sessionId: original.sessionId })
-                        } else {
-                          onEditExpense(expense)
-                        }
-                      }}
-                    />
-                  )
-                }
-                return (
-                  <StandaloneRow
-                    key={row.expense._id}
-                    expense={row.expense}
-                    onEditExpense={onEditExpense}
+              {timeSections.map((section) => (
+                <div key={section.bucket}>
+                  <ExpenseTimeOfDaySectionHeader
+                    label={section.label}
+                    emoji={section.emoji}
+                    accent={section.accent}
                   />
-                )
-              })}
+                  <div className="expense-rows-nest pl-3.5 space-y-2">
+                    {section.rows.map((row) => {
+                      if (row.type === 'receipt') {
+                        return (
+                          <ReceiptGroupRow
+                            key={row.group.key}
+                            group={row.group}
+                            defaultExpanded
+                            onEditExpense={onEditExpense}
+                          />
+                        )
+                      }
+                      if (row.type === 'session') {
+                        return (
+                          <ReceiptGroupRow
+                            key={row.group.key}
+                            group={sessionGroupToReceiptGroup(row.group)}
+                            defaultExpanded
+                            onEditExpense={(expense) => {
+                              const original = row.group.items.find((i) => i._id === expense._id)
+                              if (original?.sessionId) {
+                                onEditExpense({ ...expense, sessionId: original.sessionId })
+                              } else {
+                                onEditExpense(expense)
+                              }
+                            }}
+                          />
+                        )
+                      }
+                      return (
+                        <StandaloneRow
+                          key={row.expense._id}
+                          expense={row.expense}
+                          onEditExpense={onEditExpense}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
