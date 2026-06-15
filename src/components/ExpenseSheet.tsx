@@ -6,6 +6,7 @@ import { getCategory } from '@/lib/categories'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 
 export type SheetIntent =
+  | { type: 'add' }
   | { type: 'supermarket' }
   | {
       type: 'quick'
@@ -113,6 +114,7 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
     return (
       <ItemPicker
         categoryId={categoryId}
+        variant={intent.type === 'supermarket' ? 'supermarket' : 'default'}
         categoryEmoji={category.emoji}
         categoryLabel={category.label}
         onSelect={handleItemSelect}
@@ -121,6 +123,7 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
   }
 
   const isQuick = intent.type === 'quick'
+  const canPickAnotherItem = intent.type === 'add' || intent.type === 'supermarket'
 
   return (
     <AmountKeypad
@@ -138,7 +141,7 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
       onChange={setAmount}
       onSave={handleSave}
       onCancel={close}
-      onBack={intent.type === 'supermarket' ? () => setStep('item') : undefined}
+      onBack={canPickAnotherItem ? () => setStep('item') : undefined}
       saving={saving}
       autoSaveOnPreset={isQuick}
       onPresetSelect={isQuick ? handleQuickPreset : undefined}

@@ -107,7 +107,7 @@ export function BentoQuickAccess({ onOpenSheet, onSaved }: BentoQuickAccessProps
         <MotionReveal step={8}>
           <button
             type="button"
-            onClick={() => onOpenSheet({ type: 'supermarket' })}
+            onClick={() => onOpenSheet({ type: 'add' })}
             className={cn(
               'bento-tile bento-tile--cream h-[76px] w-full',
               'flex flex-col items-center justify-center gap-0.5',

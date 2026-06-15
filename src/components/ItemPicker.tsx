@@ -11,6 +11,7 @@ export interface SelectedItem {
 
 interface ItemPickerProps {
   categoryId: string
+  variant?: 'default' | 'supermarket'
   categoryEmoji: string
   categoryLabel: string
   storeName?: string
@@ -32,6 +33,7 @@ function matchesSearch(item: CatalogItem, query: string): boolean {
 
 export function ItemPicker({
   categoryId,
+  variant = 'default',
   categoryEmoji,
   categoryLabel,
   storeName,
@@ -40,27 +42,36 @@ export function ItemPicker({
   const [search, setSearch] = useState('')
   const catalog = getCategoryItems(categoryId)
   const isLargeCatalog = catalog.length > 16
+  const isSupermarket = variant === 'supermarket'
 
   const filteredItems = useMemo(
     () => catalog.filter((item) => matchesSearch(item, search)),
     [catalog, search]
   )
 
+  const title = storeName ?? (isSupermarket ? categoryLabel : '¿Qué fue?')
+  const titleEmoji = isSupermarket ? categoryEmoji : '✏️'
+  const subtitle = storeName
+    ? categoryLabel
+    : isSupermarket
+      ? isLargeCatalog
+        ? `${catalog.length} ítems · elegí y después el detalle`
+        : 'Elegí un ítem'
+      : isLargeCatalog
+        ? `${catalog.length} comidas y más · después el precio`
+        : 'Elegí y después el precio'
+
   return (
     <div className="pb-3 -mx-1">
       <div className="sticky top-0 z-10 -mx-1 px-1 pt-0.5 pb-3 bg-gradient-to-b from-[hsl(40_60%_99%)] from-75% to-transparent">
         <div className="text-center mb-3">
           <p className="font-display text-[1.35rem] font-bold text-ink tracking-tight">
-            {categoryEmoji} {storeName ?? categoryLabel}
+            {titleEmoji} {title}
           </p>
           {storeName ? (
-            <p className="text-[11px] text-muted-foreground font-medium mt-0.5">{categoryLabel}</p>
+            <p className="text-[11px] text-muted-foreground font-medium mt-0.5">{subtitle}</p>
           ) : (
-            <p className="text-[11px] text-muted-foreground font-medium mt-1">
-              {isLargeCatalog
-                ? `${catalog.length} ítems · elegí y después el detalle`
-                : 'Elegí un ítem'}
-            </p>
+            <p className="text-[11px] text-muted-foreground font-medium mt-1">{subtitle}</p>
           )}
         </div>
 

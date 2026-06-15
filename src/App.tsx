@@ -118,7 +118,7 @@ function AppShell() {
       </main>
 
       <FabStack
-        onAdd={() => setSheetIntent({ type: 'supermarket' })}
+        onAdd={() => setSheetIntent({ type: 'add' })}
         onScan={() => setScanOpen(true)}
         pendingCount={pendingCount}
       />
