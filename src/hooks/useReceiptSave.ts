@@ -9,12 +9,14 @@ import {
   removeReceiptGroupFromOutbox,
   type PendingReceiptGroup,
 } from '@/lib/outbox'
+import type { ExpenseScope } from '@/lib/expenseScope'
 
 export interface SaveReceiptInput {
   categoryId: string
   store?: string
   items: Array<{ itemLabel: string; amount: number }>
   receiptGroupId?: string
+  scope?: ExpenseScope
 }
 
 export interface SaveReceiptResult {
@@ -44,6 +46,7 @@ export function useReceiptSave(onSaved?: (result: SaveReceiptResult) => void) {
             clientId: item.clientId,
           })),
           createdAt: pending.createdAt,
+          scope: pending.scope,
         })
         expenseIds = result.ids
         removeReceiptGroupFromOutbox(pending.receiptGroupId)

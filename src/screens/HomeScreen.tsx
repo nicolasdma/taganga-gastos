@@ -3,11 +3,12 @@ import { InsightHighlight } from '@/components/InsightHighlight'
 import { RecentExpenses } from '@/components/RecentExpenses'
 import { BentoQuickAccess } from '@/components/editorial/BentoQuickAccess'
 import { EditorialStage } from '@/components/editorial/EditorialStage'
+import { ExpenseViewFilter } from '@/components/ExpenseScopeToggle'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import type { SheetIntent } from '@/components/ExpenseSheet'
 import type { SaveExpenseResult } from '@/hooks/useExpenseSave'
-
+import { useExpenseView } from '@/hooks/useExpenseView'
 import type { EditableExpense } from '@/lib/expenseTypes'
 
 interface HomeScreenProps {
@@ -29,6 +30,7 @@ export function HomeScreen({
   onEditExpense,
   onPendingRemoved,
 }: HomeScreenProps) {
+  const { view, setView } = useExpenseView()
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollYRef = useRef(0)
   const rafRef = useRef<number | null>(null)
@@ -54,7 +56,7 @@ export function HomeScreen({
       onScroll={handleScroll}
       className="tab-scroll home-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none"
     >
-      <EditorialStage pulseKey={pulseKey} pendingCount={pendingCount} />
+      <EditorialStage pulseKey={pulseKey} pendingCount={pendingCount} view={view} />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-7">
         <MotionReveal step={4}>
@@ -63,13 +65,18 @@ export function HomeScreen({
 
         <section>
           <SectionLabel overPhoto>Acceso rápido</SectionLabel>
-          <BentoQuickAccess onOpenSheet={onOpenSheet} onSaved={onSaved} />
+          <BentoQuickAccess view={view} onOpenSheet={onOpenSheet} onSaved={onSaved} />
         </section>
 
         <section>
-          <SectionLabel overPhoto>Recientes</SectionLabel>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <SectionLabel overPhoto className="mb-0">
+              Recientes
+            </SectionLabel>
+            <ExpenseViewFilter value={view} onChange={setView} />
+          </div>
           <MotionReveal step={7}>
-            <RecentExpenses onEdit={onEditExpense} onPendingRemoved={onPendingRemoved} />
+            <RecentExpenses view={view} onEdit={onEditExpense} onPendingRemoved={onPendingRemoved} />
           </MotionReveal>
         </section>
       </div>

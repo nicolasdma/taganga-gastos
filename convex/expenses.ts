@@ -1,8 +1,20 @@
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import type { QueryCtx } from './_generated/server'
-import type { Id } from './_generated/dataModel'
+import type { Doc, Id } from './_generated/dataModel'
 import { periodRange } from './dates'
+import {
+  canModifyExpense,
+  canViewExpense,
+  expenseScope,
+  matchesView,
+  requireAuthContext,
+  type ExpenseScope,
+  type ExpenseView,
+} from './lib/auth'
+
+const expenseScopeValidator = v.union(v.literal('shared'), v.literal('personal'))
+const expenseViewValidator = v.union(v.literal('shared'), v.literal('personal'))
 
 function monthRange(monthKey: string): { start: number; end: number } {
   const [year, month] = monthKey.split('-').map(Number)
@@ -26,6 +38,47 @@ function sumCounted(expenses: Array<{ amount: number; excluded?: boolean }>) {
   return expenses.filter(isCounted).reduce((sum, e) => sum + e.amount, 0)
 }
 
+function resolveScope(scope: ExpenseScope | undefined): ExpenseScope {
+  return scope ?? 'personal'
+}
+
+async function loadVisibleExpensesInRange(
+  ctx: QueryCtx,
+  householdId: Id<'households'>,
+  userId: Id<'users'>,
+  start: number,
+  end: number,
+  view?: ExpenseView
+): Promise<Doc<'expenses'>[]> {
+  const expenses = await ctx.db
+    .query('expenses')
+    .withIndex('by_household_and_createdAt', (q) =>
+      q.eq('householdId', householdId).gte('createdAt', start)
+    )
+    .filter((q) => q.lt(q.field('createdAt'), end))
+    .collect()
+
+  return expenses.filter((expense) => {
+    if (!canViewExpense(expense, userId, householdId)) return false
+    if (view && !matchesView(expense, userId, view)) return false
+    return true
+  })
+}
+
+async function requireOwnedExpense(
+  ctx: QueryCtx,
+  id: Id<'expenses'>,
+  userId: Id<'users'>,
+  householdId: Id<'households'>
+) {
+  const expense = await ctx.db.get(id)
+  if (!expense) throw new Error('Expense not found')
+  if (!canModifyExpense(expense, userId, householdId)) {
+    throw new Error('Unauthorized')
+  }
+  return expense
+}
+
 export const addExpense = mutation({
   args: {
     amount: v.number(),
@@ -39,14 +92,24 @@ export const addExpense = mutation({
     note: v.optional(v.string()),
     clientId: v.optional(v.string()),
     createdAt: v.optional(v.number()),
+    scope: v.optional(expenseScopeValidator),
   },
+  returns: v.id('expenses'),
   handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
+    const scope = resolveScope(args.scope)
+
     if (args.clientId) {
       const existing = await ctx.db
         .query('expenses')
         .withIndex('by_clientId', (q) => q.eq('clientId', args.clientId))
         .first()
-      if (existing) return existing._id
+      if (existing) {
+        if (!canModifyExpense(existing, userId, householdId)) {
+          throw new Error('Unauthorized')
+        }
+        return existing._id
+      }
     }
 
     return await ctx.db.insert('expenses', {
@@ -61,6 +124,9 @@ export const addExpense = mutation({
       note: args.note,
       clientId: args.clientId,
       createdAt: args.createdAt ?? Date.now(),
+      householdId,
+      scope,
+      createdBy: userId,
     })
   },
 })
@@ -70,10 +136,12 @@ export const setExpenseExcluded = mutation({
     id: v.id('expenses'),
     excluded: v.boolean(),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
-    const existing = await ctx.db.get(args.id)
-    if (!existing) return
+    const { userId, householdId } = await requireAuthContext(ctx)
+    await requireOwnedExpense(ctx, args.id, userId, householdId)
     await ctx.db.patch(args.id, { excluded: args.excluded })
+    return null
   },
 })
 
@@ -90,11 +158,12 @@ export const updateExpense = mutation({
     store: v.optional(v.string()),
     note: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
-    const { id, ...fields } = args
-    const existing = await ctx.db.get(id)
-    if (!existing) return
+    const { userId, householdId } = await requireAuthContext(ctx)
+    await requireOwnedExpense(ctx, args.id, userId, householdId)
 
+    const { id, ...fields } = args
     await ctx.db.patch(id, {
       amount: fields.amount,
       categoryId: fields.categoryId,
@@ -106,6 +175,7 @@ export const updateExpense = mutation({
       store: fields.store,
       note: fields.note,
     })
+    return null
   },
 })
 
@@ -114,14 +184,18 @@ export const startSession = mutation({
     categoryId: v.string(),
     store: v.optional(v.string()),
   },
-  handler: async (_ctx, _args) => {
+  returns: v.string(),
+  handler: async (ctx) => {
+    await requireAuthContext(ctx)
     return crypto.randomUUID()
   },
 })
 
 export const closeSession = mutation({
   args: { sessionId: v.string() },
-  handler: async (_ctx, _args) => {
+  returns: v.object({ ok: v.boolean() }),
+  handler: async (ctx) => {
+    await requireAuthContext(ctx)
     return { ok: true }
   },
 })
@@ -139,9 +213,16 @@ export const addReceiptGroup = mutation({
     store: v.optional(v.string()),
     items: v.array(receiptItemArg),
     createdAt: v.optional(v.number()),
+    scope: v.optional(expenseScopeValidator),
   },
+  returns: v.object({
+    ids: v.array(v.id('expenses')),
+    receiptGroupId: v.string(),
+  }),
   handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
     const createdAt = args.createdAt ?? Date.now()
+    const scope = resolveScope(args.scope)
     const ids: Id<'expenses'>[] = []
 
     for (const item of args.items) {
@@ -151,6 +232,9 @@ export const addReceiptGroup = mutation({
           .withIndex('by_clientId', (q) => q.eq('clientId', item.clientId))
           .first()
         if (existing) {
+          if (!canModifyExpense(existing, userId, householdId)) {
+            throw new Error('Unauthorized')
+          }
           ids.push(existing._id)
           continue
         }
@@ -164,6 +248,9 @@ export const addReceiptGroup = mutation({
         store: args.store,
         clientId: item.clientId,
         createdAt,
+        householdId,
+        scope,
+        createdBy: userId,
       })
       ids.push(id)
     }
@@ -174,28 +261,49 @@ export const addReceiptGroup = mutation({
 
 export const excludeReceiptGroup = mutation({
   args: { receiptGroupId: v.string() },
+  returns: v.object({ count: v.number() }),
   handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
     const expenses = await ctx.db
       .query('expenses')
       .withIndex('by_receiptGroupId', (q) => q.eq('receiptGroupId', args.receiptGroupId))
       .collect()
 
+    let count = 0
     for (const expense of expenses) {
+      if (!canModifyExpense(expense, userId, householdId)) continue
       await ctx.db.patch(expense._id, { excluded: true })
+      count += 1
     }
 
-    return { count: expenses.length }
+    return { count }
   },
 })
 
 export const recentExpenses = query({
-  args: { limit: v.number() },
+  args: {
+    limit: v.number(),
+    view: expenseViewValidator,
+  },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const { userId, householdId } = await requireAuthContext(ctx)
+    const since = Date.now() - 120 * 24 * 60 * 60 * 1000
+
+    const expenses = await ctx.db
       .query('expenses')
-      .withIndex('by_createdAt')
+      .withIndex('by_household_and_createdAt', (q) =>
+        q.eq('householdId', householdId).gte('createdAt', since)
+      )
       .order('desc')
-      .take(args.limit)
+      .collect()
+
+    return expenses
+      .filter(
+        (expense) =>
+          canViewExpense(expense, userId, householdId) &&
+          matchesView(expense, userId, args.view)
+      )
+      .slice(0, args.limit)
   },
 })
 
@@ -204,27 +312,40 @@ export const totals = query({
     period: v.union(v.literal('today'), v.literal('week'), v.literal('month')),
     todayKey: v.string(),
     tzOffsetMinutes: v.number(),
+    view: v.optional(expenseViewValidator),
   },
+  returns: v.number(),
   handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
     const { start, end } = periodRange(args.period, args.todayKey, args.tzOffsetMinutes)
-    const expenses = await ctx.db
-      .query('expenses')
-      .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
-      .filter((q) => q.lt(q.field('createdAt'), end))
-      .collect()
+    const expenses = await loadVisibleExpensesInRange(
+      ctx,
+      householdId,
+      userId,
+      start,
+      end,
+      args.view ?? 'personal'
+    )
     return sumCounted(expenses)
   },
 })
 
 export const expensesByDay = query({
-  args: { month: v.string() },
+  args: {
+    month: v.string(),
+    view: v.optional(expenseViewValidator),
+  },
   handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
     const { start, end } = monthRange(args.month)
-    const expenses = await ctx.db
-      .query('expenses')
-      .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
-      .filter((q) => q.lt(q.field('createdAt'), end))
-      .collect()
+    const expenses = await loadVisibleExpensesInRange(
+      ctx,
+      householdId,
+      userId,
+      start,
+      end,
+      args.view ?? 'personal'
+    )
 
     const byDay: Record<string, { total: number; categories: Record<string, number> }> = {}
 
@@ -242,27 +363,41 @@ export const expensesByDay = query({
 })
 
 export const expensesForDay = query({
-  args: { date: v.string() },
+  args: {
+    date: v.string(),
+    view: v.optional(expenseViewValidator),
+  },
   handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
     const { start, end } = dayRange(args.date)
-    const expenses = await ctx.db
-      .query('expenses')
-      .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
-      .filter((q) => q.lt(q.field('createdAt'), end))
-      .collect()
+    const expenses = await loadVisibleExpensesInRange(
+      ctx,
+      householdId,
+      userId,
+      start,
+      end,
+      args.view
+    )
     return expenses.sort((a, b) => b.createdAt - a.createdAt)
   },
 })
 
 export const expensesByCategory = query({
-  args: { month: v.string() },
+  args: {
+    month: v.string(),
+    view: v.optional(expenseViewValidator),
+  },
   handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
     const { start, end } = monthRange(args.month)
-    const expenses = await ctx.db
-      .query('expenses')
-      .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
-      .filter((q) => q.lt(q.field('createdAt'), end))
-      .collect()
+    const expenses = await loadVisibleExpensesInRange(
+      ctx,
+      householdId,
+      userId,
+      start,
+      end,
+      args.view ?? 'personal'
+    )
 
     const byCategory: Record<string, number> = {}
     for (const e of expenses) {
@@ -276,10 +411,13 @@ export const expensesByCategory = query({
 export const sessionExpenses = query({
   args: { sessionId: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const { userId, householdId } = await requireAuthContext(ctx)
+    const expenses = await ctx.db
       .query('expenses')
       .withIndex('by_sessionId', (q) => q.eq('sessionId', args.sessionId))
       .collect()
+
+    return expenses.filter((expense) => canViewExpense(expense, userId, householdId))
   },
 })
 
@@ -288,13 +426,23 @@ export const frequentItems = query({
     categoryId: v.optional(v.string()),
     excludeCategoryId: v.optional(v.string()),
     limit: v.number(),
+    view: v.optional(expenseViewValidator),
   },
   handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
     const since = Date.now() - 90 * 24 * 60 * 60 * 1000
     let expenses = await ctx.db
       .query('expenses')
-      .withIndex('by_createdAt', (q) => q.gte('createdAt', since))
+      .withIndex('by_household_and_createdAt', (q) =>
+        q.eq('householdId', householdId).gte('createdAt', since)
+      )
       .collect()
+
+    expenses = expenses.filter(
+      (expense) =>
+        canViewExpense(expense, userId, householdId) &&
+        matchesView(expense, userId, args.view ?? 'personal')
+    )
 
     if (args.categoryId) {
       expenses = expenses.filter((e) => e.categoryId === args.categoryId)
@@ -388,20 +536,22 @@ function aggregateByCategory(
 
 type InsightCandidate = { text: string; priority: number }
 
-async function loadMonthExpenses(ctx: QueryCtx, month: string) {
+async function loadMonthExpenses(
+  ctx: QueryCtx,
+  householdId: Id<'households'>,
+  userId: Id<'users'>,
+  month: string
+) {
   const { start, end } = monthRange(month)
-  return await ctx.db
-    .query('expenses')
-    .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
-    .filter((q) => q.lt(q.field('createdAt'), end))
-    .collect()
+  return await loadVisibleExpensesInRange(ctx, householdId, userId, start, end, 'shared')
 }
 
 export const insights = query({
   args: { month: v.string() },
   handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
     const now = Date.now()
-    const expenses = await loadMonthExpenses(ctx, args.month)
+    const expenses = await loadMonthExpenses(ctx, householdId, userId, args.month)
     const counted = expenses.filter(isCounted)
     if (counted.length === 0) return []
 
@@ -436,7 +586,7 @@ export const insights = query({
     }
 
     const prevKey = previousMonthKey(args.month)
-    const prevExpenses = await loadMonthExpenses(ctx, prevKey)
+    const prevExpenses = await loadMonthExpenses(ctx, householdId, userId, prevKey)
     if (prevExpenses.length > 0) {
       const prevByCategory = aggregateByCategory(prevExpenses)
       let bestCompare: InsightCandidate | null = null
@@ -493,10 +643,18 @@ export const insights = query({
     if (args.month === currentMonthKey) {
       const allRecent = await ctx.db
         .query('expenses')
-        .withIndex('by_createdAt', (q) => q.gte('createdAt', now - 120 * 24 * 60 * 60 * 1000))
+        .withIndex('by_household_and_createdAt', (q) =>
+          q.eq('householdId', householdId).gte('createdAt', now - 120 * 24 * 60 * 60 * 1000)
+        )
         .collect()
 
-      const daysWithExpenses = new Set(allRecent.map((e) => dayKeyFromTs(e.createdAt)))
+      const visibleRecent = allRecent.filter(
+        (expense) =>
+          canViewExpense(expense, userId, householdId) &&
+          expenseScope(expense) === 'shared'
+      )
+
+      const daysWithExpenses = new Set(visibleRecent.map((e) => dayKeyFromTs(e.createdAt)))
       let streak = 0
       const cursor = new Date(now)
       cursor.setHours(0, 0, 0, 0)

@@ -10,6 +10,7 @@ export interface PendingExpense {
   store?: string
   note?: string
   createdAt: number
+  scope?: 'shared' | 'personal'
 }
 
 export interface PendingReceiptGroup {
@@ -22,6 +23,7 @@ export interface PendingReceiptGroup {
     amount: number
   }>
   createdAt: number
+  scope?: 'shared' | 'personal'
 }
 
 const OUTBOX_KEY = 'gastos-outbox'
@@ -64,6 +66,7 @@ export function saveOutbox(items: PendingExpense[]): void {
 export function enqueueExpense(expense: Omit<PendingExpense, 'clientId' | 'createdAt'> & { clientId?: string }): PendingExpense {
   const pending: PendingExpense = {
     ...expense,
+    scope: expense.scope ?? 'personal',
     clientId: expense.clientId ?? crypto.randomUUID(),
     createdAt: Date.now(),
   }
@@ -97,6 +100,7 @@ export function enqueueReceiptGroup(input: {
   categoryId: string
   store?: string
   items: Array<{ itemLabel: string; amount: number }>
+  scope?: 'shared' | 'personal'
 }): PendingReceiptGroup {
   const receiptGroupId = input.receiptGroupId ?? crypto.randomUUID()
   const createdAt = Date.now()
@@ -105,6 +109,7 @@ export function enqueueReceiptGroup(input: {
     categoryId: input.categoryId,
     store: input.store,
     createdAt,
+    scope: input.scope ?? 'personal',
     items: input.items.map((item) => ({
       ...item,
       clientId: crypto.randomUUID(),

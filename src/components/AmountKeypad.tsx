@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Delete } from 'lucide-react'
 import { formatItemDetail } from '@/lib/foodCatalog'
+import { ExpenseScopeToggle } from '@/components/ExpenseScopeToggle'
+import type { ExpenseScope } from '@/lib/expenseScope'
 
 export interface EditableItemHeader {
   emoji: string
@@ -27,6 +29,8 @@ interface AmountKeypadProps {
   onPresetSelect?: (amount: number) => void
   primaryAction?: 'save' | 'continue'
   primaryLabel?: string
+  scope?: ExpenseScope
+  onScopeChange?: (scope: ExpenseScope) => void
 }
 
 export function AmountKeypad({
@@ -44,6 +48,8 @@ export function AmountKeypad({
   onPresetSelect,
   primaryAction = 'save',
   primaryLabel,
+  scope,
+  onScopeChange,
 }: AmountKeypadProps) {
   const [editingLabel, setEditingLabel] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -172,6 +178,10 @@ export function AmountKeypad({
           {formatCOP(value)}
         </p>
       </div>
+
+      {scope && onScopeChange && (
+        <ExpenseScopeToggle value={scope} onChange={onScopeChange} className="mb-3" />
+      )}
 
       <div className="grid grid-cols-3 gap-2 mb-3">
         {AMOUNT_PRESETS.map((preset) => (

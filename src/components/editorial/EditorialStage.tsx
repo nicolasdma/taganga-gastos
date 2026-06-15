@@ -6,15 +6,17 @@ import { SyncPendingSticker } from '@/components/editorial/EditorialScreenHeader
 import { KittySprite } from '@/components/craft/KittySprite'
 import { usePeriodTotals } from '@/hooks/usePeriodTotals'
 import { formatCOP, formatCOPEditorial } from '@/lib/currency'
+import type { ExpenseView } from '@/lib/expenseScope'
 import { cn } from '@/lib/utils'
 
 interface EditorialStageProps {
   pulseKey?: number
   pendingCount?: number
+  view?: ExpenseView
 }
 
-export function EditorialStage({ pulseKey = 0, pendingCount = 0 }: EditorialStageProps) {
-  const { today, week, month } = usePeriodTotals()
+export function EditorialStage({ pulseKey = 0, pendingCount = 0, view }: EditorialStageProps) {
+  const { today, week, month } = usePeriodTotals(view)
   const [pulsing, setPulsing] = useState(false)
 
   useEffect(() => {
@@ -35,7 +37,9 @@ export function EditorialStage({ pulseKey = 0, pendingCount = 0 }: EditorialStag
           <MotionReveal step={1}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="editorial-kicker">Registro compartido</p>
+                <p className="editorial-kicker">
+                  {view === 'shared' ? 'Registro compartido' : 'Tu libreta'}
+                </p>
                 <h1 className="editorial-stage__title type-editorial-title text-white editorial-text-shadow">
                   Gastos
                 </h1>
@@ -72,7 +76,7 @@ export function EditorialStage({ pulseKey = 0, pendingCount = 0 }: EditorialStag
                 )}
 
                 <p className="font-display italic text-sm text-muted-foreground mt-2 leading-snug">
-                  lo que salió del bolsillo hoy
+                  lo que salió de tu bolsillo hoy
                 </p>
               </div>
             </div>

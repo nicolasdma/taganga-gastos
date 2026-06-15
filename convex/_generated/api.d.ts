@@ -8,9 +8,16 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as dates from "../dates.js";
 import type * as expenses from "../expenses.js";
+import type * as households from "../households.js";
+import type * as http from "../http.js";
+import type * as lib_auth from "../lib/auth.js";
+import type * as lib_households from "../lib/households.js";
+import type * as lib_userPreferences from "../lib/userPreferences.js";
 import type * as receiptScan from "../receiptScan.js";
+import type * as userPreferences from "../userPreferences.js";
 
 import type {
   ApiFromModules,
@@ -19,9 +26,16 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   dates: typeof dates;
   expenses: typeof expenses;
+  households: typeof households;
+  http: typeof http;
+  "lib/auth": typeof lib_auth;
+  "lib/households": typeof lib_households;
+  "lib/userPreferences": typeof lib_userPreferences;
   receiptScan: typeof receiptScan;
+  userPreferences: typeof userPreferences;
 }>;
 
 /**

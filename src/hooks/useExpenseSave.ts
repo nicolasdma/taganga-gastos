@@ -6,6 +6,7 @@ import { hapticSave } from '@/lib/haptics'
 import { pushRecentCategory, setLastStore } from '@/lib/preferences'
 import { recordItemUsage } from '@/lib/itemUsage'
 import { enqueueExpense, removeFromOutbox } from '@/lib/outbox'
+import type { ExpenseScope } from '@/lib/expenseScope'
 
 export interface SaveExpenseInput {
   amount: number
@@ -16,6 +17,7 @@ export interface SaveExpenseInput {
   sessionId?: string
   store?: string
   note?: string
+  scope?: ExpenseScope
 }
 
 export interface SaveExpenseResult {
@@ -43,6 +45,7 @@ export function useExpenseSave(onSaved?: (result: SaveExpenseResult) => void) {
           note: pending.note,
           clientId: pending.clientId,
           createdAt: pending.createdAt,
+          scope: pending.scope,
         })
         removeFromOutbox(pending.clientId)
       } catch {

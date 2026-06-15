@@ -26,6 +26,7 @@ export function useOutboxSync() {
             clientId: item.clientId,
           })),
           createdAt: group.createdAt,
+          scope: group.scope,
         })
         removeReceiptGroupFromOutbox(group.receiptGroupId)
       } catch {
@@ -48,6 +49,7 @@ export function useOutboxSync() {
           note: item.note,
           clientId: item.clientId,
           createdAt: item.createdAt,
+          scope: item.scope,
         })
         removeFromOutbox(item.clientId)
       } catch {

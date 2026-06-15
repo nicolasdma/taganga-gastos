@@ -4,6 +4,8 @@ import { BottomSheet } from '@/components/BottomSheet'
 import { ItemPicker, type SelectedItem } from '@/components/ItemPicker'
 import { getCategory } from '@/lib/categories'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
+import type { ExpenseScope } from '@/lib/expenseScope'
+import { DEFAULT_EXPENSE_SCOPE } from '@/lib/expenseScope'
 
 export type SheetIntent =
   | { type: 'add' }
@@ -78,6 +80,7 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
   const [categoryId] = useState(initial.categoryId)
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(initial.selectedItem)
   const [itemDetail, setItemDetail] = useState('')
+  const [scope, setScope] = useState<ExpenseScope>(DEFAULT_EXPENSE_SCOPE)
   const [saving, setSaving] = useState(false)
 
   const close = () => {
@@ -100,6 +103,7 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
       itemEmoji: item.itemEmoji,
       itemLabel: item.itemLabel,
       note: detail?.trim() || undefined,
+      scope,
     })
     setSaving(false)
     close()
@@ -115,7 +119,7 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
 
     if (intent.type === 'category') {
       setSaving(true)
-      await saveExpense({ amount, categoryId })
+      await saveExpense({ amount, categoryId, scope })
       setSaving(false)
       close()
       return
@@ -174,6 +178,8 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
       autoSaveOnPreset={isQuick}
       onPresetSelect={isQuick ? handleQuickPreset : undefined}
       primaryLabel="Guardar"
+      scope={scope}
+      onScopeChange={setScope}
     />
   )
 }

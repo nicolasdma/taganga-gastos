@@ -5,6 +5,7 @@ import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import { buildCategoryQuickButtons } from '@/lib/quickButtons'
 import { useExpenseSave } from '@/hooks/useExpenseSave'
+import { DEFAULT_EXPENSE_VIEW } from '@/lib/expenseScope'
 import type { SheetIntent } from '@/components/ExpenseSheet'
 import { cn } from '@/lib/utils'
 
@@ -55,7 +56,7 @@ function ActionRow({
 }
 
 export function QuickAccess({ onOpenSheet, onSaved }: QuickAccessProps) {
-  const recent = useQuery(api.expenses.recentExpenses, { limit: 1 })
+  const recent = useQuery(api.expenses.recentExpenses, { limit: 1, view: DEFAULT_EXPENSE_VIEW })
   const { saveExpense } = useExpenseSave(onSaved)
 
   const lastExpense = recent?.[0]

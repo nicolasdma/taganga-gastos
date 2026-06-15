@@ -4,13 +4,36 @@ App de gastos compartidos para 2 personas. Captura rápida, memoria de gastos en
 
 **Stack:** Vite + React 19 + TypeScript + Tailwind + Convex + Vercel
 
-## Desarrollo
+## Auth y privacidad (Convex Auth + Google)
 
-```bash
-npm install
-npm run dev:convex   # terminal 1 — backend Convex
-npm run dev          # terminal 2 — frontend Vite
-```
+1. Instalar dependencias (ya en `package.json`):
+   ```bash
+   npm install @convex-dev/auth @auth/core@0.41.1
+   ```
+2. Generar claves JWT (solo una vez por deployment):
+   ```bash
+   node scripts/generateKeys.mjs
+   ```
+   Copiá `JWT_PRIVATE_KEY` y `JWKS` al dashboard de Convex → Environment Variables.
+3. Variables en el deployment Convex:
+   ```bash
+   npx convex env set SITE_URL http://localhost:5173
+   npx convex env set AUTH_GOOGLE_ID <client-id>
+   npx convex env set AUTH_GOOGLE_SECRET <client-secret>
+   ```
+   Callback OAuth: `https://<deployment>.convex.site/api/auth/callback/google`
+4. Levantar backend + frontend:
+   ```bash
+   npm run dev:convex
+   npm run dev
+   ```
+
+### Hogar compartido
+
+- Primer usuario: **Crear hogar** (migra gastos legacy como `shared`).
+- Pareja: compartir link `/join/<CODIGO>` o pegar el código en onboarding.
+- Gastos **Compartido** 👫 → visibles para ambos. **Personal** 👤 → solo quien lo creó.
+
 
 Crea `.env.local` con:
 

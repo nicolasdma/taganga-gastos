@@ -27,15 +27,24 @@ import {
 import { pendingReceiptToListRows } from '@/hooks/useReceiptSave'
 import { cn } from '@/lib/utils'
 
+import type { ExpenseView } from '@/lib/expenseScope'
+import { DEFAULT_EXPENSE_SCOPE, DEFAULT_EXPENSE_VIEW } from '@/lib/expenseScope'
+
 interface RecentExpensesProps {
   limit?: number
+  view?: ExpenseView
   onEdit?: (expense: EditableExpense) => void
   onPendingRemoved?: () => void
 }
 
-export function RecentExpenses({ limit = 8, onEdit, onPendingRemoved }: RecentExpensesProps) {
+export function RecentExpenses({
+  limit = 8,
+  view = DEFAULT_EXPENSE_VIEW,
+  onEdit,
+  onPendingRemoved,
+}: RecentExpensesProps) {
   const { todayKey } = useLocalToday()
-  const expenses = useQuery(api.expenses.recentExpenses, { limit: limit + 20 })
+  const expenses = useQuery(api.expenses.recentExpenses, { limit: limit + 20, view })
   const [outboxTick, setOutboxTick] = useState(0)
 
   useEffect(() => {
@@ -59,7 +68,9 @@ export function RecentExpenses({ limit = 8, onEdit, onPendingRemoved }: RecentEx
   const merged = useMemo(() => {
     if (!expenses) return null
 
-    const pendingRows: ReceiptItemLike[] = pending.map((p) => ({
+    const pendingRows: ReceiptItemLike[] = pending
+      .filter((p) => (p.scope ?? DEFAULT_EXPENSE_SCOPE) === view)
+      .map((p) => ({
       _id: p.clientId,
       amount: p.amount,
       categoryId: p.categoryId,
@@ -75,7 +86,9 @@ export function RecentExpenses({ limit = 8, onEdit, onPendingRemoved }: RecentEx
       pending: true,
     }))
 
-    const pendingReceiptRows = pendingReceipts.flatMap(pendingReceiptToListRows)
+    const pendingReceiptRows = pendingReceipts
+      .filter((group) => (group.scope ?? DEFAULT_EXPENSE_SCOPE) === view)
+      .flatMap(pendingReceiptToListRows)
 
     const serverRows: ReceiptItemLike[] = expenses
       .filter((e) => !e.clientId || !pendingClientIds.has(e.clientId))
@@ -99,7 +112,7 @@ export function RecentExpenses({ limit = 8, onEdit, onPendingRemoved }: RecentEx
     const rows = groupExpensesForList(all)
 
     return groupListRowsByDay(rows.slice(0, limit), todayKey)
-  }, [expenses, pending, pendingReceipts, pendingClientIds, limit, todayKey])
+  }, [expenses, pending, pendingReceipts, pendingClientIds, limit, todayKey, view])
 
   const handlePendingDelete = (clientId: string) => {
     if (!window.confirm('¿Quitar este gasto pendiente de sincronización?')) return

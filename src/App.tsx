@@ -1,6 +1,6 @@
-import { lazy, Suspense, useCallback, useState } from 'react'
-import { useMutation } from 'convex/react'
-import { ConvexProvider, ConvexReactClient } from 'convex/react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { useConvexAuth } from '@convex-dev/auth/react'
+import { useMutation, useQuery } from 'convex/react'
 import { api } from '../convex/_generated/api'
 import { BottomNav, type TabId } from '@/components/BottomNav'
 import { ConvexConfigError } from '@/components/ConvexConfigError'
@@ -16,16 +16,22 @@ import type { SaveExpenseResult } from '@/hooks/useExpenseSave'
 import type { SaveReceiptResult } from '@/hooks/useReceiptSave'
 import type { EditableExpense } from '@/lib/expenseTypes'
 import { removeFromOutbox, removeReceiptGroupFromOutbox } from '@/lib/outbox'
-import { HomeScreen, CalendarScreen } from '@/screens'
+import { useInviteCodeFromPath } from '@/hooks/useInviteCodeFromPath'
+import { HomeScreen, CalendarScreen, LoginScreen } from '@/screens'
 
 const StatsScreen = lazy(() =>
   import('@/screens/StatsScreen').then((m) => ({ default: m.StatsScreen }))
 )
 
-const convexUrl = import.meta.env.VITE_CONVEX_URL
-const convex = convexUrl ? new ConvexReactClient(convexUrl) : null
-
 type ToastState = (SaveExpenseResult & { type?: 'expense' }) | SaveReceiptResult | null
+
+function AuthLoadingScreen() {
+  return (
+    <div className="app-shell flex items-center justify-center">
+      <p className="text-sm font-semibold text-muted-foreground">Cargando…</p>
+    </div>
+  )
+}
 
 function StatsFallback() {
   return (
@@ -155,14 +161,60 @@ function AppShell() {
   )
 }
 
+function AuthenticatedApp() {
+  const { isLoading, isAuthenticated } = useConvexAuth()
+  const household = useQuery(api.households.getMyHousehold)
+  const inviteCodeFromPath = useInviteCodeFromPath()
+  const ensureUserReady = useMutation(api.households.ensureUserReady)
+  const joinHousehold = useMutation(api.households.joinHousehold)
+  const [bootstrapping, setBootstrapping] = useState(false)
+  const bootstrapAttempted = useRef(false)
+
+  useEffect(() => {
+    if (!isAuthenticated || household === undefined || household !== null) return
+    if (bootstrapAttempted.current) return
+    bootstrapAttempted.current = true
+
+    setBootstrapping(true)
+    void (async () => {
+      try {
+        if (inviteCodeFromPath) {
+          await joinHousehold({ inviteCode: inviteCodeFromPath })
+          window.history.replaceState({}, '', '/')
+        } else {
+          await ensureUserReady({})
+        }
+      } catch {
+        try {
+          await ensureUserReady({})
+        } catch {
+          bootstrapAttempted.current = false
+        }
+      } finally {
+        setBootstrapping(false)
+      }
+    })()
+  }, [isAuthenticated, household, inviteCodeFromPath, ensureUserReady, joinHousehold])
+
+  if (isLoading || (isAuthenticated && household === undefined) || bootstrapping) {
+    return <AuthLoadingScreen />
+  }
+
+  if (!isAuthenticated) {
+    return <LoginScreen />
+  }
+
+  if (!household) {
+    return <AuthLoadingScreen />
+  }
+
+  return <AppShell />
+}
+
 export default function App() {
-  if (!convex) {
+  if (!import.meta.env.VITE_CONVEX_URL) {
     return <ConvexConfigError />
   }
 
-  return (
-    <ConvexProvider client={convex}>
-      <AppShell />
-    </ConvexProvider>
-  )
+  return <AuthenticatedApp />
 }

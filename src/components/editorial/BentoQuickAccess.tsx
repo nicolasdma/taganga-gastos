@@ -9,14 +9,17 @@ import { useExpenseSave } from '@/hooks/useExpenseSave'
 import type { SheetIntent } from '@/components/ExpenseSheet'
 import { cn } from '@/lib/utils'
 
+import type { ExpenseView } from '@/lib/expenseScope'
+
 interface BentoQuickAccessProps {
+  view: ExpenseView
   onOpenSheet: (intent: SheetIntent) => void
   onSaved: (result: import('@/hooks/useExpenseSave').SaveExpenseResult) => void
 }
 
 
-export function BentoQuickAccess({ onOpenSheet, onSaved }: BentoQuickAccessProps) {
-  const recent = useQuery(api.expenses.recentExpenses, { limit: 1 })
+export function BentoQuickAccess({ view, onOpenSheet, onSaved }: BentoQuickAccessProps) {
+  const recent = useQuery(api.expenses.recentExpenses, { limit: 1, view })
   const { saveExpense } = useExpenseSave(onSaved)
 
   const lastExpense = recent?.[0]
