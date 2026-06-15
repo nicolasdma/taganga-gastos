@@ -8,6 +8,7 @@ import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 export type SheetIntent =
   | { type: 'add' }
   | { type: 'supermarket' }
+  | { type: 'category'; categoryId: string }
   | {
       type: 'quick'
       categoryId: string
@@ -28,6 +29,9 @@ function intentKey(intent: SheetIntent): string {
   if (intent.type === 'quick') {
     return `quick:${intent.categoryId}:${intent.itemId}`
   }
+  if (intent.type === 'category') {
+    return `category:${intent.categoryId}`
+  }
   return intent.type
 }
 
@@ -45,6 +49,14 @@ function resolveInitialState(intent: SheetIntent): {
         itemEmoji: intent.itemEmoji,
         itemLabel: intent.itemLabel,
       },
+    }
+  }
+
+  if (intent.type === 'category') {
+    return {
+      step: 'amount',
+      categoryId: intent.categoryId,
+      selectedItem: null,
     }
   }
 
@@ -99,7 +111,17 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
   }
 
   const handleSave = async () => {
-    if (!resolvedItem || amount <= 0) return
+    if (amount <= 0) return
+
+    if (intent.type === 'category') {
+      setSaving(true)
+      await saveExpense({ amount, categoryId })
+      setSaving(false)
+      close()
+      return
+    }
+
+    if (!resolvedItem) return
     await saveWithItem(resolvedItem, amount, itemDetail)
   }
 
@@ -123,10 +145,16 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
   }
 
   const isQuick = intent.type === 'quick'
+  const isCategory = intent.type === 'category'
   const canPickAnotherItem = intent.type === 'add' || intent.type === 'supermarket'
 
   return (
     <AmountKeypad
+      categoryHeader={
+        isCategory && category
+          ? { emoji: category.emoji, label: category.label }
+          : undefined
+      }
       itemHeader={
         resolvedItem
           ? {

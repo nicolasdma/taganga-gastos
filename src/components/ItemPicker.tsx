@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { ExpenseChip } from '@/components/ExpenseChip'
 import { getCategoryItems, type CatalogItem } from '@/lib/categories'
+import { getFoodById } from '@/lib/foodCatalog'
+import { sortCatalogByUsage } from '@/lib/itemUsage'
 import { cn } from '@/lib/utils'
 
 export interface SelectedItem {
@@ -25,10 +29,15 @@ function normalizeSearch(text: string): string {
     .replace(/\p{Diacritic}/gu, '')
 }
 
-function matchesSearch(item: CatalogItem, query: string): boolean {
+function itemSearchHaystack(item: CatalogItem, categoryId: string): string {
+  const food = categoryId === 'supermarket' ? getFoodById(item.id) : undefined
+  const keywords = food?.keywords.join(' ') ?? ''
+  return normalizeSearch(`${item.label} ${item.id} ${keywords}`)
+}
+
+function matchesSearch(item: CatalogItem, query: string, categoryId: string): boolean {
   if (!query) return true
-  const haystack = normalizeSearch(`${item.label} ${item.id}`)
-  return haystack.includes(normalizeSearch(query))
+  return itemSearchHaystack(item, categoryId).includes(normalizeSearch(query))
 }
 
 export function ItemPicker({
@@ -44,10 +53,20 @@ export function ItemPicker({
   const isLargeCatalog = catalog.length > 16
   const isSupermarket = variant === 'supermarket'
 
-  const filteredItems = useMemo(
-    () => catalog.filter((item) => matchesSearch(item, search)),
-    [catalog, search]
-  )
+  const frequent = useQuery(api.expenses.frequentItems, { categoryId, limit: 80 })
+
+  const serverCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const row of frequent ?? []) {
+      if (row.itemId) counts.set(row.itemId, row.count)
+    }
+    return counts
+  }, [frequent])
+
+  const displayItems = useMemo(() => {
+    const filtered = catalog.filter((item) => matchesSearch(item, search, categoryId))
+    return sortCatalogByUsage(filtered, categoryId, serverCounts)
+  }, [catalog, search, categoryId, serverCounts])
 
   const title = storeName ?? (isSupermarket ? categoryLabel : '¿Qué fue?')
   const titleEmoji = isSupermarket ? categoryEmoji : '✏️'
@@ -60,6 +79,8 @@ export function ItemPicker({
       : isLargeCatalog
         ? `${catalog.length} comidas y más · después el precio`
         : 'Elegí y después el precio'
+
+  const sectionLabel = search ? 'Resultados' : 'Tus frecuentes primero'
 
   return (
     <div className="pb-3 -mx-1">
@@ -80,7 +101,7 @@ export function ItemPicker({
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar pescado, refresco, huevo…"
+            placeholder="Buscar pescado, frutilla, cerveza…"
             className={cn(
               'w-full rounded-2xl pl-4 pr-4 py-3 text-sm font-medium',
               'bg-porcelain-cream/90 border-2 border-stitch/45',
@@ -93,14 +114,14 @@ export function ItemPicker({
       </div>
 
       <div className="space-y-2.5">
-        <p className="label-stitch px-0.5">{search ? 'Resultados' : 'Ítems'}</p>
-        {filteredItems.length === 0 ? (
+        <p className="label-stitch px-0.5">{sectionLabel}</p>
+        {displayItems.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-10">
             Sin resultados para “{search}”
           </p>
         ) : (
           <div className="grid grid-cols-4 gap-2">
-            {filteredItems.map((item, i) => (
+            {displayItems.map((item, i) => (
               <ExpenseChip
                 key={item.id}
                 emoji={item.emoji}

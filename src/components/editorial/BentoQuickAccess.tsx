@@ -4,7 +4,7 @@ import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import { FOOD_CATALOG } from '@/lib/foodCatalog'
-import { buildQuickButtons } from '@/lib/quickButtons'
+import { buildCategoryQuickButtons } from '@/lib/quickButtons'
 import { useExpenseSave } from '@/hooks/useExpenseSave'
 import type { SheetIntent } from '@/components/ExpenseSheet'
 import { cn } from '@/lib/utils'
@@ -14,19 +14,14 @@ interface BentoQuickAccessProps {
   onSaved: (result: import('@/hooks/useExpenseSave').SaveExpenseResult) => void
 }
 
-const QUICK_VISIBLE = 3
 
 export function BentoQuickAccess({ onOpenSheet, onSaved }: BentoQuickAccessProps) {
-  const frequent = useQuery(api.expenses.frequentItems, {
-    excludeCategoryId: 'supermarket',
-    limit: 6,
-  })
   const recent = useQuery(api.expenses.recentExpenses, { limit: 1 })
   const { saveExpense } = useExpenseSave(onSaved)
 
   const lastExpense = recent?.[0]
   const lastDisplay = lastExpense ? formatExpenseLabel(lastExpense) : null
-  const quickButtons = buildQuickButtons(frequent, QUICK_VISIBLE)
+  const quickButtons = buildCategoryQuickButtons()
 
   const handleRepeat = async () => {
     if (!lastExpense) return

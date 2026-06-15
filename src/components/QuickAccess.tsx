@@ -3,7 +3,7 @@ import { api } from '../../convex/_generated/api'
 import { ExpenseChip } from '@/components/ExpenseChip'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
-import { buildQuickButtons } from '@/lib/quickButtons'
+import { buildCategoryQuickButtons } from '@/lib/quickButtons'
 import { useExpenseSave } from '@/hooks/useExpenseSave'
 import type { SheetIntent } from '@/components/ExpenseSheet'
 import { cn } from '@/lib/utils'
@@ -55,16 +55,12 @@ function ActionRow({
 }
 
 export function QuickAccess({ onOpenSheet, onSaved }: QuickAccessProps) {
-  const frequent = useQuery(api.expenses.frequentItems, {
-    excludeCategoryId: 'supermarket',
-    limit: 6,
-  })
   const recent = useQuery(api.expenses.recentExpenses, { limit: 1 })
   const { saveExpense } = useExpenseSave(onSaved)
 
   const lastExpense = recent?.[0]
   const lastDisplay = lastExpense ? formatExpenseLabel(lastExpense) : null
-  const quickButtons = buildQuickButtons(frequent)
+  const quickButtons = buildCategoryQuickButtons()
 
   const handleRepeat = async () => {
     if (!lastExpense) return

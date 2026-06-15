@@ -1,71 +1,27 @@
-import { QUICK_EXPENSES } from '@/lib/categories'
+import { getCategory } from '@/lib/categories'
 import type { SheetIntent } from '@/components/ExpenseSheet'
 
-export interface QuickButton {
+export interface CategoryQuickButton {
   key: string
   emoji: string
   label: string
-  intent: Extract<SheetIntent, { type: 'quick' }>
+  intent: Extract<SheetIntent, { type: 'category' }>
 }
 
-interface FrequentItem {
-  categoryId: string
-  itemId: string
-  itemEmoji?: string
-  itemLabel?: string
-}
+/** Categorías fijas en acceso rápido (reemplazan café/helado/cerveza). */
+export const QUICK_CATEGORY_IDS = ['eating-out', 'transport', 'leisure'] as const
 
-const QUICK_TARGET = 6
-
-export function buildQuickButtons(
-  frequent: FrequentItem[] | undefined,
-  limit = QUICK_TARGET
-): QuickButton[] {
-  const seen = new Set<string>()
-  const buttons: QuickButton[] = []
-
-  const push = (item: {
-    categoryId: string
-    itemId: string
-    emoji: string
-    label: string
-  }) => {
-    const key = `${item.categoryId}:${item.itemId}`
-    if (seen.has(key)) return
-    seen.add(key)
-    buttons.push({
-      key,
-      emoji: item.emoji,
-      label: item.label,
-      intent: {
-        type: 'quick',
-        categoryId: item.categoryId,
-        itemId: item.itemId,
-        itemEmoji: item.emoji,
-        itemLabel: item.label,
+export function buildCategoryQuickButtons(): CategoryQuickButton[] {
+  return QUICK_CATEGORY_IDS.flatMap((categoryId) => {
+    const cat = getCategory(categoryId)
+    if (!cat) return []
+    return [
+      {
+        key: categoryId,
+        emoji: cat.emoji,
+        label: cat.label,
+        intent: { type: 'category', categoryId },
       },
-    })
-  }
-
-  for (const f of frequent ?? []) {
-    if (buttons.length >= limit) break
-    push({
-      categoryId: f.categoryId,
-      itemId: f.itemId,
-      emoji: f.itemEmoji ?? '💸',
-      label: f.itemLabel ?? f.itemId,
-    })
-  }
-
-  for (const q of QUICK_EXPENSES) {
-    if (buttons.length >= limit) break
-    push({
-      categoryId: q.categoryId,
-      itemId: q.itemId,
-      emoji: q.emoji,
-      label: q.label,
-    })
-  }
-
-  return buttons
+    ]
+  })
 }

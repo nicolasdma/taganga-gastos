@@ -15,6 +15,7 @@ export interface EditableItemHeader {
 interface AmountKeypadProps {
   title?: string
   subtitle?: string
+  categoryHeader?: { emoji: string; label: string }
   itemHeader?: EditableItemHeader
   value: number
   onChange: (value: number) => void
@@ -31,6 +32,7 @@ interface AmountKeypadProps {
 export function AmountKeypad({
   title,
   subtitle,
+  categoryHeader,
   itemHeader,
   value,
   onChange,
@@ -99,7 +101,7 @@ export function AmountKeypad({
         ) : (
           <div className="w-16" />
         )}
-        {!itemHeader && title && (
+        {!itemHeader && !categoryHeader && title && (
           <div className="text-center min-w-0 flex-1 px-3">
             <p className="font-display text-sm font-bold text-foreground truncate">{title}</p>
             {subtitle && (
@@ -107,9 +109,18 @@ export function AmountKeypad({
             )}
           </div>
         )}
-        {itemHeader && <div className="flex-1" />}
+        {(itemHeader || categoryHeader) && <div className="flex-1" />}
         <div className="w-16" />
       </div>
+
+      {categoryHeader && (
+        <div className="text-center mb-4 px-1">
+          <div className="flex items-center justify-center gap-2.5 min-h-[2.75rem]">
+            <span className="text-3xl leading-none shrink-0">{categoryHeader.emoji}</span>
+            <p className="font-display text-xl font-bold text-ink">{categoryHeader.label}</p>
+          </div>
+        </div>
+      )}
 
       {itemHeader && (
         <div className="text-center mb-4 px-1">

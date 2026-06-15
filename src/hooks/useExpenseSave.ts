@@ -4,6 +4,7 @@ import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { hapticSave } from '@/lib/haptics'
 import { pushRecentCategory, setLastStore } from '@/lib/preferences'
+import { recordItemUsage } from '@/lib/itemUsage'
 import { enqueueExpense, removeFromOutbox } from '@/lib/outbox'
 
 export interface SaveExpenseInput {
@@ -49,6 +50,7 @@ export function useExpenseSave(onSaved?: (result: SaveExpenseResult) => void) {
       }
 
       pushRecentCategory(input.categoryId)
+      if (input.itemId) recordItemUsage(input.categoryId, input.itemId)
       if (input.store) setLastStore(input.store)
       hapticSave()
 

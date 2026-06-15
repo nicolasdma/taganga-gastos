@@ -25,7 +25,7 @@ export const CATEGORIES: Category[] = [
   { id: 'home', emoji: '🏠', label: 'Hogar' },
   { id: 'supermarket', emoji: '🛒', label: 'Super' },
   { id: 'eating-out', emoji: '🍽️', label: 'Comer afuera' },
-  { id: 'transport', emoji: '🏍️', label: 'Transporte' },
+  { id: 'transport', emoji: '🚕', label: 'Transporte' },
   { id: 'household', emoji: '🧴', label: 'Limpieza' },
   { id: 'health', emoji: '🏥', label: 'Salud' },
   { id: 'leisure', emoji: '🎉', label: 'Ocio' },
