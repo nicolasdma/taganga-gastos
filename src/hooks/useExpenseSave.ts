@@ -41,6 +41,7 @@ export function useExpenseSave(onSaved?: (result: SaveExpenseResult) => void) {
           store: pending.store,
           note: pending.note,
           clientId: pending.clientId,
+          createdAt: pending.createdAt,
         })
         removeFromOutbox(pending.clientId)
       } catch {

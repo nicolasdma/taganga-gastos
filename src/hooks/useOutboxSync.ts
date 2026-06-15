@@ -47,6 +47,7 @@ export function useOutboxSync() {
           store: item.store,
           note: item.note,
           clientId: item.clientId,
+          createdAt: item.createdAt,
         })
         removeFromOutbox(item.clientId)
       } catch {

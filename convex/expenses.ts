@@ -2,34 +2,7 @@ import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import type { QueryCtx } from './_generated/server'
 import type { Id } from './_generated/dataModel'
-
-function startOfDay(ts: number): number {
-  const d = new Date(ts)
-  d.setHours(0, 0, 0, 0)
-  return d.getTime()
-}
-
-function startOfWeek(ts: number): number {
-  const d = new Date(ts)
-  const day = d.getDay()
-  const diff = day === 0 ? 6 : day - 1
-  d.setDate(d.getDate() - diff)
-  d.setHours(0, 0, 0, 0)
-  return d.getTime()
-}
-
-function startOfMonth(ts: number): number {
-  const d = new Date(ts)
-  d.setDate(1)
-  d.setHours(0, 0, 0, 0)
-  return d.getTime()
-}
-
-function periodStart(period: 'today' | 'week' | 'month', now: number): number {
-  if (period === 'today') return startOfDay(now)
-  if (period === 'week') return startOfWeek(now)
-  return startOfMonth(now)
-}
+import { periodRange } from './dates'
 
 function monthRange(monthKey: string): { start: number; end: number } {
   const [year, month] = monthKey.split('-').map(Number)
@@ -65,6 +38,7 @@ export const addExpense = mutation({
     store: v.optional(v.string()),
     note: v.optional(v.string()),
     clientId: v.optional(v.string()),
+    createdAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     if (args.clientId) {
@@ -86,7 +60,7 @@ export const addExpense = mutation({
       store: args.store,
       note: args.note,
       clientId: args.clientId,
-      createdAt: Date.now(),
+      createdAt: args.createdAt ?? Date.now(),
     })
   },
 })
@@ -228,13 +202,15 @@ export const recentExpenses = query({
 export const totals = query({
   args: {
     period: v.union(v.literal('today'), v.literal('week'), v.literal('month')),
+    todayKey: v.string(),
+    tzOffsetMinutes: v.number(),
   },
   handler: async (ctx, args) => {
-    const now = Date.now()
-    const start = periodStart(args.period, now)
+    const { start, end } = periodRange(args.period, args.todayKey, args.tzOffsetMinutes)
     const expenses = await ctx.db
       .query('expenses')
       .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
+      .filter((q) => q.lt(q.field('createdAt'), end))
       .collect()
     return sumCounted(expenses)
   },

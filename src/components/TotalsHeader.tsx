@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from 'convex/react'
-import { api } from '../../convex/_generated/api'
 import { CraftCat } from '@/components/craft/CraftCat'
+import { usePeriodTotals } from '@/hooks/usePeriodTotals'
 import { formatCOP } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
@@ -10,9 +9,7 @@ interface TotalsHeaderProps {
 }
 
 export function TotalsHeader({ pulseKey = 0 }: TotalsHeaderProps) {
-  const today = useQuery(api.expenses.totals, { period: 'today' })
-  const week = useQuery(api.expenses.totals, { period: 'week' })
-  const month = useQuery(api.expenses.totals, { period: 'month' })
+  const { today, week, month } = usePeriodTotals()
   const [pulsing, setPulsing] = useState(false)
 
   useEffect(() => {

@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as dates from "../dates.js";
 import type * as expenses from "../expenses.js";
 import type * as receiptScan from "../receiptScan.js";
 
@@ -18,6 +19,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  dates: typeof dates;
   expenses: typeof expenses;
   receiptScan: typeof receiptScan;
 }>;

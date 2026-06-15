@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
 import { CollageSticker } from '@/components/editorial/CollageSticker'
 import { MarqueeBand } from '@/components/editorial/MarqueeBand'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { SyncPendingSticker } from '@/components/editorial/EditorialScreenHeader'
 import { KittySprite } from '@/components/craft/KittySprite'
+import { usePeriodTotals } from '@/hooks/usePeriodTotals'
 import { formatCOP, formatCOPEditorial } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
@@ -15,9 +14,7 @@ interface EditorialStageProps {
 }
 
 export function EditorialStage({ pulseKey = 0, pendingCount = 0 }: EditorialStageProps) {
-  const today = useQuery(api.expenses.totals, { period: 'today' })
-  const week = useQuery(api.expenses.totals, { period: 'week' })
-  const month = useQuery(api.expenses.totals, { period: 'month' })
+  const { today, week, month } = usePeriodTotals()
   const [pulsing, setPulsing] = useState(false)
 
   useEffect(() => {
