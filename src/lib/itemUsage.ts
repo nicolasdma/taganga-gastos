@@ -67,6 +67,9 @@ export function sortCatalogByUsage(
   const now = Date.now()
 
   return [...items].sort((a, b) => {
+    if (a.id === 'other' && b.id !== 'other') return 1
+    if (b.id === 'other' && a.id !== 'other') return -1
+
     const scoreA = computeItemScore(
       store[usageKey(categoryId, a.id)],
       serverCounts.get(a.id) ?? 0,
