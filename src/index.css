@@ -319,8 +319,101 @@
     position: relative;
     background: linear-gradient(180deg, hsl(40 60% 99%) 0%, hsl(38 48% 95%) 100%);
     border-top: 5px solid var(--cobalt-glaze);
-    border-radius: 1.75rem 1.5rem 0 0 / 1.5rem 1.75rem 0 0;
-    box-shadow: 0 -16px 56px -14px rgba(26, 39, 68, 0.28);
+    border-radius: 1.85rem 1.65rem 0 0 / 1.65rem 1.85rem 0 0;
+    box-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.65) inset,
+      0 -20px 64px -18px rgba(26, 39, 68, 0.34),
+      0 -6px 24px -8px rgba(74, 111, 165, 0.18);
+    will-change: transform;
+  }
+
+  .sheet-backdrop {
+    background: rgba(26, 39, 68, 0);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    transition:
+      background 480ms cubic-bezier(0.32, 0.72, 0, 1),
+      backdrop-filter 480ms cubic-bezier(0.32, 0.72, 0, 1),
+      -webkit-backdrop-filter 480ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .sheet-backdrop--open {
+    background: rgba(26, 39, 68, 0.42);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .sheet-panel {
+    transform: translate3d(0, 100%, 0);
+    transition: transform 480ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .sheet-panel--open {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .sheet-panel--dragging {
+    transition: none;
+  }
+
+  .sheet-handle {
+    display: flex;
+    justify-content: center;
+    padding: 0.65rem 0 0.45rem;
+    cursor: grab;
+  }
+
+  .sheet-handle:active {
+    cursor: grabbing;
+  }
+
+  .sheet-handle-bar {
+    width: 2.75rem;
+    height: 0.3rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, hsl(218 28% 78%), var(--cobalt-glaze), hsl(218 28% 78%));
+    opacity: 0.55;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    transition: width 200ms ease, opacity 200ms ease;
+  }
+
+  .sheet-panel--open .sheet-handle-bar {
+    width: 3rem;
+    opacity: 0.7;
+  }
+
+  .sheet-content {
+    animation: sheet-content-in 480ms cubic-bezier(0.32, 0.72, 0, 1) 60ms both;
+  }
+
+  @keyframes sheet-content-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 12px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-backdrop,
+    .sheet-panel,
+    .sheet-content,
+    .sheet-handle-bar {
+      transition-duration: 0.01ms !important;
+      transition-delay: 0ms !important;
+    }
+
+    .sheet-porcelain {
+      transform: none;
+    }
+
+    .sheet-panel,
+    .sheet-panel--open {
+      transform: none;
+    }
   }
 
   .sheet-porcelain::before {

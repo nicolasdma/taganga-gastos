@@ -1,20 +1,29 @@
+import { useEffect, useRef, useState } from 'react'
 import { AMOUNT_PRESETS, formatCOP } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Delete } from 'lucide-react'
+import { formatItemDetail } from '@/lib/foodCatalog'
+
+export interface EditableItemHeader {
+  emoji: string
+  catalogLabel: string
+  detail: string
+  onDetailChange: (detail: string) => void
+}
 
 interface AmountKeypadProps {
-  title: string
+  title?: string
   subtitle?: string
+  itemHeader?: EditableItemHeader
   value: number
   onChange: (value: number) => void
   onSave: () => void
   onCancel?: () => void
+  onBack?: () => void
   saving?: boolean
-  /** Preset tap saves immediately (quick expense flow) */
   autoSaveOnPreset?: boolean
   onPresetSelect?: (amount: number) => void
-  /** FAB flow: continue to category picker */
   primaryAction?: 'save' | 'continue'
   primaryLabel?: string
 }
@@ -22,16 +31,25 @@ interface AmountKeypadProps {
 export function AmountKeypad({
   title,
   subtitle,
+  itemHeader,
   value,
   onChange,
   onSave,
   onCancel,
+  onBack,
   saving,
   autoSaveOnPreset,
   onPresetSelect,
   primaryAction = 'save',
   primaryLabel,
 }: AmountKeypadProps) {
+  const [editingLabel, setEditingLabel] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editingLabel) inputRef.current?.focus()
+  }, [editingLabel])
+
   const appendDigit = (digit: number) => {
     const next = value * 10 + digit
     if (next > 99_999_999) return
@@ -52,24 +70,89 @@ export function AmountKeypad({
   const canProceed = value > 0 && !saving
   const showSaveButton = !autoSaveOnPreset || value > 0
 
+  const commitDetail = (raw: string) => {
+    if (!itemHeader) return
+    const trimmed = formatItemDetail(raw)
+    if (!trimmed || trimmed.toLowerCase() === itemHeader.catalogLabel.toLowerCase()) {
+      itemHeader.onDetailChange('')
+    } else {
+      itemHeader.onDetailChange(trimmed)
+    }
+    setEditingLabel(false)
+  }
+
+  const headerLabel = itemHeader
+    ? itemHeader.detail.trim() || itemHeader.catalogLabel
+    : title
+
   return (
     <div className="flex flex-col pb-2">
-      {(onCancel || title) && (
-        <div className="flex items-center justify-between mb-3">
-          {onCancel ? (
-            <button type="button" onClick={onCancel} className="text-sm font-semibold text-muted-foreground">
-              Cancelar
-            </button>
-          ) : (
-            <div className="w-16" />
-          )}
+      <div className="flex items-center justify-between mb-3">
+        {onCancel ? (
+          <button type="button" onClick={onCancel} className="text-sm font-semibold text-muted-foreground">
+            Cancelar
+          </button>
+        ) : onBack ? (
+          <button type="button" onClick={onBack} className="text-sm font-semibold text-muted-foreground">
+            Atrás
+          </button>
+        ) : (
+          <div className="w-16" />
+        )}
+        {!itemHeader && title && (
           <div className="text-center min-w-0 flex-1 px-3">
             <p className="font-display text-sm font-bold text-foreground truncate">{title}</p>
             {subtitle && (
               <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
             )}
           </div>
-          <div className="w-16" />
+        )}
+        {itemHeader && <div className="flex-1" />}
+        <div className="w-16" />
+      </div>
+
+      {itemHeader && (
+        <div className="text-center mb-4 px-1">
+          <div className="flex items-center justify-center gap-2.5 min-h-[2.75rem]">
+            <span className="text-3xl leading-none shrink-0">{itemHeader.emoji}</span>
+            {editingLabel ? (
+              <input
+                key={itemHeader.detail}
+                ref={inputRef}
+                type="text"
+                defaultValue={itemHeader.detail}
+                placeholder={itemHeader.catalogLabel}
+                className={cn(
+                  'min-w-0 flex-1 max-w-[12rem] rounded-xl px-3 py-2 text-base font-display font-bold text-ink',
+                  'bg-porcelain-cream/90 border-2 border-cobalt-glaze/45',
+                  'placeholder:text-muted-foreground/45 placeholder:font-medium placeholder:text-sm',
+                  'focus:outline-none focus:border-cobalt-glaze/70 focus:ring-2 focus:ring-cobalt-glaze/15'
+                )}
+                enterKeyHint="done"
+                onBlur={(e) => commitDetail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    commitDetail(e.currentTarget.value)
+                  }
+                  if (e.key === 'Escape') {
+                    setEditingLabel(false)
+                  }
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditingLabel(true)}
+                className={cn(
+                  'font-display text-xl font-bold text-ink text-left',
+                  'border-b-2 border-dashed border-stitch/55 pb-0.5',
+                  'active:opacity-70 transition-opacity'
+                )}
+              >
+                {headerLabel}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

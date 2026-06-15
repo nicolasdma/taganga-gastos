@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { AmountKeypad } from '@/components/AmountKeypad'
 import { BottomSheet } from '@/components/BottomSheet'
-import { CategoryPicker } from '@/components/CategoryPicker'
 import { ItemPicker, type SelectedItem } from '@/components/ItemPicker'
 import { getCategory } from '@/lib/categories'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 
 export type SheetIntent =
-  | { type: 'fab' }
   | { type: 'supermarket' }
   | {
       type: 'quick'
@@ -17,7 +15,7 @@ export type SheetIntent =
       itemLabel: string
     }
 
-type Step = 'amount' | 'category' | 'item'
+type Step = 'item' | 'amount'
 
 interface ExpenseSheetProps {
   intent: SheetIntent | null
@@ -34,13 +32,9 @@ function intentKey(intent: SheetIntent): string {
 
 function resolveInitialState(intent: SheetIntent): {
   step: Step
-  categoryId: string | null
+  categoryId: string
   selectedItem: SelectedItem | null
 } {
-  if (intent.type === 'supermarket') {
-    return { step: 'item', categoryId: 'supermarket', selectedItem: null }
-  }
-
   if (intent.type === 'quick') {
     return {
       step: 'amount',
@@ -53,7 +47,7 @@ function resolveInitialState(intent: SheetIntent): {
     }
   }
 
-  return { step: 'amount', categoryId: null, selectedItem: null }
+  return { step: 'item', categoryId: 'supermarket', selectedItem: null }
 }
 
 interface ExpenseSheetContentProps {
@@ -68,110 +62,54 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
 
   const [step, setStep] = useState<Step>(initial.step)
   const [amount, setAmount] = useState(0)
-  const [categoryId, setCategoryId] = useState<string | null>(initial.categoryId)
+  const [categoryId] = useState(initial.categoryId)
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(initial.selectedItem)
-  const [showDetail, setShowDetail] = useState(false)
+  const [itemDetail, setItemDetail] = useState('')
   const [saving, setSaving] = useState(false)
 
   const close = () => {
     onClose()
   }
 
-  const handleQuickPreset = async (preset: number) => {
-    if (intent.type !== 'quick') return
+  const resolvedItem = selectedItem
+  const category = getCategory(categoryId)
+
+  const saveWithItem = async (
+    item: SelectedItem,
+    expenseAmount: number,
+    detail?: string
+  ) => {
     setSaving(true)
     await saveExpense({
-      amount: preset,
-      categoryId: intent.categoryId,
-      itemId: intent.itemId,
-      itemEmoji: intent.itemEmoji,
-      itemLabel: intent.itemLabel,
-    })
-    setSaving(false)
-    close()
-  }
-
-  const handleQuickSave = async () => {
-    if (intent.type !== 'quick' || amount <= 0) return
-    setSaving(true)
-    await saveExpense({
-      amount,
-      categoryId: intent.categoryId,
-      itemId: intent.itemId,
-      itemEmoji: intent.itemEmoji,
-      itemLabel: intent.itemLabel,
-    })
-    setSaving(false)
-    close()
-  }
-
-  const handleFabContinue = () => {
-    if (amount > 0) setStep('category')
-  }
-
-  const handleCategorySelect = async (catId: string) => {
-    setCategoryId(catId)
-
-    if (showDetail) {
-      setStep('item')
-      return
-    }
-
-    setSaving(true)
-    await saveExpense({ amount, categoryId: catId })
-    setSaving(false)
-    close()
-  }
-
-  const handleItemSelect = async (item: SelectedItem) => {
-    if (categoryId === 'supermarket' || intent.type === 'supermarket') {
-      setSelectedItem(item)
-      setAmount(0)
-      setStep('amount')
-      return
-    }
-
-    if (intent.type === 'fab') {
-      setSaving(true)
-      await saveExpense({
-        amount,
-        categoryId: categoryId!,
-        itemId: item.itemId,
-        itemEmoji: item.itemEmoji,
-        itemLabel: item.itemLabel,
-      })
-      setSaving(false)
-      close()
-    }
-  }
-
-  const handleItemAmountSave = async () => {
-    if (!selectedItem || amount <= 0 || !categoryId) return
-    setSaving(true)
-    await saveExpense({
-      amount,
+      amount: expenseAmount,
       categoryId,
-      itemId: selectedItem.itemId,
-      itemEmoji: selectedItem.itemEmoji,
-      itemLabel: selectedItem.itemLabel,
+      itemId: item.itemId,
+      itemEmoji: item.itemEmoji,
+      itemLabel: item.itemLabel,
+      note: detail?.trim() || undefined,
     })
     setSaving(false)
     close()
   }
 
-  const category = categoryId ? getCategory(categoryId) : null
-
-  if (step === 'category' && intent.type === 'fab') {
-    return (
-      <CategoryPicker
-        showDetail={showDetail}
-        onToggleDetail={() => setShowDetail((v) => !v)}
-        onSelect={handleCategorySelect}
-      />
-    )
+  const handleQuickPreset = async (preset: number) => {
+    if (!resolvedItem) return
+    await saveWithItem(resolvedItem, preset, itemDetail)
   }
 
-  if (step === 'item' && categoryId && category) {
+  const handleSave = async () => {
+    if (!resolvedItem || amount <= 0) return
+    await saveWithItem(resolvedItem, amount, itemDetail)
+  }
+
+  const handleItemSelect = (item: SelectedItem) => {
+    setSelectedItem(item)
+    setItemDetail('')
+    setAmount(0)
+    setStep('amount')
+  }
+
+  if (step === 'item' && category) {
     return (
       <ItemPicker
         categoryId={categoryId}
@@ -182,50 +120,29 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
     )
   }
 
-  const title =
-    selectedItem
-      ? `${selectedItem.itemEmoji} ${selectedItem.itemLabel}`
-      : intent.type === 'fab'
-        ? 'Nuevo gasto'
-        : 'Monto'
-
-  const subtitle =
-    category && selectedItem
-      ? `${category.emoji} ${category.label}`
-      : category
-        ? category.label
-        : undefined
-
   const isQuick = intent.type === 'quick'
-  const isItemAmount =
-    selectedItem &&
-    step === 'amount' &&
-    categoryId !== null &&
-    (categoryId === 'supermarket' || intent.type === 'supermarket')
 
   return (
     <AmountKeypad
-      title={title}
-      subtitle={subtitle}
+      itemHeader={
+        resolvedItem
+          ? {
+              emoji: resolvedItem.itemEmoji,
+              catalogLabel: resolvedItem.itemLabel,
+              detail: itemDetail,
+              onDetailChange: setItemDetail,
+            }
+          : undefined
+      }
       value={amount}
       onChange={setAmount}
-      onSave={
-        isItemAmount
-          ? handleItemAmountSave
-          : isQuick
-            ? handleQuickSave
-            : intent.type === 'fab'
-              ? handleFabContinue
-              : () => {}
-      }
+      onSave={handleSave}
       onCancel={close}
+      onBack={intent.type === 'supermarket' ? () => setStep('item') : undefined}
       saving={saving}
       autoSaveOnPreset={isQuick}
       onPresetSelect={isQuick ? handleQuickPreset : undefined}
-      primaryAction={intent.type === 'fab' && !isItemAmount ? 'continue' : 'save'}
-      primaryLabel={
-        isItemAmount ? 'Guardar' : intent.type === 'fab' ? 'Siguiente' : undefined
-      }
+      primaryLabel="Guardar"
     />
   )
 }

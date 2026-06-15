@@ -65,6 +65,7 @@ export function RecentExpenses({ limit = 8, onEdit, onPendingRemoved }: RecentEx
       sessionId: p.sessionId,
       receiptGroupId: p.receiptGroupId,
       store: p.store,
+      note: p.note,
       excluded: false,
       pending: true,
     }))
@@ -83,6 +84,7 @@ export function RecentExpenses({ limit = 8, onEdit, onPendingRemoved }: RecentEx
         sessionId: e.sessionId,
         receiptGroupId: e.receiptGroupId,
         store: e.store,
+        note: e.note,
         excluded: e.excluded,
         pending: false,
       }))

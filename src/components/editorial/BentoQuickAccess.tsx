@@ -3,6 +3,7 @@ import { api } from '../../../convex/_generated/api'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
+import { FOOD_CATALOG } from '@/lib/foodCatalog'
 import { buildQuickButtons } from '@/lib/quickButtons'
 import { useExpenseSave } from '@/hooks/useExpenseSave'
 import type { SheetIntent } from '@/components/ExpenseSheet'
@@ -76,7 +77,9 @@ export function BentoQuickAccess({ onOpenSheet, onSaved }: BentoQuickAccessProps
         >
           <p className="bento-label">Supermercado</p>
           <p className="text-2xl mt-1">🛒</p>
-          <p className="text-xs text-muted-foreground font-medium mt-1">huevos · leche · pan</p>
+          <p className="text-xs text-muted-foreground font-medium mt-1">
+            pescado · refresco · huevos · {FOOD_CATALOG.length} ítems
+          </p>
         </button>
       </MotionReveal>
 
@@ -104,7 +107,7 @@ export function BentoQuickAccess({ onOpenSheet, onSaved }: BentoQuickAccessProps
         <MotionReveal step={8}>
           <button
             type="button"
-            onClick={() => onOpenSheet({ type: 'fab' })}
+            onClick={() => onOpenSheet({ type: 'supermarket' })}
             className={cn(
               'bento-tile bento-tile--cream h-[76px] w-full',
               'flex flex-col items-center justify-center gap-0.5',

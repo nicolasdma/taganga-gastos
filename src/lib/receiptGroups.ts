@@ -9,6 +9,7 @@ export interface ReceiptItemLike {
   itemEmoji?: string
   sessionId?: string
   store?: string
+  note?: string
   receiptGroupId?: string
   excluded?: boolean
   pending?: boolean

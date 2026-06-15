@@ -1,3 +1,5 @@
+import { FOOD_CATALOG, SUPERMARKET_EXTRAS, getFoodById } from '@/lib/foodCatalog'
+
 export interface CatalogItem {
   id: string
   emoji: string
@@ -44,16 +46,8 @@ export const QUICK_EXPENSES: QuickExpense[] = [
 
 export const CATEGORY_ITEMS: Record<string, CatalogItem[]> = {
   supermarket: [
-    { id: 'eggs', emoji: '🥚', label: 'Huevos' },
-    { id: 'milk', emoji: '🥛', label: 'Leche' },
-    { id: 'bread', emoji: '🍞', label: 'Pan' },
-    { id: 'chicken', emoji: '🍗', label: 'Pollo' },
-    { id: 'meat', emoji: '🥩', label: 'Carne' },
-    { id: 'fruit', emoji: '🍌', label: 'Fruta' },
-    { id: 'vegetables', emoji: '🥬', label: 'Verduras' },
-    { id: 'water', emoji: '💧', label: 'Agua' },
-    { id: 'supplies', emoji: '🧻', label: 'Aseo' },
-    { id: 'other', emoji: '➕', label: 'Otro' },
+    ...FOOD_CATALOG.map(({ id, emoji, label }) => ({ id, emoji, label })),
+    ...SUPERMARKET_EXTRAS,
   ],
   'eating-out': [
     { id: 'coffee', emoji: '☕', label: 'Café' },
@@ -110,5 +104,9 @@ export function getCategoryItems(categoryId: string): CatalogItem[] {
 }
 
 export function getItem(categoryId: string, itemId: string): CatalogItem | undefined {
+  if (categoryId === 'supermarket') {
+    const food = getFoodById(itemId)
+    if (food) return { id: food.id, emoji: food.emoji, label: food.label }
+  }
   return getCategoryItems(categoryId).find((i) => i.id === itemId)
 }

@@ -11,7 +11,7 @@ export function FabStack({ onAdd, onScan, pendingCount = 0 }: FabStackProps) {
   return (
     <div
       className={cn(
-        'fixed z-40 right-4 bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))]',
+        'fixed z-40 right-4 bottom-[calc(6.75rem+env(safe-area-inset-bottom,0px))]',
         'flex flex-col items-center gap-3 fab-stack-wrap'
       )}
     >
@@ -25,7 +25,7 @@ export function FabStack({ onAdd, onScan, pendingCount = 0 }: FabStackProps) {
           'active:translate-y-1 active:shadow-none transition-all duration-150'
         )}
       >
-        <CameraFabIcon className="h-8 w-8" />
+        <CameraFabIcon className="h-[2.4rem] w-[2.4rem]" />
       </button>
 
       <button
