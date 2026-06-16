@@ -37,14 +37,15 @@ export function DebugAuthScreen() {
   const { isLoading, isAuthenticated, isRefreshing } = useConvexAuth()
   const localStoragePresence = useMemo(() => getLocalAuthStoragePresence(convexUrl), [convexUrl])
   const sessionStoragePresence = useMemo(() => getSessionAuthStoragePresence(convexUrl), [convexUrl])
-  const localAuthKeys = useMemo(
-    () => listConvexAuthKeys(typeof window !== 'undefined' ? window.localStorage : undefined),
-    []
+  const localAuthKeys = listConvexAuthKeys(
+    typeof window !== 'undefined' ? window.localStorage : undefined
   )
-  const sessionAuthKeys = useMemo(
-    () => listConvexAuthKeys(typeof window !== 'undefined' ? window.sessionStorage : undefined),
-    []
+  const sessionAuthKeys = listConvexAuthKeys(
+    typeof window !== 'undefined' ? window.sessionStorage : undefined
   )
+  const namespace = convexUrl ? escapeNamespace(convexUrl) : '(missing-convex-url)'
+  const expectedJwtKey = `__convexAuthJWT_${namespace}`
+  const expectedRefreshKey = `__convexAuthRefreshToken_${namespace}`
   const displayMode =
     typeof window === 'undefined'
       ? 'unknown'
@@ -107,6 +108,14 @@ export function DebugAuthScreen() {
           <p className="mb-1 font-semibold">session __convexAuth keys</p>
           <pre className="whitespace-pre-wrap break-all font-mono text-[11px] bg-black/20 rounded p-2">
             {sessionAuthKeys.length ? sessionAuthKeys.join('\n') : '(none)'}
+          </pre>
+        </div>
+        <div className="mt-3 text-xs text-white/80">
+          <p className="mb-1 font-semibold">expected keys (namespace)</p>
+          <pre className="whitespace-pre-wrap break-all font-mono text-[11px] bg-black/20 rounded p-2">
+            {expectedJwtKey}
+            {'\n'}
+            {expectedRefreshKey}
           </pre>
         </div>
         <button
