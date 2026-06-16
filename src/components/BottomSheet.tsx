@@ -18,7 +18,7 @@ interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
   className?: string
-  /** standard = 80dvh (expense flows), tall = up to 90dvh */
+  /** standard = content height, max 80dvh; tall = content height, max 90dvh */
   height?: SheetHeight
   title?: string
   subtitle?: string
@@ -327,7 +327,7 @@ export function BottomSheet({
 
         <div
           ref={bodyRef}
-          className="sheet-body flex-1 min-h-0 overflow-y-auto scrollbar-none px-4 pb-safe touch-pan-y"
+          className="sheet-body flex-auto min-h-0 overflow-y-auto scrollbar-none px-4 pb-safe touch-pan-y"
         >
           {subtitle && (
             <p className="text-[11px] text-muted-foreground font-medium text-center pb-3">
