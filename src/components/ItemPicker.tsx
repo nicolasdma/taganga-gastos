@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ExpenseChip } from '@/components/ExpenseChip'
 import { CreateCustomItemSheet } from '@/components/CreateCustomItemSheet'
-import { ITEM_CATALOG, itemSearchHaystack, type CatalogItem } from '@/lib/items'
+import { ITEM_CATALOG, itemMatchesSearch } from '@/lib/items'
 import { mergeCatalogWithCustom } from '@/lib/mergeCatalog'
 import { sortCatalogByUsage } from '@/lib/itemUsage'
 import { useCustomItems } from '@/hooks/useCustomItems'
@@ -20,17 +20,8 @@ interface ItemPickerProps {
   onSelect: (item: SelectedItem) => void
 }
 
-function normalizeSearch(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-}
-
-function matchesSearch(item: CatalogItem, query: string): boolean {
-  if (!query) return true
-  return itemSearchHaystack(item).includes(normalizeSearch(query))
-}
+/** Minimum query length before offering inline custom-item creation. */
+const CREATE_CTA_MIN_QUERY = 2
 
 export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
   const [search, setSearch] = useState('')
@@ -47,7 +38,7 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
 
   const displayItems = useMemo(() => {
     if (serverCounts === undefined || customItems === undefined) return []
-    const filtered = catalog.filter((item) => matchesSearch(item, search))
+    const filtered = catalog.filter((item) => itemMatchesSearch(item, search))
     return sortCatalogByUsage(filtered, serverCounts)
   }, [catalog, search, serverCounts, customItems])
 
@@ -55,8 +46,18 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
   const showCreateCta =
     customItems !== undefined &&
     serverCounts !== undefined &&
-    trimmedSearch.length > 0 &&
+    trimmedSearch.length >= CREATE_CTA_MIN_QUERY &&
     displayItems.length === 0
+
+  const handleCreated = (item: {
+    itemId: string
+    itemEmoji: string
+    itemLabel: string
+  }) => {
+    setCreateOpen(false)
+    setSearch('')
+    onSelect(item)
+  }
 
   const title = storeName ?? '¿Qué fue?'
   const titleEmoji = storeName ? '🛒' : '✏️'
@@ -147,13 +148,7 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         initialLabel={trimmedSearch}
-        onCreated={(item) =>
-          onSelect({
-            itemId: item.itemId,
-            itemEmoji: item.itemEmoji,
-            itemLabel: item.itemLabel,
-          })
-        }
+        onCreated={handleCreated}
       />
     </>
   )

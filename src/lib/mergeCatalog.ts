@@ -1,4 +1,4 @@
-import type { CatalogItem } from '@/lib/items'
+import { normalizeItemSearchText, type CatalogItem } from '@/lib/items'
 
 export interface CustomItemRecord {
   itemId: string
@@ -6,11 +6,18 @@ export interface CustomItemRecord {
   label: string
 }
 
+function labelKeywords(label: string): string[] {
+  return normalizeItemSearchText(label)
+    .split(/\s+/)
+    .filter((word) => word.length >= 2)
+}
+
 export function customItemToCatalog(item: CustomItemRecord): CatalogItem {
   return {
     id: item.itemId,
     emoji: item.emoji,
     label: item.label,
+    keywords: labelKeywords(item.label),
   }
 }
 

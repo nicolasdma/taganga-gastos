@@ -90,7 +90,20 @@ export const LEGACY_CATEGORY_DISPLAY: Record<string, { emoji: string; label: str
   savings: { emoji: '💰', label: 'Ahorro' },
 }
 
+export function normalizeItemSearchText(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+}
+
 export function itemSearchHaystack(item: CatalogItem): string {
   const keywords = item.keywords?.join(' ') ?? ''
-  return `${item.label} ${item.id} ${keywords}`.toLowerCase()
+  return normalizeItemSearchText(`${item.label} ${item.id} ${keywords}`)
+}
+
+export function itemMatchesSearch(item: CatalogItem, query: string): boolean {
+  const normalizedQuery = normalizeItemSearchText(query.trim())
+  if (!normalizedQuery) return true
+  return itemSearchHaystack(item).includes(normalizedQuery)
 }
