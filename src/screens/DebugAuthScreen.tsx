@@ -19,12 +19,32 @@ function getSessionAuthStoragePresence(convexUrl?: string) {
   }
 }
 
+function listConvexAuthKeys(storage: Storage | undefined) {
+  if (!storage) return []
+  const keys: string[] = []
+  for (let i = 0; i < storage.length; i += 1) {
+    const key = storage.key(i)
+    if (key && key.startsWith('__convexAuth')) {
+      keys.push(key)
+    }
+  }
+  return keys.sort()
+}
+
 export function DebugAuthScreen() {
   const convexUrl = import.meta.env.VITE_CONVEX_URL
   const { signIn, signOut } = useAuthActions()
   const { isLoading, isAuthenticated, isRefreshing } = useConvexAuth()
   const localStoragePresence = useMemo(() => getLocalAuthStoragePresence(convexUrl), [convexUrl])
   const sessionStoragePresence = useMemo(() => getSessionAuthStoragePresence(convexUrl), [convexUrl])
+  const localAuthKeys = useMemo(
+    () => listConvexAuthKeys(typeof window !== 'undefined' ? window.localStorage : undefined),
+    []
+  )
+  const sessionAuthKeys = useMemo(
+    () => listConvexAuthKeys(typeof window !== 'undefined' ? window.sessionStorage : undefined),
+    []
+  )
   const displayMode =
     typeof window === 'undefined'
       ? 'unknown'
@@ -33,8 +53,8 @@ export function DebugAuthScreen() {
         : 'browser-tab'
 
   return (
-    <main className="app-shell p-6 flex items-center justify-center">
-      <section className="w-full max-w-md rounded-2xl border border-white/20 bg-black/30 p-5 text-white backdrop-blur">
+    <main className="app-shell p-4 flex justify-center overflow-y-auto">
+      <section className="w-full max-w-md my-4 max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/20 bg-black/30 p-5 text-white backdrop-blur">
         <h1 className="text-xl font-bold mb-4">Debug Auth Storage</h1>
         <p className="text-sm text-white/80 mb-4">
           Esta pantalla solo muestra presencia de keys, nunca tokens.
@@ -77,6 +97,18 @@ export function DebugAuthScreen() {
             <dd className="font-mono">/debug-auth</dd>
           </div>
         </dl>
+        <div className="mt-4 text-xs text-white/80">
+          <p className="mb-1 font-semibold">local __convexAuth keys</p>
+          <pre className="whitespace-pre-wrap break-all font-mono text-[11px] bg-black/20 rounded p-2">
+            {localAuthKeys.length ? localAuthKeys.join('\n') : '(none)'}
+          </pre>
+        </div>
+        <div className="mt-3 text-xs text-white/80">
+          <p className="mb-1 font-semibold">session __convexAuth keys</p>
+          <pre className="whitespace-pre-wrap break-all font-mono text-[11px] bg-black/20 rounded p-2">
+            {sessionAuthKeys.length ? sessionAuthKeys.join('\n') : '(none)'}
+          </pre>
+        </div>
         <button
           className="mt-5 w-full rounded-xl bg-white text-black py-2 text-sm font-semibold"
           onClick={() => window.location.reload()}
