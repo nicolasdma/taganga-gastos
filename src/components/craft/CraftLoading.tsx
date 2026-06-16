@@ -9,7 +9,9 @@ import { useState } from 'react'
 import { KittySprite } from '@/components/craft/KittySprite'
 import { cn } from '@/lib/utils'
 import { CraftScreenMessage, screenMessageA11y } from '@/components/craft/CraftScreenMessage'
-import { pickInlineMessage, pickScreenMessage } from './craftLoadingMessages'
+import { CraftStatsShell } from '@/components/craft/CraftStatsShell'
+import { pickInlineMessage, pickScreenMessage, pickStatsMessage } from './craftLoadingMessages'
+import { monthKey } from '@/lib/month'
 
 export type CraftLoadingVariant =
   | 'screen'
@@ -210,21 +212,18 @@ export function CraftSkeletonChipGrid({
   )
 }
 
-/** Bloque stats lazy — header + cards porcelain */
+/** Stats lazy fallback — mismo shell que StatsScreen en carga */
 export function CraftStatsFallback({ className }: { className?: string }) {
+  const [statsMessage] = useState(() => pickStatsMessage())
+
   return (
-    <div
-      className={cn('tab-scroll h-full min-h-0 overflow-y-auto scrollbar-none px-4 pt-safe', className)}
-      aria-busy="true"
-      aria-live="polite"
-    >
-      <div className="h-8 w-32 craft-skeleton craft-skeleton--row mb-6 mt-4" aria-hidden />
-      <CraftSkeleton variant="skeleton-row" className="h-24 mb-5 rounded-[1.35rem]" />
-      <CraftSkeleton variant="skeleton-row" className="h-24 mb-5 rounded-[1.35rem]" />
-      <div className="rounded-3xl card-porcelain p-4 space-y-3">
-        <CraftSkeleton variant="skeleton-row" className="h-40 rounded-xl" />
-        <CraftLoading variant="skeleton-row" count={3} className="rounded-lg h-10" />
-      </div>
-    </div>
+    <CraftStatsShell
+      className={className}
+      month={monthKey()}
+      itemsStatus="loading"
+      insightsStatus="loading"
+      interactive={false}
+      statsMessage={statsMessage}
+    />
   )
 }

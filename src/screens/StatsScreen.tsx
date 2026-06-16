@@ -1,27 +1,25 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '../../convex/_generated/api'
-import { CraftLoading } from '@/components/craft/CraftLoading'
-import { EmptyCraft } from '@/components/craft/EmptyCraft'
-import { SectionLabel } from '@/components/craft/SectionLabel'
-import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
-import { formatCOP } from '@/lib/currency'
-import { monthKey, formatMonthLabel, shiftMonthKey } from '@/lib/month'
+import { CraftStatsShell } from '@/components/craft/CraftStatsShell'
+import { pickStatsMessage } from '@/components/craft/craftLoadingMessages'
+import { monthKey, shiftMonthKey } from '@/lib/month'
 import { useExpenseView } from '@/hooks/useExpenseView'
-import { ExpenseViewFilter } from '@/components/ExpenseScopeToggle'
-import { cn } from '@/lib/utils'
-
-const ItemDonutChart = lazy(() => import('@/components/ItemDonutChart'))
 
 export function StatsScreen() {
   const [month, setMonth] = useState(monthKey)
   const { view, setView } = useExpenseView()
+  const [statsMessage] = useState(() => pickStatsMessage())
   const byItem = useQuery(api.expenses.expensesByItem, { month, view })
   const insights = useQuery(api.expenses.insights, { month, view })
 
   const { total, rows } = useMemo(() => {
-    if (!byItem) return { total: 0, rows: [] as Array<{ id: string; emoji: string; label: string; amount: number; pct: number }> }
+    if (!byItem) {
+      return {
+        total: 0,
+        rows: [] as Array<{ id: string; emoji: string; label: string; amount: number; pct: number }>,
+      }
+    }
 
     const total = byItem.reduce((s, row) => s + row.amount, 0)
     const rows = byItem
@@ -37,120 +35,25 @@ export function StatsScreen() {
     return { total, rows }
   }, [byItem])
 
+  const itemsStatus = byItem === undefined ? 'loading' : rows.length === 0 ? 'empty' : 'ready'
+  const insightsStatus =
+    insights === undefined ? 'loading' : insights.length === 0 ? 'empty' : 'ready'
+
   return (
-    <div className="tab-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none">
-      <EditorialScreenHeader
-        kicker="Tejido a mano"
-        title="Estadísticas"
-        subtitle="por ítem 🐾"
-        catVariant="sit"
-      />
-
-      <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="month-nav-over-photo flex items-center justify-between flex-1">
-          <button
-            type="button"
-            onClick={() => setMonth((m) => shiftMonthKey(m, -1))}
-            className="month-nav-btn"
-            aria-label="Mes anterior"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="text-sm font-bold capitalize text-white editorial-text-shadow">
-            {formatMonthLabel(month)}
-          </span>
-          <button
-            type="button"
-            onClick={() => setMonth((m) => shiftMonthKey(m, 1))}
-            disabled={month >= monthKey()}
-            className={cn(
-              'month-nav-btn',
-              month >= monthKey() && 'opacity-30 pointer-events-none'
-            )}
-            aria-label="Mes siguiente"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-          </div>
-          <ExpenseViewFilter value={view} onChange={setView} />
-        </div>
-
-        <div className="rounded-3xl card-porcelain-rim shadow-porcelain p-5">
-          <p className="label-stitch mb-1">Total del mes</p>
-          <p className="font-display text-3xl font-bold font-tabular text-ink tracking-tight">
-            {byItem === undefined ? '—' : formatCOP(total)}
-          </p>
-        </div>
-
-        <section>
-          <SectionLabel overPhoto>Por ítem</SectionLabel>
-          {byItem === undefined ? (
-            <div className="rounded-3xl card-porcelain p-4 space-y-3" aria-busy="true" aria-live="polite">
-              <CraftLoading variant="skeleton-row" className="h-40 rounded-xl" />
-              <CraftLoading variant="skeleton-row" count={3} className="h-10 rounded-lg" />
-            </div>
-          ) : rows.length === 0 ? (
-            <EmptyCraft
-              emoji="📊"
-              title="Sin gastos este mes"
-              subtitle="El + de barro te espera cuando quieras anotar algo"
-            />
-          ) : (
-            <div className="rounded-3xl card-porcelain shadow-porcelain overflow-hidden">
-              <Suspense
-                fallback={
-                  <div className="h-48 border-b border-border/40 flex items-center justify-center">
-                    <CraftLoading variant="inline" message="Horneando el gráfico…" size="sm" showPaws={false} />
-                  </div>
-                }
-              >
-                <ItemDonutChart rows={rows} />
-              </Suspense>
-              <div className="divide-y divide-border/40">
-                {rows.map((row) => (
-                  <div key={row.id} className="px-4 py-3">
-                    <div className="flex items-center justify-between gap-3 mb-1.5">
-                      <span className="text-sm font-semibold text-foreground">
-                        {row.emoji} {row.label}
-                      </span>
-                      <span className="text-sm font-bold font-tabular text-foreground/90">
-                        {formatCOP(row.amount)}
-                      </span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-cobalt-glaze/80 transition-all"
-                        style={{ width: `${Math.max(row.pct, 2)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section>
-          <SectionLabel overPhoto>Insights</SectionLabel>
-          {insights === undefined ? (
-            <CraftLoading variant="inline" message="Bordando insights…" size="sm" showPaws={false} className="rounded-3xl card-stitched p-4" />
-          ) : insights.length === 0 ? (
-            <div className="rounded-3xl card-stitched p-4 text-sm text-muted-foreground">
-              Registrá más gastos para ver observaciones automáticas.
-            </div>
-          ) : (
-            <ul className="rounded-3xl card-porcelain shadow-porcelain divide-y divide-stitch/30">
-              {insights.map((line) => (
-                <li key={line} className="px-4 py-3 text-sm text-foreground leading-snug">
-                  <span className="mr-1.5">💡</span>
-                  {line}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-    </div>
+    <CraftStatsShell
+      month={month}
+      onPrevMonth={() => setMonth((m) => shiftMonthKey(m, -1))}
+      onNextMonth={() => setMonth((m) => shiftMonthKey(m, 1))}
+      nextDisabled={month >= monthKey()}
+      view={view}
+      onViewChange={setView}
+      interactive
+      itemsStatus={itemsStatus}
+      insightsStatus={insightsStatus}
+      total={total}
+      rows={rows}
+      insights={insights ?? []}
+      statsMessage={itemsStatus === 'loading' ? statsMessage : undefined}
+    />
   )
 }
