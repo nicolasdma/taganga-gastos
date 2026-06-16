@@ -1,5 +1,7 @@
 import { CornerDownLeft, Delete } from 'lucide-react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { keyTapFeedback } from '@/lib/tapFeedback'
 import {
   ALPHANUMERIC_ROWS,
   TEXT_ROW_BOT_LOWER,
@@ -30,21 +32,33 @@ function KeyButton({
   className,
   ariaLabel,
   primary,
+  haptic = true,
 }: {
   children: React.ReactNode
   onClick: () => void
   className?: string
   ariaLabel?: string
   primary?: boolean
+  haptic?: boolean
 }) {
+  const [flash, setFlash] = useState(false)
+
+  const handlePointerDown = () => {
+    if (haptic) keyTapFeedback()
+    setFlash(true)
+    window.setTimeout(() => setFlash(false), 50)
+  }
+
   return (
     <button
       type="button"
+      onPointerDown={handlePointerDown}
       onClick={onClick}
       aria-label={ariaLabel}
       className={cn(
-        'font-display font-bold active:translate-y-px transition-transform',
+        'font-display font-bold active:scale-[0.97] transition-transform',
         primary ? 'btn-cobalt active:shadow-none' : 'chip-tile active:shadow-none',
+        flash && !primary && 'bg-cobalt-glaze/10',
         className
       )}
     >
@@ -126,7 +140,7 @@ export function CraftKeyboard({
             >
               <Delete className="h-[1.125rem] w-[1.125rem] text-muted-foreground" />
             </KeyButton>
-            <KeyButton onClick={onDone} primary className={cn('flex-[2] rounded-xl', doneH)}>
+            <KeyButton onClick={onDone} primary haptic={false} className={cn('flex-[2] rounded-xl', doneH)}>
               {doneLabel}
             </KeyButton>
           </div>
@@ -203,6 +217,7 @@ export function CraftKeyboard({
           <KeyButton
             onClick={onDone}
             primary
+            haptic={false}
             ariaLabel={doneLabel}
             className={cn('flex-1 rounded-xl flex items-center justify-center gap-1', doneH)}
           >

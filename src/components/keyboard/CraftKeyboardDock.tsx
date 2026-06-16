@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import { CraftKeyboard } from './CraftKeyboard'
 import { CraftKeyboardSlide } from './CraftKeyboardSlide'
 import { useCraftKeyboardContext } from './useCraftKeyboard'
+import { useCraftKeyboardHeight } from './useCraftKeyboardHeight'
 import type { KeyboardLayout } from './keyboardLayouts'
 
 interface CraftKeyboardDockProps {
@@ -15,6 +16,10 @@ export function CraftKeyboardDock({ className, onHidden }: CraftKeyboardDockProp
   const ctx = useCraftKeyboardContext()
   const visible = Boolean(ctx?.session)
   const meta = ctx?.session
+  const dockRef = useRef<HTMLDivElement>(null)
+
+  // Stable sheet height while typing: BottomSheet uses --craft-keyboard-height + keyboard-open class.
+  useCraftKeyboardHeight(dockRef, visible)
 
   const frozenMetaRef = useRef<{
     layout: KeyboardLayout
@@ -41,8 +46,9 @@ export function CraftKeyboardDock({ className, onHidden }: CraftKeyboardDockProp
 
   const handleHidden = useCallback(() => {
     frozenMetaRef.current = null
+    ctx?.notifyKeyboardHidden()
     onHidden?.()
-  }, [onHidden])
+  }, [ctx, onHidden])
 
   if (!displayMeta) return null
 
@@ -53,7 +59,8 @@ export function CraftKeyboardDock({ className, onHidden }: CraftKeyboardDockProp
       className={cn('craft-keyboard-dock', className)}
       onHidden={handleHidden}
     >
-      <CraftKeyboard
+      <div ref={dockRef}>
+        <CraftKeyboard
         layout={displayMeta.layout}
         compact={displayMeta.compact}
         uppercase={displayMeta.uppercase}
@@ -62,6 +69,7 @@ export function CraftKeyboardDock({ className, onHidden }: CraftKeyboardDockProp
         onBackspace={onBackspace}
         onDone={onDone}
       />
+      </div>
     </CraftKeyboardSlide>
   )
 }

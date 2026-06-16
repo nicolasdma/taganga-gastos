@@ -22,6 +22,12 @@ export function useCraftKeyboardVisible() {
   return Boolean(ctx?.session)
 }
 
+/** True while keyboard is open or dock exit animation is playing — for stable sheet height. */
+export function useCraftKeyboardPanelOpen() {
+  const ctx = useCraftKeyboardContext()
+  return Boolean(ctx?.panelExpanded)
+}
+
 /** Keeps BottomSheet footer mounted while the keyboard exit animation plays. */
 export function useCraftKeyboardFooterSlot(children?: ReactNode): ReactNode | undefined {
   const keyboardVisible = useCraftKeyboardVisible()

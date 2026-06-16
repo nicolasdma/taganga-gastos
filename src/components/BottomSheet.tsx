@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
+import { useCraftKeyboardPanelOpen } from '@/components/keyboard/CraftSheetKeyboardFooter'
 
 const CLOSE_MS = 480
 
@@ -78,6 +79,8 @@ export function BottomSheet({
 
   const resolvedHeaderAction =
     headerAction ?? (title !== undefined ? 'cancel' : 'none')
+
+  const keyboardOpen = useCraftKeyboardPanelOpen()
 
   const clearCloseTimer = () => {
     if (closeTimer.current) {
@@ -279,6 +282,7 @@ export function BottomSheet({
           entered && 'sheet-panel--open',
           dragging && 'sheet-panel--dragging',
           height === 'standard' && 'sheet-panel--standard',
+          keyboardOpen && 'sheet-panel--keyboard-open',
           className
         )}
         style={dragStyle}
@@ -327,7 +331,10 @@ export function BottomSheet({
 
         <div
           ref={bodyRef}
-          className="sheet-body flex-auto min-h-0 overflow-y-auto scrollbar-none px-4 pb-safe touch-pan-y"
+          className={cn(
+            'sheet-body flex-auto min-h-0 overflow-y-auto scrollbar-none px-4 pb-safe touch-pan-y',
+            keyboardOpen && 'sheet-body--keyboard-open'
+          )}
         >
           {subtitle && (
             <p className="text-[11px] text-muted-foreground font-medium text-center pb-3">

@@ -68,12 +68,15 @@ export function CraftTextField({
   )
   const [uppercase, setUppercase] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const didAutoFocus = useRef(false)
 
   const useDock = Boolean(ctx?.dock)
   const showInlineKeyboard = showKeyboard && isFocused && !useDock
 
   useEffect(() => {
-    if (autoFocus) focus()
+    if (!autoFocus || didAutoFocus.current) return
+    didAutoFocus.current = true
+    focus()
   }, [autoFocus, focus])
 
   const appendChar = useCallback(
@@ -114,7 +117,7 @@ export function CraftTextField({
     }
   }, [layout, maxLength, onChange, value])
 
-  const showShift = enableShift && layout === 'text'
+  const showShift = enableShift && (layout === 'text' || layout === 'search')
 
   const handlersRef = useRef({
     appendChar,
@@ -179,6 +182,7 @@ export function CraftTextField({
   }, [showInlineKeyboard, handleDismiss])
 
   const openField = () => {
+    if (isFocused) return
     focus()
     inputRef.current?.focus({ preventScroll: true })
   }
@@ -225,7 +229,7 @@ export function CraftTextField({
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
-            tabIndex={0}
+            tabIndex={-1}
             onFocus={focus}
             className="sr-only"
             aria-hidden

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { BottomSheet } from '@/components/BottomSheet'
 import {
   CraftKeyboardProvider,
+  useCraftKeyboardContext,
   useCraftKeyboardFooterSlot,
 } from '@/components/keyboard'
 import { useCreateCustomItem, type CreatedCustomItem } from '@/hooks/useCreateCustomItem'
@@ -25,9 +26,14 @@ export function CreateCustomItemForm({
   onCreated,
 }: CreateCustomItemFormProps) {
   const { createCustomItem, isCreating } = useCreateCustomItem()
+  const keyboardCtx = useCraftKeyboardContext()
   const [label, setLabel] = useState(initialLabel)
   const [emoji, setEmoji] = useState('✏️')
   const [error, setError] = useState<string | null>(null)
+
+  const dismissKeyboard = () => {
+    keyboardCtx?.dismissKeyboard()
+  }
 
   const handleSave = async () => {
     const trimmed = label.trim()
@@ -66,6 +72,7 @@ export function CreateCustomItemForm({
             <button
               key={e}
               type="button"
+              onPointerDown={dismissKeyboard}
               onClick={() => setEmoji(e)}
               className={cn(
                 'h-10 rounded-xl text-xl flex items-center justify-center transition-all active:scale-95',
@@ -84,6 +91,7 @@ export function CreateCustomItemForm({
 
       <button
         type="button"
+        onPointerDown={dismissKeyboard}
         onClick={() => void handleSave()}
         disabled={isCreating}
         className={cn(

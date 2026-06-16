@@ -46,12 +46,15 @@ interface CraftKeyboardContextValue {
   activeFieldId: string | null
   /** Metadata for rendering; handlers live in the session ref. */
   session: SessionMeta | null
+  /** Stays true until dock exit animation finishes (stable sheet height). */
+  panelExpanded: boolean
   getSession: () => CraftKeyboardSession | null
   focusField: (id: string) => void
   blurField: (id: string) => void
   setSession: (session: CraftKeyboardSession) => void
   clearSession: (fieldId: string) => void
   dismissKeyboard: () => void
+  notifyKeyboardHidden: () => void
 }
 
 const CraftKeyboardContext = createContext<CraftKeyboardContextValue | null>(null)
@@ -77,6 +80,7 @@ export function CraftKeyboardProvider({
 }) {
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null)
   const [sessionMeta, setSessionMeta] = useState<SessionMeta | null>(null)
+  const [panelExpanded, setPanelExpanded] = useState(false)
   const sessionRef = useRef<CraftKeyboardSession | null>(null)
 
   const getSession = useCallback(() => sessionRef.current, [])
@@ -125,6 +129,14 @@ export function CraftKeyboardProvider({
     session.onDismiss()
   }, [])
 
+  const notifyKeyboardHidden = useCallback(() => {
+    setPanelExpanded(false)
+  }, [])
+
+  useEffect(() => {
+    if (sessionMeta) setPanelExpanded(true)
+  }, [sessionMeta])
+
   useEffect(() => {
     if (!sessionMeta) return
 
@@ -142,23 +154,27 @@ export function CraftKeyboardProvider({
       dock,
       activeFieldId,
       session: sessionMeta,
+      panelExpanded,
       getSession,
       focusField,
       blurField,
       setSession,
       clearSession,
       dismissKeyboard,
+      notifyKeyboardHidden,
     }),
     [
       dock,
       activeFieldId,
       sessionMeta,
+      panelExpanded,
       getSession,
       focusField,
       blurField,
       setSession,
       clearSession,
       dismissKeyboard,
+      notifyKeyboardHidden,
     ]
   )
 

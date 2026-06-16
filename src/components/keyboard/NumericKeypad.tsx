@@ -1,5 +1,7 @@
 import { Delete } from 'lucide-react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { keyTapFeedback } from '@/lib/tapFeedback'
 
 interface NumericKeypadProps {
   value: number
@@ -8,6 +10,37 @@ interface NumericKeypadProps {
   maxValue?: number
   compact?: boolean
   className?: string
+}
+
+interface NumKeyProps {
+  children: React.ReactNode
+  onPress: () => void
+  className?: string
+  ariaLabel?: string
+}
+
+function NumKey({ children, onPress, className, ariaLabel }: NumKeyProps) {
+  const [flash, setFlash] = useState(false)
+
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onPointerDown={() => {
+        keyTapFeedback()
+        setFlash(true)
+        window.setTimeout(() => setFlash(false), 50)
+      }}
+      onClick={onPress}
+      className={cn(
+        'rounded-2xl chip-tile font-bold text-foreground active:scale-[0.97] active:shadow-none transition-transform',
+        flash && 'bg-cobalt-glaze/10',
+        className
+      )}
+    >
+      {children}
+    </button>
+  )
 }
 
 export function NumericKeypad({
@@ -34,39 +67,20 @@ export function NumericKeypad({
     <div className={cn('select-none', className)} role="group" aria-label="Teclado numérico">
       <div className="grid grid-cols-3 gap-1.5">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
-          <button
+          <NumKey
             key={digit}
-            type="button"
-            onClick={() => appendDigit(digit)}
-            className={cn(
-              'rounded-2xl chip-tile font-bold text-foreground active:translate-y-0.5 active:shadow-none',
-              keyH
-            )}
+            onPress={() => appendDigit(digit)}
+            className={keyH}
           >
             {digit}
-          </button>
+          </NumKey>
         ))}
-        <button
-          type="button"
-          onClick={backspace}
-          className={cn(
-            'rounded-2xl chip-tile flex items-center justify-center active:translate-y-0.5 active:shadow-none',
-            keyH
-          )}
-          aria-label="Borrar"
-        >
+        <NumKey onPress={backspace} className={cn('flex items-center justify-center', keyH)} ariaLabel="Borrar">
           <Delete className="h-5 w-5 text-muted-foreground" />
-        </button>
-        <button
-          type="button"
-          onClick={() => appendDigit(0)}
-          className={cn(
-            'rounded-2xl chip-tile font-bold text-foreground active:translate-y-0.5 active:shadow-none col-span-2',
-            keyH
-          )}
-        >
+        </NumKey>
+        <NumKey onPress={() => appendDigit(0)} className={cn('col-span-2', keyH)}>
           0
-        </button>
+        </NumKey>
       </div>
       {onDone && (
         <button
