@@ -4,7 +4,8 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from '../convex/_generated/api'
 import { BottomNav, type TabId } from '@/components/BottomNav'
 import { ConvexConfigError } from '@/components/ConvexConfigError'
-import { ExpenseEditSheet, type EditableExpense } from '@/components/ExpenseEditSheet'
+import { ExpenseEditSheet } from '@/components/ExpenseEditSheet'
+import type { EditableExpense } from '@/lib/expenseTypes'
 import { ExpenseSheet, type SaveExpenseResult, type SheetIntent } from '@/components/ExpenseSheet'
 import { FabStack } from '@/components/FabStack'
 import { AndroidInstallBanner } from '@/components/InstallPromptBanner'
@@ -23,7 +24,7 @@ import { useIsOffline } from '@/hooks/useIsOffline'
 import { useKeyboardOpen } from '@/hooks/useKeyboardOpen'
 import { useOutboxSync } from '@/hooks/useOutboxSync'
 import { useOutboxStatus } from '@/hooks/useOutboxStatus'
-import { useExpenseView } from '@/hooks/useExpenseView'
+import { ExpenseViewProvider, useExpenseView } from '@/hooks/useExpenseView'
 import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import { hasLocalAuthToken, requestStoragePersistence } from '@/lib/authStorage'
 import { removeFromOutbox, removeReceiptGroupFromOutbox } from '@/lib/outbox'
@@ -47,7 +48,7 @@ function StatsFallback() {
 
 const HOME_BACKGROUND_BEAT_MS = 0
 
-function AppShell() {
+function AppShellInner() {
   const [tab, setTab] = useState<TabId>('home')
   const [sheetIntent, setSheetIntent] = useState<SheetIntent | null>(null)
   const [scanOpen, setScanOpen] = useState(false)
@@ -162,12 +163,12 @@ function AppShell() {
           />
         </div>
         <div className={cn('h-full', tab !== 'calendar' && 'hidden')}>
-          <CalendarScreen onEditExpense={setEditExpense} />
+          <CalendarScreen active={tab === 'calendar'} onEditExpense={setEditExpense} />
         </div>
         {statsMounted && (
           <div className={cn('h-full', tab !== 'stats' && 'hidden')}>
             <Suspense fallback={<StatsFallback />}>
-              <StatsScreen />
+              <StatsScreen active={tab === 'stats'} />
             </Suspense>
           </div>
         )}
@@ -220,6 +221,14 @@ function AppShell() {
       )}
     </div>
     </TabScrollProvider>
+  )
+}
+
+function AppShell() {
+  return (
+    <ExpenseViewProvider>
+      <AppShellInner />
+    </ExpenseViewProvider>
   )
 }
 

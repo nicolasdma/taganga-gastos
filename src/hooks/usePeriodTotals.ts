@@ -49,23 +49,18 @@ export function usePeriodTotals(view: ExpenseView = DEFAULT_EXPENSE_VIEW) {
     return () => window.removeEventListener(OUTBOX_CHANGED, update)
   }, [])
 
+  const totalsArgs = { todayKey, tzOffsetMinutes, view }
   const todayServer = useQuery(api.expenses.totals, {
-    period: 'today',
-    todayKey,
-    tzOffsetMinutes,
-    view,
+    period: 'today' as const,
+    ...totalsArgs,
   })
   const weekServer = useQuery(api.expenses.totals, {
-    period: 'week',
-    todayKey,
-    tzOffsetMinutes,
-    view,
+    period: 'week' as const,
+    ...totalsArgs,
   })
   const monthServer = useQuery(api.expenses.totals, {
-    period: 'month',
-    todayKey,
-    tzOffsetMinutes,
-    view,
+    period: 'month' as const,
+    ...totalsArgs,
   })
 
   const pending = useMemo(() => {

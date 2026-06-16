@@ -21,7 +21,11 @@ interface BentoQuickAccessProps {
   onSaved: (result: SaveExpenseResult) => void
 }
 
-export function BentoQuickAccess({ view, onOpenSheet, onSaved }: BentoQuickAccessProps) {
+export function BentoQuickAccess({
+  view,
+  onOpenSheet,
+  onSaved,
+}: BentoQuickAccessProps) {
   const [createItemOpen, setCreateItemOpen] = useState(false)
   const recent = useQuery(api.expenses.recentExpenses, { limit: 1, view })
   const frequentQuickItems = useFrequentQuickItems(view, 3)

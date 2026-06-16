@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { useFrequentQuickItems } from '@/hooks/useFrequentQuickItems'
+import { useExpenseView } from '@/hooks/useExpenseView'
 import { useIsOffline } from '@/hooks/useIsOffline'
 import { usePeriodTotals } from '@/hooks/usePeriodTotals'
 import { useTagangaBackgroundReady } from '@/hooks/useTagangaBackgroundReady'
-import { DEFAULT_EXPENSE_VIEW } from '@/lib/expenseScope'
 
 const RECENT_LIST_LIMIT = 28
 const HOME_BOOT_MIN_MS = 700
@@ -22,8 +22,7 @@ export function useHomeFirstViewReady(): boolean {
   const [minElapsed, setMinElapsed] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
 
-  const prefs = useQuery(api.userPreferences.getMyPreferences)
-  const view = prefs?.expenseView ?? DEFAULT_EXPENSE_VIEW
+  const { view, isReady: prefsReady } = useExpenseView()
 
   const { today, week, month } = usePeriodTotals(view)
   const recentExpenses = useQuery(api.expenses.recentExpenses, {
@@ -45,7 +44,7 @@ export function useHomeFirstViewReady(): boolean {
   }, [offline])
 
   const dataReady =
-    prefs !== undefined &&
+    prefsReady &&
     today !== undefined &&
     week !== undefined &&
     month !== undefined &&

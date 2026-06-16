@@ -16,7 +16,7 @@ import {
   excludedRowClass,
   isExpenseExcluded,
 } from '@/lib/expenseExcluded'
-import type { EditableExpense } from '@/components/ExpenseEditSheet'
+import type { EditableExpense } from '@/lib/expenseTypes'
 import { groupExpensesForList, type ReceiptItemLike } from '@/lib/receiptGroups'
 import { formatDisplayDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'

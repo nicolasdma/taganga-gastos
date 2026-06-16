@@ -6,7 +6,7 @@ import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
 import { ExpenseMonthGrid } from '@/components/ExpenseMonthGrid'
-import type { EditableExpense } from '@/components/ExpenseEditSheet'
+import type { EditableExpense } from '@/lib/expenseTypes'
 import { formatCOP } from '@/lib/currency'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import { useReportTabScroll } from '@/hooks/useReportTabScroll'
@@ -25,7 +25,13 @@ function formatComparison(current: number, previous: number): string | null {
   return `${sign}${pct}% vs mes pasado`
 }
 
-export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: EditableExpense) => void }) {
+export function CalendarScreen({
+  active = true,
+  onEditExpense,
+}: {
+  active?: boolean
+  onEditExpense: (expense: EditableExpense) => void
+}) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const { view } = useExpenseView()
@@ -33,8 +39,8 @@ export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: Edi
   const monthKey = formatMonthKey(currentMonth)
   const prevMonthKey = formatMonthKey(subMonths(currentMonth, 1))
 
-  const byDay = useQuery(api.expenses.expensesByDay, { month: monthKey, view })
-  const prevByDay = useQuery(api.expenses.expensesByDay, { month: prevMonthKey, view })
+  const byDay = useQuery(api.expenses.expensesByDay, active ? { month: monthKey, view } : 'skip')
+  const prevByDay = useQuery(api.expenses.expensesByDay, active ? { month: prevMonthKey, view } : 'skip')
 
   const total = useMemo(() => monthTotal(byDay), [byDay])
   const prevTotal = useMemo(() => monthTotal(prevByDay), [prevByDay])

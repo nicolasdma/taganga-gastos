@@ -190,7 +190,7 @@ export function CraftLoading({
   )
 }
 
-/** Grid de chips skeleton — imita ItemPicker / QuickAccess */
+/** Grid de chips skeleton — imita ItemPicker / BentoQuickAccess */
 export function CraftSkeletonChipGrid({
   count = 8,
   columns = 4,

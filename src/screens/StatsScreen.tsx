@@ -6,12 +6,18 @@ import { pickStatsMessage } from '@/components/craft/craftLoadingMessages'
 import { monthKey, shiftMonthKey } from '@/lib/month'
 import { useExpenseView } from '@/hooks/useExpenseView'
 
-export function StatsScreen() {
+export function StatsScreen({ active = true }: { active?: boolean }) {
   const [month, setMonth] = useState(monthKey)
   const { view } = useExpenseView()
   const [statsMessage] = useState(() => pickStatsMessage())
-  const byItem = useQuery(api.expenses.expensesByItem, { month, view })
-  const insights = useQuery(api.expenses.insights, { month, view })
+  const byItem = useQuery(
+    api.expenses.expensesByItem,
+    active ? { month, view } : 'skip'
+  )
+  const insights = useQuery(
+    api.expenses.insights,
+    active ? { month, view } : 'skip'
+  )
 
   const { total, rows } = useMemo(() => {
     if (!byItem) {

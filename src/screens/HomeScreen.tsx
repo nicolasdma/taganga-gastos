@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { InsightHighlight } from '@/components/InsightHighlight'
-import { RecentExpenses, type EditableExpense } from '@/components/RecentExpenses'
+import { RecentExpenses } from '@/components/RecentExpenses'
 import { BentoQuickAccess } from '@/components/editorial/BentoQuickAccess'
 import { EditorialStage } from '@/components/editorial/EditorialStage'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
@@ -8,6 +8,7 @@ import { SectionLabel } from '@/components/craft/SectionLabel'
 import type { SaveExpenseResult, SheetIntent } from '@/components/ExpenseSheet'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import { useTabScroll } from '@/components/editorial/AppBrandmarkDock'
+import type { EditableExpense } from '@/lib/expenseTypes'
 
 interface HomeScreenProps {
   pulseKey: number
@@ -50,27 +51,37 @@ export function HomeScreen({
 
   useEffect(() => {
     const el = scrollRef.current
-    if (el) reportScroll('home', el.scrollTop)
-  }, [reportScroll])
+    if (!el) return
+    reportScroll('home', el.scrollTop)
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [handleScroll, reportScroll])
 
   return (
     <div
       ref={scrollRef}
-      onScroll={handleScroll}
       className="tab-scroll home-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none"
     >
       <EditorialStage view={view} pulseKey={pulseKey} />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-7">
         <MotionReveal step={4}>
-          <InsightHighlight view={view} pulseKey={pulseKey} onOpenStats={onOpenStats} />
+          <InsightHighlight
+            view={view}
+            pulseKey={pulseKey}
+            onOpenStats={onOpenStats}
+          />
         </MotionReveal>
 
         <section>
           <MotionReveal step={5}>
             <SectionLabel overPhoto>Acceso rápido</SectionLabel>
           </MotionReveal>
-          <BentoQuickAccess view={view} onOpenSheet={onOpenSheet} onSaved={onSaved} />
+          <BentoQuickAccess
+            view={view}
+            onOpenSheet={onOpenSheet}
+            onSaved={onSaved}
+          />
         </section>
 
         <section>
@@ -80,7 +91,11 @@ export function HomeScreen({
             </SectionLabel>
           </MotionReveal>
           <MotionReveal step={7}>
-            <RecentExpenses view={view} onEdit={onEditExpense} onPendingRemoved={onPendingRemoved} />
+            <RecentExpenses
+              view={view}
+              onEdit={onEditExpense}
+              onPendingRemoved={onPendingRemoved}
+            />
           </MotionReveal>
         </section>
       </div>

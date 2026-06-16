@@ -234,9 +234,7 @@ function ExpenseEditSheetBody({
 }
 
 export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditSheetProps) {
-  if (!expense) {
-    return <BottomSheet open={false} onClose={onClose}>{null}</BottomSheet>
-  }
+  if (!expense) return null
 
   return (
     <ExpenseEditSheetBody

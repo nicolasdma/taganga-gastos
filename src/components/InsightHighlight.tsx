@@ -10,7 +10,11 @@ interface InsightHighlightProps {
   pulseKey?: number
 }
 
-export function InsightHighlight({ view, onOpenStats, pulseKey = 0 }: InsightHighlightProps) {
+export function InsightHighlight({
+  view,
+  onOpenStats,
+  pulseKey = 0,
+}: InsightHighlightProps) {
   const insights = useQuery(api.expenses.insights, { month: monthKey(), view })
 
   if (insights === undefined || insights.length === 0) return null
