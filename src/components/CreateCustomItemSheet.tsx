@@ -60,7 +60,6 @@ export function CreateCustomItemForm({
           onChange={setLabel}
           placeholder="comida de gatito"
           maxLength={40}
-          autoFocus
           compactKeyboard
         />
       </label>
