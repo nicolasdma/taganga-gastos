@@ -180,7 +180,7 @@ export function BottomSheet({
   const sheet = (
     <div
       className={cn(
-        'sheet-root fixed inset-0 flex flex-col justify-end',
+        'sheet-root fixed inset-x-0 bottom-0 flex flex-col justify-end',
         elevated ? 'z-[60]' : 'z-50'
       )}
       role="presentation"
@@ -195,7 +195,7 @@ export function BottomSheet({
       <div
         ref={panelRef}
         className={cn(
-          'sheet-panel relative sheet-porcelain flex flex-col max-h-[90dvh]',
+          'sheet-panel relative sheet-porcelain flex flex-col',
           entered && 'sheet-panel--open',
           dragging && 'sheet-panel--dragging',
           className

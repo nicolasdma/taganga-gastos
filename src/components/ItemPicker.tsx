@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ExpenseChip } from '@/components/ExpenseChip'
 import { CreateCustomItemSheet } from '@/components/CreateCustomItemSheet'
 import { ITEM_CATALOG, itemMatchesSearch } from '@/lib/items'
@@ -26,6 +26,7 @@ const CREATE_CTA_MIN_QUERY = 2
 export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
   const [search, setSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
+  const resultsRef = useRef<HTMLDivElement>(null)
   const { view } = useExpenseView()
   const customItems = useCustomItems(view)
   const catalog = useMemo(
@@ -43,11 +44,25 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
   }, [catalog, search, serverCounts, customItems])
 
   const trimmedSearch = search.trim()
+  const isSearching = trimmedSearch.length > 0
   const showCreateCta =
     customItems !== undefined &&
     serverCounts !== undefined &&
     trimmedSearch.length >= CREATE_CTA_MIN_QUERY &&
     displayItems.length === 0
+
+  useEffect(() => {
+    if (!isSearching) return
+    const scroll = () =>
+      resultsRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    requestAnimationFrame(scroll)
+    const timeoutId = window.setTimeout(scroll, 280)
+    return () => window.clearTimeout(timeoutId)
+  }, [isSearching, displayItems.length, showCreateCta])
+
+  const scrollResultsIntoView = useCallback(() => {
+    resultsRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }, [])
 
   const handleCreated = (item: {
     itemId: string
@@ -71,8 +86,8 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
 
   return (
     <>
-      <div className="pb-3 -mx-1">
-        <div className="sticky top-0 z-10 -mx-1 px-1 pt-0.5 pb-3 bg-gradient-to-b from-[hsl(40_60%_99%)] from-75% to-transparent">
+      <div className="item-picker flex flex-col pb-3 -mx-1">
+        <div className="sticky top-0 z-10 shrink-0 -mx-1 px-1 pt-0.5 pb-3 bg-gradient-to-b from-[hsl(40_60%_99%)] from-75% to-transparent">
           <div className="text-center mb-3">
             <p className="font-display text-[1.35rem] font-bold text-ink tracking-tight">
               {titleEmoji} {title}
@@ -85,6 +100,7 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onFocus={scrollResultsIntoView}
               placeholder="Buscar pescado, taxi, arriendo…"
               inputMode="search"
               enterKeyHint="search"
@@ -99,7 +115,13 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
           )}
         </div>
 
-        <div className="space-y-2.5">
+        <div
+          ref={resultsRef}
+          className={cn(
+            'space-y-2.5 flex-1',
+            isSearching && 'item-picker-results--searching'
+          )}
+        >
           <p className="label-stitch px-0.5">{sectionLabel}</p>
           {serverCounts === undefined || customItems === undefined ? (
             <div className="grid grid-cols-4 gap-2">
