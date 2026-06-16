@@ -14,7 +14,7 @@ import { ReceiptScanSheet, type SaveReceiptResult } from '@/components/ReceiptSc
 import { CraftBootOverlay } from '@/components/craft/CraftBootOverlay'
 import { CraftBootScreen } from '@/components/craft/CraftBootScreen'
 import { CraftStatsFallback } from '@/components/craft/CraftLoading'
-import { AppBrandmarkDock } from '@/components/editorial/AppBrandmarkDock'
+import { TabScrollProvider, AppBrandmarkDock } from '@/components/editorial/AppBrandmarkDock'
 import { TagangaBackground } from '@/components/TagangaBackground'
 import { Toast } from '@/components/Toast'
 import { useHomeFirstViewReady } from '@/hooks/useHomeFirstViewReady'
@@ -58,6 +58,7 @@ function AppShell() {
   const homeReady = useHomeFirstViewReady()
   const [bootOverlay, setBootOverlay] = useState<'visible' | 'exiting' | 'gone'>('visible')
   const [contentRevealed, setContentRevealed] = useState(false)
+  const [statsMounted, setStatsMounted] = useState(false)
 
   useEffect(() => {
     if (!homeReady || bootOverlay !== 'visible') return
@@ -79,6 +80,11 @@ function AppShell() {
   const excludeReceiptGroup = useMutation(api.expenses.excludeReceiptGroup)
 
   const bump = useCallback(() => setPulseKey((k) => k + 1), [])
+
+  const handleTabChange = useCallback((next: TabId) => {
+    if (next === 'stats') setStatsMounted(true)
+    setTab(next)
+  }, [])
 
   const handleExpenseSaved = useCallback(
     (result: SaveExpenseResult) => {
@@ -121,6 +127,7 @@ function AppShell() {
       : '🐾 Guardado'
 
   return (
+    <TabScrollProvider>
     <div
       className={cn(
         'app-shell flex flex-col bg-transparent',
@@ -144,23 +151,25 @@ function AppShell() {
         className="relative z-10 flex-1 min-h-0 overflow-hidden"
         aria-hidden={!contentRevealed}
       >
-        {tab === 'home' && (
+        <div className={cn('h-full', tab !== 'home' && 'hidden')}>
           <HomeScreen
             pulseKey={pulseKey}
             onOpenSheet={setSheetIntent}
-            onOpenStats={() => setTab('stats')}
+            onOpenStats={() => handleTabChange('stats')}
             onSaved={handleExpenseSaved}
             onEditExpense={setEditExpense}
             onPendingRemoved={bump}
           />
-        )}
-        {tab === 'calendar' && (
-          <CalendarScreen key="calendar" onEditExpense={setEditExpense} />
-        )}
-        {tab === 'stats' && (
-          <Suspense key="stats" fallback={<StatsFallback />}>
-            <StatsScreen />
-          </Suspense>
+        </div>
+        <div className={cn('h-full', tab !== 'calendar' && 'hidden')}>
+          <CalendarScreen onEditExpense={setEditExpense} />
+        </div>
+        {statsMounted && (
+          <div className={cn('h-full', tab !== 'stats' && 'hidden')}>
+            <Suspense fallback={<StatsFallback />}>
+              <StatsScreen />
+            </Suspense>
+          </div>
         )}
       </main>
 
@@ -171,7 +180,7 @@ function AppShell() {
         hidden={keyboardOpen || !contentRevealed}
       />
 
-      {!keyboardOpen && contentRevealed && <BottomNav active={tab} onChange={setTab} />}
+      {!keyboardOpen && contentRevealed && <BottomNav active={tab} onChange={handleTabChange} />}
 
       {!keyboardOpen && <AndroidInstallBanner />}
       {!keyboardOpen && <IosInstallGuide />}
@@ -210,6 +219,7 @@ function AppShell() {
         />
       )}
     </div>
+    </TabScrollProvider>
   )
 }
 

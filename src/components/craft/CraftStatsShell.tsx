@@ -6,6 +6,7 @@ import { SectionLabel } from '@/components/craft/SectionLabel'
 import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
 import { formatCOP } from '@/lib/currency'
 import { formatMonthLabel } from '@/lib/month'
+import { useReportTabScroll } from '@/hooks/useReportTabScroll'
 import { cn } from '@/lib/utils'
 
 export type StatsDataStatus = 'loading' | 'empty' | 'ready'
@@ -121,9 +122,13 @@ export function CraftStatsShell({
 }: CraftStatsShellProps) {
   const itemsLoading = itemsStatus === 'loading'
   const insightsLoading = insightsStatus === 'loading'
+  const scrollRef = useReportTabScroll('stats')
 
   return (
-    <div className={cn('tab-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none', className)}>
+    <div
+      ref={scrollRef}
+      className={cn('tab-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none', className)}
+    >
       <EditorialScreenHeader
         kicker="Tejido a mano"
         title="Estadísticas"

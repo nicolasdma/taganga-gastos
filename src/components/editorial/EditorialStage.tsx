@@ -1,5 +1,5 @@
 import { CollageSticker } from '@/components/editorial/CollageSticker'
-import { EditorialHeaderSpacer } from '@/components/editorial/AppBrandmarkDock'
+import { BrandmarkSlot } from '@/components/editorial/AppBrandmarkDock'
 import { MarqueeBand } from '@/components/editorial/MarqueeBand'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { usePeriodTotals } from '@/hooks/usePeriodTotals'
@@ -26,13 +26,13 @@ export function EditorialStage({ pulseKey = 0, view }: EditorialStageProps) {
             <div className="flex items-start justify-between gap-3 editorial-header__title-row">
               <div>
                 <p className="editorial-kicker">
-                  {view === 'shared' ? 'Registro compartido' : 'Tu libreta'}
+                  {view === 'shared' ? 'Compartidos' : 'Tu libreta'}
                 </p>
                 <h1 className="editorial-stage__title type-editorial-title text-white editorial-text-shadow">
                   Gastos
                 </h1>
               </div>
-              <EditorialHeaderSpacer />
+              <BrandmarkSlot />
             </div>
           </MotionReveal>
         </div>

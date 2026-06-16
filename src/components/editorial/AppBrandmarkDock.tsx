@@ -1,7 +1,53 @@
-import type { CSSProperties } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import type { TabId } from '@/components/BottomNav'
 import { EditorialBrandmark } from '@/components/editorial/EditorialBrandmark'
 import type { ExpenseView } from '@/lib/expenseScope'
+
+const KITTY_SIZE_STYLE = { '--editorial-kitty-size': '76px' } as CSSProperties
+
+const INITIAL_SCROLL: Record<TabId, number> = { home: 0, calendar: 0, stats: 0 }
+
+interface TabScrollContextValue {
+  reportScroll: (tab: TabId, y: number) => void
+  scrollY: Record<TabId, number>
+}
+
+const TabScrollContext = createContext<TabScrollContextValue | null>(null)
+
+export function TabScrollProvider({ children }: { children: ReactNode }) {
+  const [scrollY, setScrollY] = useState(INITIAL_SCROLL)
+
+  const reportScroll = useCallback((tab: TabId, y: number) => {
+    setScrollY((prev) => (prev[tab] === y ? prev : { ...prev, [tab]: y }))
+  }, [])
+
+  const value = useMemo(() => ({ reportScroll, scrollY }), [reportScroll, scrollY])
+
+  return <TabScrollContext.Provider value={value}>{children}</TabScrollContext.Provider>
+}
+
+export function useTabScroll() {
+  const ctx = useContext(TabScrollContext)
+  if (!ctx) {
+    throw new Error('useTabScroll must be used within TabScrollProvider')
+  }
+  return ctx
+}
+
+/** Layout reservation — brandmark renders in AppBrandmarkDock (single instance). */
+export function BrandmarkSlot() {
+  return (
+    <div className="editorial-brandmark-slot shrink-0" style={KITTY_SIZE_STYLE} aria-hidden />
+  )
+}
 
 interface AppBrandmarkDockProps {
   tab: TabId
@@ -12,7 +58,10 @@ interface AppBrandmarkDockProps {
   hidden?: boolean
 }
 
-/** Single persistent brandmark — lives in App shell, never remounts on tab change. */
+/**
+ * One EditorialBrandmark for the whole app — never remounts on tab change.
+ * Fixed in the header band; translateY follows tab scroll so it moves with content.
+ */
 export function AppBrandmarkDock({
   tab,
   view,
@@ -21,10 +70,18 @@ export function AppBrandmarkDock({
   pendingCount = 0,
   hidden,
 }: AppBrandmarkDockProps) {
+  const { scrollY } = useTabScroll()
+
   if (hidden) return null
 
+  const offset = scrollY[tab] ?? 0
+
   return (
-    <div className="app-brandmark-dock" data-tab={tab}>
+    <div
+      className="app-brandmark-dock"
+      data-tab={tab}
+      style={{ transform: `translate3d(0, ${-offset}px, 0)` }}
+    >
       <EditorialBrandmark
         view={view}
         onViewChange={onViewChange}
@@ -32,16 +89,5 @@ export function AppBrandmarkDock({
         pendingCount={pendingCount}
       />
     </div>
-  )
-}
-
-/** Reserves header space so titles do not sit under the fixed dock. */
-export function EditorialHeaderSpacer() {
-  return (
-    <div
-      className="editorial-header__brandmark-spacer shrink-0"
-      style={{ '--editorial-kitty-size': '76px' } as CSSProperties}
-      aria-hidden
-    />
   )
 }

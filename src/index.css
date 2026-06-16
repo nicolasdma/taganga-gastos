@@ -710,6 +710,10 @@
       transition-delay: 0ms !important;
     }
 
+    .app-brandmark-dock {
+      transition-property: top !important;
+    }
+
     .app-shell--content-revealed .nav-float,
     .app-shell--content-revealed .fab-stack-wrap {
       animation: none;
@@ -819,12 +823,20 @@
     transform-origin: top right;
   }
 
+  .editorial-brandmark-slot {
+    width: min(9.5rem, calc(var(--editorial-kitty-size, 76px) * 1.55));
+    min-width: min(9.5rem, calc(var(--editorial-kitty-size, 76px) * 1.55));
+    min-height: var(--editorial-brandmark-footprint-h, 6.85rem);
+    flex-shrink: 0;
+  }
+
   .app-brandmark-dock {
     position: fixed;
     z-index: 25;
     top: calc(max(env(safe-area-inset-top, 0px), 0.5rem) + 1rem);
     right: 1rem;
     pointer-events: none;
+    will-change: transform;
     transition: top 320ms cubic-bezier(0.22, 1, 0.36, 1);
     --editorial-kitty-size: 76px;
   }
@@ -835,13 +847,6 @@
 
   .app-brandmark-dock[data-tab='home'] {
     top: calc(max(env(safe-area-inset-top, 0px), 0.5rem) + 3rem);
-  }
-
-  .editorial-header__brandmark-spacer {
-    width: min(9.5rem, calc(var(--editorial-kitty-size, 76px) * 1.55));
-    min-width: min(9.5rem, calc(var(--editorial-kitty-size, 76px) * 1.55));
-    min-height: var(--editorial-brandmark-footprint-h, 6.85rem);
-    flex-shrink: 0;
   }
 
   .editorial-header__title-row {
@@ -970,6 +975,38 @@
 
   .editorial-screen-header {
     padding-top: max(env(safe-area-inset-top, 0px), 0.5rem);
+  }
+
+  /* Calendario / Estadísticas — título grande; achica solo si la columna se aprieta */
+  .editorial-screen-header .editorial-header__copy {
+    container-type: inline-size;
+    container-name: header-copy;
+    padding-right: 0.35rem;
+  }
+
+  .editorial-screen-header .type-editorial-title {
+    font-size: clamp(2.35rem, 9.5vw, 3.2rem);
+    line-height: 0.94;
+    letter-spacing: -0.04em;
+  }
+
+  @container header-copy (max-width: 10.5rem) {
+    .editorial-screen-header .type-editorial-title {
+      font-size: clamp(2.1rem, 8.5vw, 2.75rem);
+      line-height: 0.98;
+    }
+  }
+
+  @container header-copy (max-width: 9rem) {
+    .editorial-screen-header .type-editorial-title {
+      font-size: clamp(1.9rem, 7.5vw, 2.35rem);
+      line-height: 1.04;
+      overflow-wrap: break-word;
+    }
+  }
+
+  .editorial-screen-header--stacked .editorial-header__title-row {
+    min-height: calc(var(--editorial-brandmark-footprint-h, 6.85rem) + 1.35rem);
   }
 
   .editorial-screen-header .marquee-track span,

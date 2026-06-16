@@ -9,6 +9,7 @@ import { ExpenseMonthGrid } from '@/components/ExpenseMonthGrid'
 import type { EditableExpense } from '@/components/ExpenseEditSheet'
 import { formatCOP } from '@/lib/currency'
 import { useExpenseView } from '@/hooks/useExpenseView'
+import { useReportTabScroll } from '@/hooks/useReportTabScroll'
 import { formatMonthKey, subMonths } from '@/lib/utils'
 
 function monthTotal(byDay: Record<string, { total: number }> | undefined): number {
@@ -38,9 +39,13 @@ export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: Edi
   const total = useMemo(() => monthTotal(byDay), [byDay])
   const prevTotal = useMemo(() => monthTotal(prevByDay), [prevByDay])
   const comparison = useMemo(() => formatComparison(total, prevTotal), [total, prevTotal])
+  const scrollRef = useReportTabScroll('calendar')
 
   return (
-    <div className="tab-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none">
+    <div
+      ref={scrollRef}
+      className="tab-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none"
+    >
       <EditorialScreenHeader
         kicker="Día a día"
         title="Calendario"
