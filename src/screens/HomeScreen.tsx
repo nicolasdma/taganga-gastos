@@ -64,17 +64,21 @@ export function HomeScreen({
         </MotionReveal>
 
         <section>
-          <SectionLabel overPhoto>Acceso rápido</SectionLabel>
+          <MotionReveal step={5}>
+            <SectionLabel overPhoto>Acceso rápido</SectionLabel>
+          </MotionReveal>
           <BentoQuickAccess view={view} onOpenSheet={onOpenSheet} onSaved={onSaved} />
         </section>
 
         <section>
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <SectionLabel overPhoto className="mb-0">
-              Recientes
-            </SectionLabel>
-            <ExpenseViewFilter value={view} onChange={setView} />
-          </div>
+          <MotionReveal step={6}>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <SectionLabel overPhoto className="mb-0">
+                Recientes
+              </SectionLabel>
+              <ExpenseViewFilter value={view} onChange={setView} />
+            </div>
+          </MotionReveal>
           <MotionReveal step={7}>
             <RecentExpenses view={view} onEdit={onEditExpense} onPendingRemoved={onPendingRemoved} />
           </MotionReveal>

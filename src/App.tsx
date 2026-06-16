@@ -11,9 +11,12 @@ import { AndroidInstallBanner } from '@/components/InstallPromptBanner'
 import { IosInstallGuide } from '@/components/IosInstallGuide'
 import { PwaUpdateBanner } from '@/components/PwaUpdateBanner'
 import { ReceiptScanSheet } from '@/components/ReceiptScanSheet'
-import { CraftLoading, CraftStatsFallback } from '@/components/craft/CraftLoading'
+import { CraftBootOverlay } from '@/components/craft/CraftBootOverlay'
+import { CraftBootScreen } from '@/components/craft/CraftBootScreen'
+import { CraftStatsFallback } from '@/components/craft/CraftLoading'
 import { TagangaBackground } from '@/components/TagangaBackground'
 import { Toast } from '@/components/Toast'
+import { useHomeFirstViewReady } from '@/hooks/useHomeFirstViewReady'
 import { useDisplayModeAnalytics } from '@/hooks/useDisplayModeAnalytics'
 import { useIsOffline } from '@/hooks/useIsOffline'
 import { useKeyboardOpen } from '@/hooks/useKeyboardOpen'
@@ -25,6 +28,7 @@ import type { SaveReceiptResult } from '@/hooks/useReceiptSave'
 import type { EditableExpense } from '@/lib/expenseTypes'
 import { hasLocalAuthToken, requestStoragePersistence } from '@/lib/authStorage'
 import { removeFromOutbox, removeReceiptGroupFromOutbox } from '@/lib/outbox'
+import { cn } from '@/lib/utils'
 import { useInviteCodeFromPath } from '@/hooks/useInviteCodeFromPath'
 import { DebugAuthScreen } from '@/screens/DebugAuthScreen'
 import { HomeScreen, CalendarScreen, LoginScreen } from '@/screens'
@@ -36,12 +40,14 @@ const StatsScreen = lazy(() =>
 type ToastState = (SaveExpenseResult & { type?: 'expense' }) | SaveReceiptResult | null
 
 function AuthLoadingScreen() {
-  return <CraftLoading variant="screen" />
+  return <CraftBootScreen />
 }
 
 function StatsFallback() {
   return <CraftStatsFallback />
 }
+
+const HOME_BACKGROUND_BEAT_MS = 0
 
 function AppShell() {
   const [tab, setTab] = useState<TabId>('home')
@@ -51,6 +57,22 @@ function AppShell() {
   const [pulseKey, setPulseKey] = useState(0)
   const [toast, setToast] = useState<ToastState>(null)
   const keyboardOpen = useKeyboardOpen()
+  const homeReady = useHomeFirstViewReady()
+  const [bootOverlay, setBootOverlay] = useState<'visible' | 'exiting' | 'gone'>('visible')
+  const [contentRevealed, setContentRevealed] = useState(false)
+
+  useEffect(() => {
+    if (!homeReady || bootOverlay !== 'visible') return
+    const frame = window.requestAnimationFrame(() => {
+      setBootOverlay('exiting')
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [homeReady, bootOverlay])
+
+  const handleBootExited = useCallback(() => {
+    setBootOverlay('gone')
+    window.setTimeout(() => setContentRevealed(true), HOME_BACKGROUND_BEAT_MS)
+  }, [])
 
   useOutboxSync()
   const pendingCount = useOutboxStatus()
@@ -100,9 +122,19 @@ function AppShell() {
       : '🐾 Guardado'
 
   return (
-    <div className="app-shell flex flex-col bg-transparent">
+    <div
+      className={cn(
+        'app-shell flex flex-col bg-transparent',
+        bootOverlay !== 'gone' && 'app-shell--booting',
+        !contentRevealed && 'app-shell--content-hold',
+        contentRevealed && 'app-shell--content-revealed'
+      )}
+    >
       <TagangaBackground />
-      <main className="relative z-10 flex-1 min-h-0 overflow-hidden">
+      <main
+        className="relative z-10 flex-1 min-h-0 overflow-hidden"
+        aria-hidden={!contentRevealed}
+      >
         {tab === 'home' && (
           <HomeScreen
             pulseKey={pulseKey}
@@ -128,10 +160,10 @@ function AppShell() {
         onAdd={() => setSheetIntent({ type: 'add' })}
         onScan={() => setScanOpen(true)}
         pendingCount={pendingCount}
-        hidden={keyboardOpen}
+        hidden={keyboardOpen || !contentRevealed}
       />
 
-      {!keyboardOpen && <BottomNav active={tab} onChange={setTab} />}
+      {!keyboardOpen && contentRevealed && <BottomNav active={tab} onChange={setTab} />}
 
       {!keyboardOpen && <AndroidInstallBanner />}
       {!keyboardOpen && <IosInstallGuide />}
@@ -160,6 +192,13 @@ function AppShell() {
           actionLabel="Deshacer"
           onAction={handleUndo}
           onDismiss={() => setToast(null)}
+        />
+      )}
+
+      {bootOverlay !== 'gone' && (
+        <CraftBootOverlay
+          exiting={bootOverlay === 'exiting'}
+          onExited={handleBootExited}
         />
       )}
     </div>

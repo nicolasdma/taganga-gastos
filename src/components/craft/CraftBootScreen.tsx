@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { CraftScreenMessage, screenMessageA11y } from '@/components/craft/CraftScreenMessage'
+import { CraftBootScreenContent } from '@/components/craft/CraftBootScreenContent'
+import { screenMessageA11y } from '@/components/craft/CraftScreenMessage'
+import { cn } from '@/lib/utils'
 
 export const KITTY_SPRITE_SRC = '/kitty-sprite.png'
 
@@ -45,13 +47,7 @@ export function CraftBootScreen({ message = '🐾 un momentito' }: CraftBootScre
       aria-live="polite"
       aria-label={screenMessageA11y(message)}
     >
-      <div className="boot-screen__paws" aria-hidden />
-      <div className="boot-screen__kitty-float" aria-hidden>
-        <div className="boot-screen__kitty-wrap">
-          <div className="boot-screen__kitty boot-screen__kitty--live" />
-        </div>
-      </div>
-      <CraftScreenMessage text={message} />
+      <CraftBootScreenContent message={message} kittyLive />
     </div>
   )
 }

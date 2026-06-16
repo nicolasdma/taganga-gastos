@@ -43,6 +43,34 @@ html.boot-ready body {
 .boot-screen--ready {
   opacity: 1;
   visibility: visible;
+  transition: opacity 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.boot-screen--exit {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.home-boot-content {
+  height: 100%;
+  min-height: 0;
+}
+
+.home-boot-content[data-boot-phase='loading'],
+.home-boot-content[data-boot-phase='exiting'] {
+  pointer-events: none;
+}
+
+.boot-screen--overlay {
+  z-index: 10001;
+}
+
+.boot-screen--exiting {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 520ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .boot-screen__paws {
@@ -159,6 +187,12 @@ html.boot-ready body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .boot-screen--ready,
+  .boot-screen--exit,
+  .boot-screen--exiting {
+    transition-duration: 0.01ms;
+  }
+
   .boot-screen__kitty-float {
     animation: none;
   }
@@ -170,5 +204,9 @@ html.boot-ready body {
   .craft-loading-dots span {
     animation: none;
     opacity: 0.55;
+  }
+
+  .boot-screen--exiting {
+    transition-duration: 0.01ms;
   }
 }
