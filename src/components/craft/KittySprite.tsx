@@ -69,7 +69,7 @@ export function KittySprite({
   }
 
   useEffect(() => {
-    setActive(anim)
+    queueMicrotask(() => setActive(anim))
   }, [anim])
 
   // Guardar → nod (no usar row 4 happy, ojos cerrados = desaparece)
@@ -78,12 +78,14 @@ export function KittySprite({
 
     if (pulseTimer.current) clearTimeout(pulseTimer.current)
     busy.current = true
-    setActive('nod')
 
     pulseTimer.current = setTimeout(() => {
-      pulseTimer.current = null
-      goIdle()
-    }, PLAY_MS.nod)
+      setActive('nod')
+      pulseTimer.current = setTimeout(() => {
+        pulseTimer.current = null
+        goIdle()
+      }, PLAY_MS.nod)
+    }, 0)
 
     return () => {
       if (pulseTimer.current) clearTimeout(pulseTimer.current)

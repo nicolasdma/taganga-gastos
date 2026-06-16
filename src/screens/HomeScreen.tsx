@@ -10,7 +10,6 @@ import { useExpenseView } from '@/hooks/useExpenseView'
 
 interface HomeScreenProps {
   pulseKey: number
-  pendingCount: number
   onOpenSheet: (intent: SheetIntent) => void
   onOpenStats: () => void
   onSaved: (result: SaveExpenseResult) => void
@@ -20,14 +19,13 @@ interface HomeScreenProps {
 
 export function HomeScreen({
   pulseKey,
-  pendingCount,
   onOpenSheet,
   onOpenStats,
   onSaved,
   onEditExpense,
   onPendingRemoved,
 }: HomeScreenProps) {
-  const { view, setView } = useExpenseView()
+  const { view } = useExpenseView()
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollYRef = useRef(0)
   const rafRef = useRef<number | null>(null)
@@ -53,12 +51,7 @@ export function HomeScreen({
       onScroll={handleScroll}
       className="tab-scroll home-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none"
     >
-      <EditorialStage
-        pulseKey={pulseKey}
-        pendingCount={pendingCount}
-        view={view}
-        onViewChange={setView}
-      />
+      <EditorialStage view={view} pulseKey={pulseKey} />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-7">
         <MotionReveal step={4}>

@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
 import { CollageSticker } from '@/components/editorial/CollageSticker'
+import { EditorialHeaderSpacer } from '@/components/editorial/AppBrandmarkDock'
 import { MarqueeBand } from '@/components/editorial/MarqueeBand'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
-import { EditorialBrandmark } from '@/components/editorial/EditorialBrandmark'
 import { usePeriodTotals } from '@/hooks/usePeriodTotals'
 import { formatCOP, formatCOPEditorial } from '@/lib/currency'
 import type { ExpenseView } from '@/lib/expenseScope'
@@ -10,27 +9,11 @@ import { cn } from '@/lib/utils'
 
 interface EditorialStageProps {
   pulseKey?: number
-  pendingCount?: number
   view?: ExpenseView
-  onViewChange?: (view: ExpenseView) => void
 }
 
-export function EditorialStage({
-  pulseKey = 0,
-  pendingCount = 0,
-  view,
-  onViewChange,
-}: EditorialStageProps) {
+export function EditorialStage({ pulseKey = 0, view }: EditorialStageProps) {
   const { today, week, month } = usePeriodTotals(view)
-  const [pulsing, setPulsing] = useState(false)
-
-  useEffect(() => {
-    if (pulseKey > 0) {
-      setPulsing(true)
-      const t = setTimeout(() => setPulsing(false), 600)
-      return () => clearTimeout(t)
-    }
-  }, [pulseKey])
 
   const editorial = today !== undefined ? formatCOPEditorial(today) : null
 
@@ -40,7 +23,7 @@ export function EditorialStage({
         <MarqueeBand />
         <div className="px-4 pt-2 pb-5 relative">
           <MotionReveal step={1}>
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-3 editorial-header__title-row">
               <div>
                 <p className="editorial-kicker">
                   {view === 'shared' ? 'Registro compartido' : 'Tu libreta'}
@@ -49,18 +32,13 @@ export function EditorialStage({
                   Gastos
                 </h1>
               </div>
-              <EditorialBrandmark
-                view={view}
-                onViewChange={onViewChange}
-                pulseKey={pulseKey}
-                pendingCount={pendingCount}
-              />
+              <EditorialHeaderSpacer />
             </div>
           </MotionReveal>
         </div>
       </div>
 
-      <div className="editorial-stage__body px-4 -mt-4 relative z-10 pb-3">
+      <div className="editorial-stage__body px-4 pt-2 relative z-10 pb-3">
         <div className="hero-total-sticky">
           <MotionReveal step={2}>
             <div className="relative pt-4">
@@ -70,9 +48,10 @@ export function EditorialStage({
               <div className="torn-sheet px-5 pt-9 pb-5">
                 {editorial ? (
                   <div
+                    key={pulseKey}
                     className={cn(
                       'type-display-massive transition-transform duration-300',
-                      pulsing && 'animate-total-pulse'
+                      pulseKey > 0 && 'animate-total-pulse'
                     )}
                   >
                     <span className="type-display-symbol">{editorial.symbol}</span>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { BottomSheet } from '@/components/BottomSheet'
 import { useCreateCustomItem, type CreatedCustomItem } from '@/hooks/useCreateCustomItem'
 import { cn } from '@/lib/utils'
@@ -23,12 +23,6 @@ export function CreateCustomItemForm({
   const [label, setLabel] = useState(initialLabel)
   const [emoji, setEmoji] = useState('✏️')
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    setLabel(initialLabel)
-    setEmoji('✏️')
-    setError(null)
-  }, [initialLabel])
 
   const handleSave = async () => {
     const trimmed = label.trim()
@@ -134,7 +128,7 @@ export function CreateCustomItemSheet({
       title="✏️ Nuevo ítem"
       headerAction="cancel"
     >
-      <CreateCustomItemForm initialLabel={initialLabel} onCreated={handleCreated} />
+      <CreateCustomItemForm key={initialLabel} initialLabel={initialLabel} onCreated={handleCreated} />
     </BottomSheet>
   )
 }

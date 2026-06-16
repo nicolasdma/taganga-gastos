@@ -27,7 +27,7 @@ function formatComparison(current: number, previous: number): string | null {
 export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: EditableExpense) => void }) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const { view, setView } = useExpenseView()
+  const { view } = useExpenseView()
 
   const monthKey = formatMonthKey(currentMonth)
   const prevMonthKey = formatMonthKey(subMonths(currentMonth, 1))
@@ -45,8 +45,6 @@ export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: Edi
         kicker="Día a día"
         title="Calendario"
         subtitle="con cariño 🐾"
-        view={view}
-        onViewChange={setView}
       />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-4">

@@ -14,6 +14,7 @@ import { ReceiptScanSheet, type SaveReceiptResult } from '@/components/ReceiptSc
 import { CraftBootOverlay } from '@/components/craft/CraftBootOverlay'
 import { CraftBootScreen } from '@/components/craft/CraftBootScreen'
 import { CraftStatsFallback } from '@/components/craft/CraftLoading'
+import { AppBrandmarkDock } from '@/components/editorial/AppBrandmarkDock'
 import { TagangaBackground } from '@/components/TagangaBackground'
 import { Toast } from '@/components/Toast'
 import { useHomeFirstViewReady } from '@/hooks/useHomeFirstViewReady'
@@ -22,6 +23,7 @@ import { useIsOffline } from '@/hooks/useIsOffline'
 import { useKeyboardOpen } from '@/hooks/useKeyboardOpen'
 import { useOutboxSync } from '@/hooks/useOutboxSync'
 import { useOutboxStatus } from '@/hooks/useOutboxStatus'
+import { useExpenseView } from '@/hooks/useExpenseView'
 import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import { hasLocalAuthToken, requestStoragePersistence } from '@/lib/authStorage'
 import { removeFromOutbox, removeReceiptGroupFromOutbox } from '@/lib/outbox'
@@ -72,6 +74,7 @@ function AppShell() {
 
   useOutboxSync()
   const pendingCount = useOutboxStatus()
+  const { view, setView } = useExpenseView()
   const setExpenseExcluded = useMutation(api.expenses.setExpenseExcluded)
   const excludeReceiptGroup = useMutation(api.expenses.excludeReceiptGroup)
 
@@ -127,6 +130,16 @@ function AppShell() {
       )}
     >
       <TagangaBackground />
+
+      <AppBrandmarkDock
+        tab={tab}
+        view={view}
+        onViewChange={setView}
+        pulseKey={pulseKey}
+        pendingCount={pendingCount}
+        hidden={!contentRevealed || keyboardOpen}
+      />
+
       <main
         className="relative z-10 flex-1 min-h-0 overflow-hidden"
         aria-hidden={!contentRevealed}
@@ -134,7 +147,6 @@ function AppShell() {
         {tab === 'home' && (
           <HomeScreen
             pulseKey={pulseKey}
-            pendingCount={pendingCount}
             onOpenSheet={setSheetIntent}
             onOpenStats={() => setTab('stats')}
             onSaved={handleExpenseSaved}

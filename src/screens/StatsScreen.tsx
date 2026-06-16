@@ -8,7 +8,7 @@ import { useExpenseView } from '@/hooks/useExpenseView'
 
 export function StatsScreen() {
   const [month, setMonth] = useState(monthKey)
-  const { view, setView } = useExpenseView()
+  const { view } = useExpenseView()
   const [statsMessage] = useState(() => pickStatsMessage())
   const byItem = useQuery(api.expenses.expensesByItem, { month, view })
   const insights = useQuery(api.expenses.insights, { month, view })
@@ -45,8 +45,6 @@ export function StatsScreen() {
       onPrevMonth={() => setMonth((m) => shiftMonthKey(m, -1))}
       onNextMonth={() => setMonth((m) => shiftMonthKey(m, 1))}
       nextDisabled={month >= monthKey()}
-      view={view}
-      onViewChange={setView}
       interactive
       itemsStatus={itemsStatus}
       insightsStatus={insightsStatus}

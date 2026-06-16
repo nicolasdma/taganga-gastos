@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Button } from '@/components/ui/button'
@@ -23,10 +23,6 @@ export function OnboardingScreen({ initialInviteCode }: OnboardingScreenProps) {
     api.households.lookupInvite,
     inviteCode.trim().length >= 6 ? { inviteCode: inviteCode.trim() } : 'skip'
   )
-
-  useEffect(() => {
-    if (initialInviteCode) setInviteCode(initialInviteCode)
-  }, [initialInviteCode])
 
   const handleCreate = async () => {
     setSubmitting(true)

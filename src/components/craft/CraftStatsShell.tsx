@@ -5,8 +5,6 @@ import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
 import { formatCOP } from '@/lib/currency'
-import type { ExpenseScope } from '@/lib/expenseScope'
-import { DEFAULT_EXPENSE_VIEW } from '@/lib/expenseScope'
 import { formatMonthLabel } from '@/lib/month'
 import { cn } from '@/lib/utils'
 
@@ -25,9 +23,7 @@ interface CraftStatsShellProps {
   onPrevMonth?: () => void
   onNextMonth?: () => void
   nextDisabled?: boolean
-  view?: ExpenseScope
-  onViewChange?: (view: ExpenseScope) => void
-  /** Suspense fallback — nav inert, filter as skeleton */
+  /** Suspense fallback — nav inert */
   interactive?: boolean
   itemsStatus: StatsDataStatus
   insightsStatus: StatsDataStatus
@@ -114,8 +110,6 @@ export function CraftStatsShell({
   onPrevMonth,
   onNextMonth,
   nextDisabled = false,
-  view,
-  onViewChange,
   interactive = true,
   itemsStatus,
   insightsStatus,
@@ -134,9 +128,6 @@ export function CraftStatsShell({
         kicker="Tejido a mano"
         title="Estadísticas"
         subtitle="por ítem 🐾"
-        view={view ?? DEFAULT_EXPENSE_VIEW}
-        onViewChange={interactive ? onViewChange : undefined}
-        filterSkeleton={!interactive}
       />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-5">

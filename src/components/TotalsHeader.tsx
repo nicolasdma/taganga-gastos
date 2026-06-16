@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { CraftCat } from '@/components/craft/CraftCat'
 import { usePeriodTotals } from '@/hooks/usePeriodTotals'
 import { formatCOP } from '@/lib/currency'
@@ -10,15 +9,6 @@ interface TotalsHeaderProps {
 
 export function TotalsHeader({ pulseKey = 0 }: TotalsHeaderProps) {
   const { today, week, month } = usePeriodTotals()
-  const [pulsing, setPulsing] = useState(false)
-
-  useEffect(() => {
-    if (pulseKey > 0) {
-      setPulsing(true)
-      const t = setTimeout(() => setPulsing(false), 550)
-      return () => clearTimeout(t)
-    }
-  }, [pulseKey])
 
   return (
     <div className="relative rounded-[1.4rem_1.2rem_1.35rem_1.25rem] card-porcelain-rim shadow-porcelain p-5 tilt-gentle overflow-hidden">
@@ -29,9 +19,10 @@ export function TotalsHeader({ pulseKey = 0 }: TotalsHeaderProps) {
 
       <p className="label-stitch mb-1 relative">Hoy</p>
       <p
+        key={pulseKey}
         className={cn(
           'font-display text-[2.85rem] font-bold font-tabular text-ink tracking-tight leading-none transition-transform duration-300 relative',
-          pulsing && 'animate-total-pulse'
+          pulseKey > 0 && 'animate-total-pulse'
         )}
       >
         {today === undefined ? '—' : formatCOP(today)}

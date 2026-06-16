@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { AmountKeypad } from '@/components/AmountKeypad'
@@ -109,6 +109,7 @@ function ExpenseEditContent({
   if (step === 'create-item') {
     return (
       <CreateCustomItemForm
+        key={createQuery}
         initialLabel={createQuery}
         onCreated={(item) => {
           setSelectedItem(item)
@@ -169,16 +170,17 @@ function ExpenseEditContent({
   )
 }
 
-export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditSheetProps) {
+function ExpenseEditSheetBody({
+  expense,
+  onClose,
+  onUpdated,
+}: {
+  expense: EditableExpense
+  onClose: () => void
+  onUpdated: () => void
+}) {
   const [step, setStep] = useState<Step>('edit')
   const [createQuery, setCreateQuery] = useState('')
-
-  useEffect(() => {
-    if (expense) {
-      setStep('edit')
-      setCreateQuery('')
-    }
-  }, [expense?._id])
 
   const handleBack = () => {
     if (step === 'item' || step === 'create-item') {
@@ -191,17 +193,14 @@ export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditShe
   const sheetTitle = (() => {
     if (step === 'item') return itemPickerTitle()
     if (step === 'create-item') return '✏️ Nuevo ítem'
-    if (expense) {
-      const display = formatExpenseLabel(expense)
-      return `${display.emoji} ${display.label}`
-    }
-    return 'Editar gasto'
+    const display = formatExpenseLabel(expense)
+    return `${display.emoji} ${display.label}`
   })()
 
   const sheetSubtitle = (() => {
     if (step === 'item') return itemPickerSubtitle()
     if (step === 'create-item') return undefined
-    if (expense?.excluded) return 'Editar · no cuenta en totales'
+    if (expense.excluded) return 'Editar · no cuenta en totales'
     return 'Editar monto'
   })()
 
@@ -209,7 +208,7 @@ export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditShe
 
   return (
     <BottomSheet
-      open={expense !== null}
+      open
       onClose={onClose}
       height="standard"
       title={sheetTitle}
@@ -218,21 +217,33 @@ export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditShe
       onBack={handleBack}
       scrollKey={step}
     >
-      {expense && (
-        <ExpenseEditContent
-          key={`${expense._id}:${expense.excluded}`}
-          expense={expense}
-          step={step}
-          createQuery={createQuery}
-          onClose={onClose}
-          onUpdated={onUpdated}
-          onStepChange={setStep}
-          onRequestCreate={(query) => {
-            setCreateQuery(query)
-            setStep('create-item')
-          }}
-        />
-      )}
+      <ExpenseEditContent
+        expense={expense}
+        step={step}
+        createQuery={createQuery}
+        onClose={onClose}
+        onUpdated={onUpdated}
+        onStepChange={setStep}
+        onRequestCreate={(query) => {
+          setCreateQuery(query)
+          setStep('create-item')
+        }}
+      />
     </BottomSheet>
+  )
+}
+
+export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditSheetProps) {
+  if (!expense) {
+    return <BottomSheet open={false} onClose={onClose}>{null}</BottomSheet>
+  }
+
+  return (
+    <ExpenseEditSheetBody
+      key={expense._id}
+      expense={expense}
+      onClose={onClose}
+      onUpdated={onUpdated}
+    />
   )
 }

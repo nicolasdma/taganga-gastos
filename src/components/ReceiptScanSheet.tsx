@@ -49,11 +49,15 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
   }
 
   useEffect(() => {
-    if (open) {
-      reset()
-      const t = setTimeout(openCamera, 50)
-      return () => clearTimeout(t)
-    }
+    if (!open) return
+    const t = window.setTimeout(() => {
+      setPhase('idle')
+      setError(null)
+      setScanResult(null)
+      setReviewFooter(null)
+      inputRef.current?.click()
+    }, 50)
+    return () => clearTimeout(t)
   }, [open])
 
   const handleFile = async (file: File | undefined) => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import {
@@ -9,17 +9,18 @@ import {
 export function useExpenseView() {
   const saved = useQuery(api.userPreferences.getMyPreferences)
   const patchPreferences = useMutation(api.userPreferences.patchMyPreferences)
-  const [view, setViewState] = useState<ExpenseView>(DEFAULT_EXPENSE_VIEW)
+  const [optimisticView, setOptimisticView] = useState<ExpenseView | null>(null)
 
-  useEffect(() => {
-    if (saved === undefined) return
-    setViewState(saved.expenseView ?? DEFAULT_EXPENSE_VIEW)
-  }, [saved])
+  const syncedView =
+    saved === undefined ? DEFAULT_EXPENSE_VIEW : (saved.expenseView ?? DEFAULT_EXPENSE_VIEW)
+  const view = optimisticView ?? syncedView
 
   const setView = useCallback(
     (next: ExpenseView) => {
-      setViewState(next)
-      void patchPreferences({ patch: { expenseView: next } })
+      setOptimisticView(next)
+      void patchPreferences({ patch: { expenseView: next } }).finally(() => {
+        setOptimisticView((current) => (current === next ? null : current))
+      })
     },
     [patchPreferences]
   )
