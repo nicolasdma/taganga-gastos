@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ConvexAuthProvider } from '@convex-dev/auth/react'
 import { ConvexReactClient } from 'convex/react'
+// Fontsource bundles ship with font-display: swap in @font-face rules.
 import '@fontsource-variable/outfit'
 import '@fontsource-variable/fraunces'
 import './index.css'

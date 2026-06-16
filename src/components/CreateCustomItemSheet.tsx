@@ -70,9 +70,11 @@ export function CreateCustomItemSheet({
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="comida de gatito"
+            inputMode="text"
+            enterKeyHint="done"
             autoFocus
             className={cn(
-              'w-full rounded-2xl px-4 py-3 text-sm font-medium',
+              'w-full rounded-2xl px-4 py-3 text-base font-medium',
               'bg-porcelain-cream/90 border-2 border-stitch/45',
               'placeholder:text-muted-foreground/55',
               'focus:outline-none focus:border-cobalt-glaze/55 focus:ring-2 focus:ring-cobalt-glaze/15'

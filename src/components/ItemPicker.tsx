@@ -86,8 +86,10 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar pescado, taxi, arriendo…"
+              inputMode="search"
+              enterKeyHint="search"
               className={cn(
-                'w-full rounded-2xl pl-4 pr-4 py-3 text-sm font-medium',
+                'w-full rounded-2xl pl-4 pr-4 py-3 text-base font-medium',
                 'bg-porcelain-cream/90 border-2 border-stitch/45',
                 'placeholder:text-muted-foreground/55',
                 'focus:outline-none focus:border-cobalt-glaze/55 focus:ring-2 focus:ring-cobalt-glaze/15',

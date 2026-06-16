@@ -2,6 +2,8 @@
   "name": "Gastos · Taganga",
   "short_name": "Gastos",
   "description": "Registro de gastos compartido",
+  "id": "/",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a2744",

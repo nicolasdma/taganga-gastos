@@ -25,7 +25,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
               type="button"
               onClick={() => onChange(tab.id)}
               className={cn(
-                'flex-1 flex flex-col items-center gap-0.5 py-2 rounded-full transition-all duration-300',
+                'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[44px] py-3 rounded-full transition-all duration-300',
                 isActive
                   ? 'bg-cobalt-deep text-porcelain-cream shadow-cobalt scale-[1.02]'
                   : 'text-muted-foreground active:scale-95'

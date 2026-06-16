@@ -117,7 +117,9 @@ export function ReceiptReviewSheet({
                   value={item.label}
                   onChange={(e) => updateLabel(item.id, e.target.value)}
                   placeholder="Nombre del ítem"
-                  className="flex-1 min-w-0 bg-transparent text-sm font-semibold outline-none"
+                  inputMode="text"
+                  enterKeyHint="done"
+                  className="flex-1 min-w-0 bg-transparent text-base font-semibold outline-none"
                 />
                 <button
                   type="button"
@@ -151,6 +153,7 @@ export function ReceiptReviewSheet({
               <input
                 type="number"
                 inputMode="numeric"
+                enterKeyHint="done"
                 value={amountDraft || ''}
                 onChange={(e) => setAmountDraft(Math.max(0, Number(e.target.value) || 0))}
                 className="w-full text-2xl font-extrabold font-tabular bg-transparent outline-none mb-2"
@@ -189,7 +192,9 @@ export function ReceiptReviewSheet({
             value={store}
             onChange={(e) => setStore(e.target.value)}
             placeholder="Ej: Olímpica, Juan Valdez, Éxito…"
-            className="w-full rounded-xl border border-border/60 bg-card px-3 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-coral/30"
+            inputMode="text"
+            enterKeyHint="done"
+            className="w-full rounded-xl border border-border/60 bg-card px-3 py-2.5 text-base font-semibold outline-none focus:ring-2 focus:ring-coral/30"
           />
         </div>
 

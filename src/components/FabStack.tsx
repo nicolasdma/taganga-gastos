@@ -5,9 +5,12 @@ interface FabStackProps {
   onAdd: () => void
   onScan: () => void
   pendingCount?: number
+  hidden?: boolean
 }
 
-export function FabStack({ onAdd, onScan, pendingCount = 0 }: FabStackProps) {
+export function FabStack({ onAdd, onScan, pendingCount = 0, hidden }: FabStackProps) {
+  if (hidden) return null
+
   return (
     <div
       className={cn(

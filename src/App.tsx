@@ -7,14 +7,22 @@ import { ConvexConfigError } from '@/components/ConvexConfigError'
 import { ExpenseEditSheet } from '@/components/ExpenseEditSheet'
 import { ExpenseSheet, type SheetIntent } from '@/components/ExpenseSheet'
 import { FabStack } from '@/components/FabStack'
+import { AndroidInstallBanner } from '@/components/InstallPromptBanner'
+import { IosInstallGuide } from '@/components/IosInstallGuide'
+import { PwaUpdateBanner } from '@/components/PwaUpdateBanner'
 import { ReceiptScanSheet } from '@/components/ReceiptScanSheet'
 import { TagangaBackground } from '@/components/TagangaBackground'
 import { Toast } from '@/components/Toast'
+import { useDisplayModeAnalytics } from '@/hooks/useDisplayModeAnalytics'
+import { useIsOffline } from '@/hooks/useIsOffline'
+import { useKeyboardOpen } from '@/hooks/useKeyboardOpen'
 import { useOutboxSync } from '@/hooks/useOutboxSync'
 import { useOutboxStatus } from '@/hooks/useOutboxStatus'
+import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import type { SaveExpenseResult } from '@/hooks/useExpenseSave'
 import type { SaveReceiptResult } from '@/hooks/useReceiptSave'
 import type { EditableExpense } from '@/lib/expenseTypes'
+import { hasLocalAuthToken, requestStoragePersistence } from '@/lib/authStorage'
 import { removeFromOutbox, removeReceiptGroupFromOutbox } from '@/lib/outbox'
 import { useInviteCodeFromPath } from '@/hooks/useInviteCodeFromPath'
 import { HomeScreen, CalendarScreen, LoginScreen } from '@/screens'
@@ -50,6 +58,7 @@ function AppShell() {
   const [editExpense, setEditExpense] = useState<EditableExpense | null>(null)
   const [pulseKey, setPulseKey] = useState(0)
   const [toast, setToast] = useState<ToastState>(null)
+  const keyboardOpen = useKeyboardOpen()
 
   useOutboxSync()
   const pendingCount = useOutboxStatus()
@@ -127,9 +136,13 @@ function AppShell() {
         onAdd={() => setSheetIntent({ type: 'add' })}
         onScan={() => setScanOpen(true)}
         pendingCount={pendingCount}
+        hidden={keyboardOpen}
       />
 
-      <BottomNav active={tab} onChange={setTab} />
+      {!keyboardOpen && <BottomNav active={tab} onChange={setTab} />}
+
+      {!keyboardOpen && <AndroidInstallBanner />}
+      {!keyboardOpen && <IosInstallGuide />}
 
       <ExpenseSheet
         intent={sheetIntent}
@@ -149,7 +162,7 @@ function AppShell() {
         onUpdated={bump}
       />
 
-      {toast && (
+      {toast && !keyboardOpen && (
         <Toast
           message={toastMessage}
           actionLabel="Deshacer"
@@ -163,12 +176,23 @@ function AppShell() {
 
 function AuthenticatedApp() {
   const { isLoading, isAuthenticated } = useConvexAuth()
+  const offline = useIsOffline()
+  const convexUrl = import.meta.env.VITE_CONVEX_URL
+  const offlineWithSession = offline && hasLocalAuthToken(convexUrl)
   const household = useQuery(api.households.getMyHousehold)
   const inviteCodeFromPath = useInviteCodeFromPath()
   const ensureUserReady = useMutation(api.households.ensureUserReady)
   const joinHousehold = useMutation(api.households.joinHousehold)
   const [bootstrapping, setBootstrapping] = useState(false)
   const bootstrapAttempted = useRef(false)
+
+  useDisplayModeAnalytics()
+
+  // Request persistent storage after login (Safari tab vs PWA = separate partitions on iOS).
+  useEffect(() => {
+    if (!isAuthenticated) return
+    void requestStoragePersistence()
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (!isAuthenticated || household === undefined || household !== null) return
@@ -196,15 +220,22 @@ function AuthenticatedApp() {
     })()
   }, [isAuthenticated, household, inviteCodeFromPath, ensureUserReady, joinHousehold])
 
-  if (isLoading || (isAuthenticated && household === undefined) || bootstrapping) {
+  if (isLoading || bootstrapping) {
     return <AuthLoadingScreen />
   }
 
   if (!isAuthenticated) {
+    if (offlineWithSession) {
+      return <AppShell />
+    }
     return <LoginScreen />
   }
 
-  if (!household) {
+  if (household === undefined && !offlineWithSession) {
+    return <AuthLoadingScreen />
+  }
+
+  if (!household && !offlineWithSession) {
     return <AuthLoadingScreen />
   }
 
@@ -212,9 +243,16 @@ function AuthenticatedApp() {
 }
 
 export default function App() {
+  useVisualViewportHeight()
+
   if (!import.meta.env.VITE_CONVEX_URL) {
     return <ConvexConfigError />
   }
 
-  return <AuthenticatedApp />
+  return (
+    <>
+      <PwaUpdateBanner />
+      <AuthenticatedApp />
+    </>
+  )
 }

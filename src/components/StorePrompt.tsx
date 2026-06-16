@@ -20,6 +20,8 @@ export function StorePrompt({ onConfirm, onCancel }: StorePromptProps) {
         value={store}
         onChange={(e) => setStore(e.target.value)}
         placeholder="Ej. Olímpica, Éxito…"
+        inputMode="text"
+        enterKeyHint="done"
         autoFocus
         className="mb-4 text-center"
         onKeyDown={(e) => {

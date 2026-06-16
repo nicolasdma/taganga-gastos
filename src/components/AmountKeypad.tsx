@@ -139,13 +139,14 @@ export function AmountKeypad({
                 type="text"
                 defaultValue={itemHeader.detail}
                 placeholder={itemHeader.catalogLabel}
+                inputMode="text"
+                enterKeyHint="done"
                 className={cn(
                   'min-w-0 flex-1 max-w-[12rem] rounded-xl px-3 py-2 text-base font-display font-bold text-ink',
                   'bg-porcelain-cream/90 border-2 border-cobalt-glaze/45',
                   'placeholder:text-muted-foreground/45 placeholder:font-medium placeholder:text-sm',
                   'focus:outline-none focus:border-cobalt-glaze/70 focus:ring-2 focus:ring-cobalt-glaze/15'
                 )}
-                enterKeyHint="done"
                 onBlur={(e) => commitDetail(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {

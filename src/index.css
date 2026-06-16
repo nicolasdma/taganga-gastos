@@ -4,6 +4,8 @@
 
 @layer base {
   :root {
+    --vv-height: 100dvh;
+    --vv-offset-top: 0px;
     --background: 38 48% 94%;
     --foreground: 222 42% 16%;
     --card: 40 55% 98%;
@@ -43,6 +45,10 @@
     @apply border-border;
   }
 
+  html {
+    touch-action: manipulation;
+  }
+
   html,
   body,
   #root {
@@ -55,6 +61,14 @@
   select,
   textarea {
     font: inherit;
+  }
+
+  /* iOS auto-zoom prevention — keep pinch-zoom enabled (no maximum-scale). */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+    scroll-margin-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   }
 
   body {
@@ -483,6 +497,7 @@
 
   .sheet-content {
     animation: sheet-content-in 480ms cubic-bezier(0.32, 0.72, 0, 1) 60ms both;
+    overscroll-behavior-y: contain;
   }
 
   @keyframes sheet-content-in {
