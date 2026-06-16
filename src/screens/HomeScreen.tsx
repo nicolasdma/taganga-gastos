@@ -60,7 +60,7 @@ export function HomeScreen({
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-7">
         <MotionReveal step={4}>
-          <InsightHighlight pulseKey={pulseKey} onOpenStats={onOpenStats} />
+          <InsightHighlight view={view} pulseKey={pulseKey} onOpenStats={onOpenStats} />
         </MotionReveal>
 
         <section>

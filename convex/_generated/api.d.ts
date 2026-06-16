@@ -15,7 +15,9 @@ import type * as households from "../households.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_households from "../lib/households.js";
+import type * as lib_items from "../lib/items.js";
 import type * as lib_userPreferences from "../lib/userPreferences.js";
+import type * as migrations from "../migrations.js";
 import type * as receiptScan from "../receiptScan.js";
 import type * as userPreferences from "../userPreferences.js";
 
@@ -33,7 +35,9 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/households": typeof lib_households;
+  "lib/items": typeof lib_items;
   "lib/userPreferences": typeof lib_userPreferences;
+  migrations: typeof migrations;
   receiptScan: typeof receiptScan;
   userPreferences: typeof userPreferences;
 }>;

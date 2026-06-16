@@ -5,46 +5,49 @@ import { api } from '../../convex/_generated/api'
 import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
-import { CATEGORIES } from '@/lib/categories'
 import { formatCOP } from '@/lib/currency'
 import { monthKey, formatMonthLabel, shiftMonthKey } from '@/lib/month'
+import { useExpenseView } from '@/hooks/useExpenseView'
+import { ExpenseViewFilter } from '@/components/ExpenseScopeToggle'
 import { cn } from '@/lib/utils'
 
-const CategoryDonutChart = lazy(() => import('@/components/CategoryDonutChart'))
+const ItemDonutChart = lazy(() => import('@/components/ItemDonutChart'))
 
 export function StatsScreen() {
   const [month, setMonth] = useState(monthKey)
-  const byCategory = useQuery(api.expenses.expensesByCategory, { month })
-  const insights = useQuery(api.expenses.insights, { month })
+  const { view, setView } = useExpenseView()
+  const byItem = useQuery(api.expenses.expensesByItem, { month, view })
+  const insights = useQuery(api.expenses.insights, { month, view })
 
   const { total, rows } = useMemo(() => {
-    if (!byCategory) return { total: 0, rows: [] as Array<{ id: string; emoji: string; label: string; amount: number; pct: number }> }
+    if (!byItem) return { total: 0, rows: [] as Array<{ id: string; emoji: string; label: string; amount: number; pct: number }> }
 
-    const total = Object.values(byCategory).reduce((s, n) => s + n, 0)
-    const rows = CATEGORIES.map((cat) => ({
-      id: cat.id,
-      emoji: cat.emoji,
-      label: cat.label,
-      amount: byCategory[cat.id] ?? 0,
-      pct: total > 0 ? ((byCategory[cat.id] ?? 0) / total) * 100 : 0,
-    }))
+    const total = byItem.reduce((s, row) => s + row.amount, 0)
+    const rows = byItem
+      .map((row) => ({
+        id: row.itemId,
+        emoji: row.itemEmoji,
+        label: row.itemLabel,
+        amount: row.amount,
+        pct: total > 0 ? (row.amount / total) * 100 : 0,
+      }))
       .filter((r) => r.amount > 0)
-      .sort((a, b) => b.amount - a.amount)
 
     return { total, rows }
-  }, [byCategory])
+  }, [byItem])
 
   return (
     <div className="tab-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none">
       <EditorialScreenHeader
         kicker="Tejido a mano"
         title="Estadísticas"
-        subtitle="por categoría 🐾"
+        subtitle="por ítem 🐾"
         catVariant="sit"
       />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-5">
-        <div className="month-nav-over-photo flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
+          <div className="month-nav-over-photo flex items-center justify-between flex-1">
           <button
             type="button"
             onClick={() => setMonth((m) => shiftMonthKey(m, -1))}
@@ -68,18 +71,20 @@ export function StatsScreen() {
           >
             <ChevronRight className="h-4 w-4" />
           </button>
+          </div>
+          <ExpenseViewFilter value={view} onChange={setView} />
         </div>
 
         <div className="rounded-3xl card-porcelain-rim shadow-porcelain p-5">
           <p className="label-stitch mb-1">Total del mes</p>
           <p className="font-display text-3xl font-bold font-tabular text-ink tracking-tight">
-            {byCategory === undefined ? '—' : formatCOP(total)}
+            {byItem === undefined ? '—' : formatCOP(total)}
           </p>
         </div>
 
         <section>
-          <SectionLabel overPhoto>Por categoría</SectionLabel>
-          {byCategory === undefined ? (
+          <SectionLabel overPhoto>Por ítem</SectionLabel>
+          {byItem === undefined ? (
             <div className="rounded-3xl card-porcelain p-4 space-y-3">
               <div className="h-40 rounded-xl bg-muted/40 animate-pulse" />
               {[1, 2, 3].map((i) => (
@@ -97,7 +102,7 @@ export function StatsScreen() {
               <Suspense
                 fallback={<div className="h-48 bg-muted/30 animate-pulse border-b border-border/40" />}
               >
-                <CategoryDonutChart rows={rows} />
+                <ItemDonutChart rows={rows} />
               </Suspense>
               <div className="divide-y divide-border/40">
                 {rows.map((row) => (

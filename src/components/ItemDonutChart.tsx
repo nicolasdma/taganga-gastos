@@ -9,11 +9,11 @@ export interface ChartRow {
   amount: number
 }
 
-interface CategoryDonutChartProps {
+interface ItemDonutChartProps {
   rows: ChartRow[]
 }
 
-export default function CategoryDonutChart({ rows }: CategoryDonutChartProps) {
+export default function ItemDonutChart({ rows }: ItemDonutChartProps) {
   const data = rows.map((r) => ({
     name: `${r.emoji} ${r.label}`,
     value: r.amount,

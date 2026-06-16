@@ -6,12 +6,12 @@ import { periodRange } from './dates'
 import {
   canModifyExpense,
   canViewExpense,
-  expenseScope,
   matchesView,
   requireAuthContext,
   type ExpenseScope,
   type ExpenseView,
 } from './lib/auth'
+import { itemGroupKey, resolveItemFields } from './lib/items'
 
 const expenseScopeValidator = v.union(v.literal('shared'), v.literal('personal'))
 const expenseViewValidator = v.union(v.literal('shared'), v.literal('personal'))
@@ -40,6 +40,33 @@ function sumCounted(expenses: Array<{ amount: number; excluded?: boolean }>) {
 
 function resolveScope(scope: ExpenseScope | undefined): ExpenseScope {
   return scope ?? 'personal'
+}
+
+function expenseItemKey(e: {
+  itemId?: string
+  itemLabel?: string
+  categoryId?: string
+}): string {
+  if (e.itemId) return e.itemId
+  if (e.itemLabel?.trim()) return e.itemLabel.trim().toLowerCase()
+  if (e.categoryId) return e.categoryId
+  return 'unknown'
+}
+
+function expenseDisplayFields(e: {
+  categoryId?: string
+  itemId?: string
+  itemEmoji?: string
+  itemLabel?: string
+}): { itemId: string; itemEmoji: string; itemLabel: string } {
+  const resolved = resolveItemFields(
+    e.categoryId ?? 'misc',
+    e.itemId,
+    e.itemEmoji,
+    e.itemLabel
+  )
+  if (resolved) return resolved
+  return { itemId: 'unknown', itemEmoji: '💸', itemLabel: 'Gasto' }
 }
 
 async function loadVisibleExpensesInRange(
@@ -82,10 +109,9 @@ async function requireOwnedExpense(
 export const addExpense = mutation({
   args: {
     amount: v.number(),
-    categoryId: v.string(),
-    itemId: v.optional(v.string()),
-    itemEmoji: v.optional(v.string()),
-    itemLabel: v.optional(v.string()),
+    itemId: v.string(),
+    itemEmoji: v.string(),
+    itemLabel: v.string(),
     sessionId: v.optional(v.string()),
     receiptGroupId: v.optional(v.string()),
     store: v.optional(v.string()),
@@ -114,7 +140,6 @@ export const addExpense = mutation({
 
     return await ctx.db.insert('expenses', {
       amount: args.amount,
-      categoryId: args.categoryId,
       itemId: args.itemId,
       itemEmoji: args.itemEmoji,
       itemLabel: args.itemLabel,
@@ -149,10 +174,9 @@ export const updateExpense = mutation({
   args: {
     id: v.id('expenses'),
     amount: v.number(),
-    categoryId: v.string(),
-    itemId: v.optional(v.string()),
-    itemEmoji: v.optional(v.string()),
-    itemLabel: v.optional(v.string()),
+    itemId: v.string(),
+    itemEmoji: v.string(),
+    itemLabel: v.string(),
     sessionId: v.optional(v.string()),
     receiptGroupId: v.optional(v.string()),
     store: v.optional(v.string()),
@@ -166,7 +190,6 @@ export const updateExpense = mutation({
     const { id, ...fields } = args
     await ctx.db.patch(id, {
       amount: fields.amount,
-      categoryId: fields.categoryId,
       itemId: fields.itemId,
       itemEmoji: fields.itemEmoji,
       itemLabel: fields.itemLabel,
@@ -181,7 +204,6 @@ export const updateExpense = mutation({
 
 export const startSession = mutation({
   args: {
-    categoryId: v.string(),
     store: v.optional(v.string()),
   },
   returns: v.string(),
@@ -203,13 +225,14 @@ export const closeSession = mutation({
 const receiptItemArg = v.object({
   amount: v.number(),
   itemLabel: v.string(),
+  itemEmoji: v.optional(v.string()),
+  itemId: v.optional(v.string()),
   clientId: v.optional(v.string()),
 })
 
 export const addReceiptGroup = mutation({
   args: {
     receiptGroupId: v.string(),
-    categoryId: v.string(),
     store: v.optional(v.string()),
     items: v.array(receiptItemArg),
     createdAt: v.optional(v.number()),
@@ -242,7 +265,8 @@ export const addReceiptGroup = mutation({
 
       const id = await ctx.db.insert('expenses', {
         amount: item.amount,
-        categoryId: args.categoryId,
+        itemId: item.itemId ?? itemGroupKey(undefined, item.itemLabel),
+        itemEmoji: item.itemEmoji ?? '🧾',
         itemLabel: item.itemLabel,
         receiptGroupId: args.receiptGroupId,
         store: args.store,
@@ -330,11 +354,24 @@ export const totals = query({
   },
 })
 
+const dayItemSummaryValidator = v.object({
+  total: v.number(),
+  items: v.record(
+    v.string(),
+    v.object({
+      emoji: v.string(),
+      label: v.string(),
+      amount: v.number(),
+    })
+  ),
+})
+
 export const expensesByDay = query({
   args: {
     month: v.string(),
     view: v.optional(expenseViewValidator),
   },
+  returns: v.record(v.string(), dayItemSummaryValidator),
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
     const { start, end } = monthRange(args.month)
@@ -347,15 +384,30 @@ export const expensesByDay = query({
       args.view ?? 'personal'
     )
 
-    const byDay: Record<string, { total: number; categories: Record<string, number> }> = {}
+    const byDay: Record<
+      string,
+      { total: number; items: Record<string, { emoji: string; label: string; amount: number }> }
+    > = {}
 
     for (const e of expenses) {
       if (!isCounted(e)) continue
       const d = new Date(e.createdAt)
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-      if (!byDay[key]) byDay[key] = { total: 0, categories: {} }
+      if (!byDay[key]) byDay[key] = { total: 0, items: {} }
+
+      const display = expenseDisplayFields(e)
+      const itemKey = expenseItemKey(e)
       byDay[key].total += e.amount
-      byDay[key].categories[e.categoryId] = (byDay[key].categories[e.categoryId] ?? 0) + e.amount
+      const existing = byDay[key].items[itemKey]
+      if (existing) {
+        existing.amount += e.amount
+      } else {
+        byDay[key].items[itemKey] = {
+          emoji: display.itemEmoji,
+          label: display.itemLabel,
+          amount: e.amount,
+        }
+      }
     }
 
     return byDay
@@ -382,11 +434,19 @@ export const expensesForDay = query({
   },
 })
 
-export const expensesByCategory = query({
+export const expensesByItem = query({
   args: {
     month: v.string(),
     view: v.optional(expenseViewValidator),
   },
+  returns: v.array(
+    v.object({
+      itemId: v.string(),
+      itemEmoji: v.string(),
+      itemLabel: v.string(),
+      amount: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
     const { start, end } = monthRange(args.month)
@@ -399,12 +459,29 @@ export const expensesByCategory = query({
       args.view ?? 'personal'
     )
 
-    const byCategory: Record<string, number> = {}
+    const byItem = new Map<
+      string,
+      { itemId: string; itemEmoji: string; itemLabel: string; amount: number }
+    >()
+
     for (const e of expenses) {
       if (!isCounted(e)) continue
-      byCategory[e.categoryId] = (byCategory[e.categoryId] ?? 0) + e.amount
+      const display = expenseDisplayFields(e)
+      const key = expenseItemKey(e)
+      const existing = byItem.get(key)
+      if (existing) {
+        existing.amount += e.amount
+      } else {
+        byItem.set(key, {
+          itemId: display.itemId,
+          itemEmoji: display.itemEmoji,
+          itemLabel: display.itemLabel,
+          amount: e.amount,
+        })
+      }
     }
-    return byCategory
+
+    return Array.from(byItem.values()).sort((a, b) => b.amount - a.amount)
   },
 })
 
@@ -423,11 +500,17 @@ export const sessionExpenses = query({
 
 export const frequentItems = query({
   args: {
-    categoryId: v.optional(v.string()),
-    excludeCategoryId: v.optional(v.string()),
     limit: v.number(),
     view: v.optional(expenseViewValidator),
   },
+  returns: v.array(
+    v.object({
+      itemId: v.string(),
+      itemEmoji: v.string(),
+      itemLabel: v.string(),
+      count: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
     const since = Date.now() - 90 * 24 * 60 * 60 * 1000
@@ -444,30 +527,23 @@ export const frequentItems = query({
         matchesView(expense, userId, args.view ?? 'personal')
     )
 
-    if (args.categoryId) {
-      expenses = expenses.filter((e) => e.categoryId === args.categoryId)
-    }
-    if (args.excludeCategoryId) {
-      expenses = expenses.filter((e) => e.categoryId !== args.excludeCategoryId)
-    }
-
     const counts = new Map<
       string,
-      { categoryId: string; itemId: string; itemEmoji?: string; itemLabel?: string; count: number }
+      { itemId: string; itemEmoji: string; itemLabel: string; count: number }
     >()
 
     for (const e of expenses) {
-      if (!isCounted(e) || !e.itemId) continue
-      const key = `${e.categoryId}:${e.itemId}`
+      if (!isCounted(e)) continue
+      const display = expenseDisplayFields(e)
+      const key = expenseItemKey(e)
       const existing = counts.get(key)
       if (existing) {
         existing.count += 1
       } else {
         counts.set(key, {
-          categoryId: e.categoryId,
-          itemId: e.itemId,
-          itemEmoji: e.itemEmoji,
-          itemLabel: e.itemLabel,
+          itemId: display.itemId,
+          itemEmoji: display.itemEmoji,
+          itemLabel: display.itemLabel,
           count: 1,
         })
       }
@@ -478,18 +554,6 @@ export const frequentItems = query({
       .slice(0, args.limit)
   },
 })
-
-const CATEGORY_LABELS: Record<string, string> = {
-  home: 'Hogar',
-  supermarket: 'Supermercado',
-  'eating-out': 'Comer afuera',
-  transport: 'Transporte',
-  household: 'Limpieza',
-  health: 'Salud',
-  leisure: 'Ocio',
-  misc: 'Varios',
-  savings: 'Ahorro',
-}
 
 const DAY_NAMES = [
   'domingo',
@@ -523,51 +587,67 @@ function dayKeyFromTs(ts: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function aggregateByCategory(
-  expenses: Array<{ amount: number; categoryId: string; excluded?: boolean }>
-) {
-  const byCategory: Record<string, number> = {}
-  for (const e of expenses) {
-    if (!isCounted(e)) continue
-    byCategory[e.categoryId] = (byCategory[e.categoryId] ?? 0) + e.amount
-  }
-  return byCategory
-}
-
 type InsightCandidate = { text: string; priority: number }
 
 async function loadMonthExpenses(
   ctx: QueryCtx,
   householdId: Id<'households'>,
   userId: Id<'users'>,
-  month: string
+  month: string,
+  view: ExpenseView
 ) {
   const { start, end } = monthRange(month)
-  return await loadVisibleExpensesInRange(ctx, householdId, userId, start, end, 'shared')
+  return await loadVisibleExpensesInRange(ctx, householdId, userId, start, end, view)
+}
+
+function aggregateByItem(
+  expenses: Array<{
+    amount: number
+    excluded?: boolean
+    itemId?: string
+    itemEmoji?: string
+    itemLabel?: string
+    categoryId?: string
+  }>
+) {
+  const byItem = new Map<string, { label: string; emoji: string; total: number }>()
+  for (const e of expenses) {
+    if (!isCounted(e)) continue
+    const display = expenseDisplayFields(e)
+    const key = expenseItemKey(e)
+    const existing = byItem.get(key)
+    if (existing) {
+      existing.total += e.amount
+    } else {
+      byItem.set(key, {
+        label: display.itemLabel,
+        emoji: display.itemEmoji,
+        total: e.amount,
+      })
+    }
+  }
+  return byItem
 }
 
 export const insights = query({
-  args: { month: v.string() },
+  args: {
+    month: v.string(),
+    view: v.optional(expenseViewValidator),
+  },
+  returns: v.array(v.string()),
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
+    const view = args.view ?? 'personal'
     const now = Date.now()
-    const expenses = await loadMonthExpenses(ctx, householdId, userId, args.month)
+    const expenses = await loadMonthExpenses(ctx, householdId, userId, args.month, view)
     const counted = expenses.filter(isCounted)
     if (counted.length === 0) return []
 
     const candidates: InsightCandidate[] = []
-    const byCategory = aggregateByCategory(expenses)
+    const byItem = aggregateByItem(expenses)
     const total = sumCounted(expenses)
 
-    const byItem: Record<string, { label: string; total: number }> = {}
-    for (const e of counted) {
-      if (!e.itemLabel) continue
-      const key = e.itemLabel.toLowerCase()
-      if (!byItem[key]) byItem[key] = { label: e.itemLabel, total: 0 }
-      byItem[key].total += e.amount
-    }
-
-    const topItem = Object.values(byItem).sort((a, b) => b.total - a.total)[0]
+    const topItem = Array.from(byItem.values()).sort((a, b) => b.total - a.total)[0]
     if (topItem && topItem.total >= 30_000) {
       candidates.push({
         text: `Gastaste ${formatCOP(topItem.total)} en ${topItem.label.toLowerCase()} este mes`,
@@ -575,24 +655,31 @@ export const insights = query({
       })
     }
 
-    const supermarket = byCategory['supermarket'] ?? 0
-    if (supermarket >= 20_000) {
+    const groceryTotal = Array.from(byItem.entries())
+      .filter(([key]) =>
+        ['pescado', 'pollo', 'leche', 'huevo', 'pan', 'arroz', 'verdura', 'carne', 'meat'].includes(key)
+      )
+      .reduce((sum, [, v]) => sum + v.total, 0)
+
+    if (groceryTotal >= 20_000) {
       const days = daysElapsedInMonth(args.month, now)
-      const avg = Math.round(supermarket / days)
+      const avg = Math.round(groceryTotal / days)
       candidates.push({
-        text: `Supermercado promedia ${formatCOP(avg)}/día`,
+        text: `Comida del mes promedia ${formatCOP(avg)}/día`,
         priority: 55 + avg / 2000,
       })
     }
 
     const prevKey = previousMonthKey(args.month)
-    const prevExpenses = await loadMonthExpenses(ctx, householdId, userId, prevKey)
+    const prevExpenses = await loadMonthExpenses(ctx, householdId, userId, prevKey, view)
     if (prevExpenses.length > 0) {
-      const prevByCategory = aggregateByCategory(prevExpenses)
+      const prevByItem = aggregateByItem(prevExpenses)
       let bestCompare: InsightCandidate | null = null
 
-      for (const [categoryId, currentAmount] of Object.entries(byCategory)) {
-        const prevAmount = prevByCategory[categoryId] ?? 0
+      for (const [itemKey, current] of byItem.entries()) {
+        const prev = prevByItem.get(itemKey)
+        const prevAmount = prev?.total ?? 0
+        const currentAmount = current.total
         if (currentAmount < 10_000) continue
 
         const diff = currentAmount - prevAmount
@@ -607,10 +694,9 @@ export const insights = query({
           if (Math.abs(pct) < 15) continue
         }
 
-        const label = CATEGORY_LABELS[categoryId] ?? categoryId
         const verb = diff > 0 ? 'subió' : 'bajó'
         const candidate: InsightCandidate = {
-          text: `${label} ${verb} ${Math.abs(pct)}% vs el mes pasado`,
+          text: `${current.label} ${verb} ${Math.abs(pct)}% vs el mes pasado`,
           priority: Math.abs(pct) * 2 + Math.abs(diff) / 5000,
         }
         if (!bestCompare || candidate.priority > bestCompare.priority) {
@@ -651,7 +737,7 @@ export const insights = query({
       const visibleRecent = allRecent.filter(
         (expense) =>
           canViewExpense(expense, userId, householdId) &&
-          expenseScope(expense) === 'shared'
+          matchesView(expense, userId, view)
       )
 
       const daysWithExpenses = new Set(visibleRecent.map((e) => dayKeyFromTs(e.createdAt)))
@@ -677,12 +763,11 @@ export const insights = query({
     }
 
     if (total > 0 && candidates.length === 0) {
-      const topCategory = Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0]
-      if (topCategory && topCategory[1] >= 10_000) {
-        const label = CATEGORY_LABELS[topCategory[0]] ?? topCategory[0]
-        const share = Math.round((topCategory[1] / total) * 100)
+      const topEntry = Array.from(byItem.values()).sort((a, b) => b.total - a.total)[0]
+      if (topEntry && topEntry.total >= 10_000) {
+        const share = Math.round((topEntry.total / total) * 100)
         candidates.push({
-          text: `${label} concentra el ${share}% de tus gastos`,
+          text: `${topEntry.label} concentra el ${share}% de tus gastos`,
           priority: share,
         })
       }

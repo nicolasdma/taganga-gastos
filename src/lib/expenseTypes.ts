@@ -3,7 +3,6 @@ import type { Id } from '../../convex/_generated/dataModel'
 export interface EditableExpense {
   _id: Id<'expenses'>
   amount: number
-  categoryId: string
   itemId?: string
   itemEmoji?: string
   itemLabel?: string

@@ -3,9 +3,10 @@ import { api } from '../../convex/_generated/api'
 import { ExpenseChip } from '@/components/ExpenseChip'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
-import { buildCategoryQuickButtons } from '@/lib/quickButtons'
+import { buildRecentQuickButtons } from '@/lib/quickButtons'
 import { useExpenseSave } from '@/hooks/useExpenseSave'
-import { DEFAULT_EXPENSE_VIEW } from '@/lib/expenseScope'
+import { useFrequentQuickItems } from '@/hooks/useFrequentQuickItems'
+import { useExpenseView } from '@/hooks/useExpenseView'
 import type { SheetIntent } from '@/components/ExpenseSheet'
 import { cn } from '@/lib/utils'
 
@@ -13,6 +14,8 @@ interface QuickAccessProps {
   onOpenSheet: (intent: SheetIntent) => void
   onSaved: (result: import('@/hooks/useExpenseSave').SaveExpenseResult) => void
 }
+
+const QUICK_GRID = 'grid-cols-4'
 
 function ActionRow({
   emoji,
@@ -56,18 +59,20 @@ function ActionRow({
 }
 
 export function QuickAccess({ onOpenSheet, onSaved }: QuickAccessProps) {
-  const recent = useQuery(api.expenses.recentExpenses, { limit: 1, view: DEFAULT_EXPENSE_VIEW })
+  const { view } = useExpenseView()
+  const recent = useQuery(api.expenses.recentExpenses, { limit: 1, view })
+  const frequentQuickItems = useFrequentQuickItems(view, 3)
   const { saveExpense } = useExpenseSave(onSaved)
 
   const lastExpense = recent?.[0]
   const lastDisplay = lastExpense ? formatExpenseLabel(lastExpense) : null
-  const quickButtons = buildCategoryQuickButtons()
+  const quickButtons =
+    frequentQuickItems === undefined ? undefined : buildRecentQuickButtons(frequentQuickItems)
 
   const handleRepeat = async () => {
-    if (!lastExpense) return
+    if (!lastExpense?.itemId || !lastExpense.itemEmoji || !lastExpense.itemLabel) return
     await saveExpense({
       amount: lastExpense.amount,
-      categoryId: lastExpense.categoryId,
       itemId: lastExpense.itemId,
       itemEmoji: lastExpense.itemEmoji,
       itemLabel: lastExpense.itemLabel,
@@ -89,23 +94,33 @@ export function QuickAccess({ onOpenSheet, onSaved }: QuickAccessProps) {
       )}
 
       <ActionRow
-        emoji="🛒"
-        title="Supermercado"
-        subtitle="Huevos, leche, pan…"
+        emoji="✏️"
+        title="Agregar ítem"
+        subtitle="Elegí del catálogo"
         variant="emerald"
-        onClick={() => onOpenSheet({ type: 'supermarket' })}
+        onClick={() => onOpenSheet({ type: 'add' })}
       />
 
-      <div className="grid grid-cols-3 gap-2.5">
-        {quickButtons.map((btn, i) => (
-          <ExpenseChip
-            key={btn.key}
-            emoji={btn.emoji}
-            label={btn.label}
-            tiltIndex={i}
-            onClick={() => onOpenSheet(btn.intent)}
-          />
-        ))}
+      <div className={cn('grid gap-2.5', QUICK_GRID)}>
+        {quickButtons === undefined
+          ? [1, 2, 3].map((i) => (
+              <div key={i} className="h-16 rounded-2xl bg-muted/40 animate-pulse" />
+            ))
+          : quickButtons.map((btn, i) => (
+              <ExpenseChip
+                key={btn.key}
+                emoji={btn.emoji}
+                label={btn.label}
+                tiltIndex={i}
+                onClick={() => onOpenSheet(btn.intent)}
+              />
+            ))}
+        <ExpenseChip
+          emoji="⋯"
+          label="Más"
+          tiltIndex={quickButtons?.length ?? 3}
+          onClick={() => onOpenSheet({ type: 'add' })}
+        />
       </div>
     </div>
   )

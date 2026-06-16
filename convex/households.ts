@@ -1,6 +1,6 @@
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { internalMutation, mutation, query } from './_generated/server'
 import { createHouseholdForUser } from './lib/households'
 
 const householdSummary = v.object({
@@ -122,6 +122,72 @@ export const joinHousehold = mutation({
       householdId: household._id,
       name: household.name,
       inviteCode: household.inviteCode,
+    }
+  },
+})
+
+/** One-off admin: move a user into an existing household (e.g. fix auto-created duplicate homes). */
+export const adminMoveUserToHousehold = internalMutation({
+  args: {
+    userId: v.id('users'),
+    targetHouseholdId: v.id('households'),
+  },
+  returns: v.object({
+    ok: v.literal(true),
+    oldHouseholdId: v.id('households'),
+    newHouseholdId: v.id('households'),
+    movedExpenseCount: v.number(),
+    deletedOldHousehold: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const membership = await ctx.db
+      .query('householdMembers')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .first()
+    if (!membership) throw new Error('User has no household membership')
+
+    const target = await ctx.db.get('households', args.targetHouseholdId)
+    if (!target) throw new Error('Target household not found')
+
+    const oldHouseholdId = membership.householdId
+    if (oldHouseholdId === args.targetHouseholdId) {
+      throw new Error('User is already in the target household')
+    }
+
+    await ctx.db.patch(membership._id, {
+      householdId: args.targetHouseholdId,
+      joinedAt: Date.now(),
+    })
+
+    const expenses = await ctx.db
+      .query('expenses')
+      .withIndex('by_household_and_createdAt', (q) => q.eq('householdId', oldHouseholdId))
+      .collect()
+
+    let movedExpenseCount = 0
+    for (const expense of expenses) {
+      if (expense.createdBy !== args.userId) continue
+      await ctx.db.patch(expense._id, { householdId: args.targetHouseholdId })
+      movedExpenseCount += 1
+    }
+
+    const remainingMembers = await ctx.db
+      .query('householdMembers')
+      .withIndex('by_household', (q) => q.eq('householdId', oldHouseholdId))
+      .collect()
+
+    let deletedOldHousehold = false
+    if (remainingMembers.length === 0) {
+      await ctx.db.delete(oldHouseholdId)
+      deletedOldHousehold = true
+    }
+
+    return {
+      ok: true as const,
+      oldHouseholdId,
+      newHouseholdId: args.targetHouseholdId,
+      movedExpenseCount,
+      deletedOldHousehold,
     }
   },
 })

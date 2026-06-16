@@ -20,8 +20,11 @@ import { groupExpensesForList, type ReceiptItemLike } from '@/lib/receiptGroups'
 import { formatDisplayDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
+import type { ExpenseView } from '@/lib/expenseScope'
+
 interface DayDetailSheetProps {
   date: string | null
+  view: ExpenseView
   onClose: () => void
   onEditExpense: (expense: EditableExpense) => void
 }
@@ -37,7 +40,6 @@ function toListItem(expense: Expense): ReceiptItemLike {
   return {
     _id: expense._id,
     amount: expense.amount,
-    categoryId: expense.categoryId,
     itemId: expense.itemId,
     itemEmoji: expense.itemEmoji,
     itemLabel: expense.itemLabel,
@@ -55,7 +57,6 @@ function sessionGroupToReceiptGroup(group: Extract<ReturnType<typeof groupExpens
     key: group.key,
     receiptGroupId: group.sessionId,
     store: group.store,
-    categoryId: group.categoryId,
     total: group.total,
     items: group.items,
   }
@@ -78,7 +79,6 @@ function StandaloneRow({
         onEditExpense({
           _id: expense._id as EditableExpense['_id'],
           amount: expense.amount,
-          categoryId: expense.categoryId,
           itemId: expense.itemId,
           itemEmoji: expense.itemEmoji,
           itemLabel: expense.itemLabel,
@@ -113,10 +113,10 @@ function StandaloneRow({
   )
 }
 
-export function DayDetailSheet({ date, onClose, onEditExpense }: DayDetailSheetProps) {
+export function DayDetailSheet({ date, view, onClose, onEditExpense }: DayDetailSheetProps) {
   const expenses = useQuery(
     api.expenses.expensesForDay,
-    date ? { date } : 'skip'
+    date ? { date, view } : 'skip'
   )
 
   const dayTotal = useMemo(

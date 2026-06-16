@@ -2,18 +2,14 @@ import { useState } from 'react'
 import { AmountKeypad } from '@/components/AmountKeypad'
 import { BottomSheet } from '@/components/BottomSheet'
 import { ItemPicker, type SelectedItem } from '@/components/ItemPicker'
-import { getCategory } from '@/lib/categories'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 import type { ExpenseScope } from '@/lib/expenseScope'
 import { DEFAULT_EXPENSE_SCOPE } from '@/lib/expenseScope'
 
 export type SheetIntent =
   | { type: 'add' }
-  | { type: 'supermarket' }
-  | { type: 'category'; categoryId: string }
   | {
       type: 'quick'
-      categoryId: string
       itemId: string
       itemEmoji: string
       itemLabel: string
@@ -29,23 +25,18 @@ interface ExpenseSheetProps {
 
 function intentKey(intent: SheetIntent): string {
   if (intent.type === 'quick') {
-    return `quick:${intent.categoryId}:${intent.itemId}`
-  }
-  if (intent.type === 'category') {
-    return `category:${intent.categoryId}`
+    return `quick:${intent.itemId}`
   }
   return intent.type
 }
 
 function resolveInitialState(intent: SheetIntent): {
   step: Step
-  categoryId: string
   selectedItem: SelectedItem | null
 } {
   if (intent.type === 'quick') {
     return {
       step: 'amount',
-      categoryId: intent.categoryId,
       selectedItem: {
         itemId: intent.itemId,
         itemEmoji: intent.itemEmoji,
@@ -54,15 +45,7 @@ function resolveInitialState(intent: SheetIntent): {
     }
   }
 
-  if (intent.type === 'category') {
-    return {
-      step: 'amount',
-      categoryId: intent.categoryId,
-      selectedItem: null,
-    }
-  }
-
-  return { step: 'item', categoryId: 'supermarket', selectedItem: null }
+  return { step: 'item', selectedItem: null }
 }
 
 interface ExpenseSheetContentProps {
@@ -77,7 +60,6 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
 
   const [step, setStep] = useState<Step>(initial.step)
   const [amount, setAmount] = useState(0)
-  const [categoryId] = useState(initial.categoryId)
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(initial.selectedItem)
   const [itemDetail, setItemDetail] = useState('')
   const [scope, setScope] = useState<ExpenseScope>(DEFAULT_EXPENSE_SCOPE)
@@ -88,7 +70,6 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
   }
 
   const resolvedItem = selectedItem
-  const category = getCategory(categoryId)
 
   const saveWithItem = async (
     item: SelectedItem,
@@ -98,7 +79,6 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
     setSaving(true)
     await saveExpense({
       amount: expenseAmount,
-      categoryId,
       itemId: item.itemId,
       itemEmoji: item.itemEmoji,
       itemLabel: item.itemLabel,
@@ -115,17 +95,7 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
   }
 
   const handleSave = async () => {
-    if (amount <= 0) return
-
-    if (intent.type === 'category') {
-      setSaving(true)
-      await saveExpense({ amount, categoryId, scope })
-      setSaving(false)
-      close()
-      return
-    }
-
-    if (!resolvedItem) return
+    if (amount <= 0 || !resolvedItem) return
     await saveWithItem(resolvedItem, amount, itemDetail)
   }
 
@@ -136,29 +106,14 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
     setStep('amount')
   }
 
-  if (step === 'item' && category) {
-    return (
-      <ItemPicker
-        categoryId={categoryId}
-        variant={intent.type === 'supermarket' ? 'supermarket' : 'default'}
-        categoryEmoji={category.emoji}
-        categoryLabel={category.label}
-        onSelect={handleItemSelect}
-      />
-    )
+  if (step === 'item') {
+    return <ItemPicker onSelect={handleItemSelect} />
   }
 
   const isQuick = intent.type === 'quick'
-  const isCategory = intent.type === 'category'
-  const canPickAnotherItem = intent.type === 'add' || intent.type === 'supermarket'
 
   return (
     <AmountKeypad
-      categoryHeader={
-        isCategory && category
-          ? { emoji: category.emoji, label: category.label }
-          : undefined
-      }
       itemHeader={
         resolvedItem
           ? {
@@ -173,7 +128,7 @@ function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentPr
       onChange={setAmount}
       onSave={handleSave}
       onCancel={close}
-      onBack={canPickAnotherItem ? () => setStep('item') : undefined}
+      onBack={() => setStep('item')}
       saving={saving}
       autoSaveOnPreset={isQuick}
       onPresetSelect={isQuick ? handleQuickPreset : undefined}

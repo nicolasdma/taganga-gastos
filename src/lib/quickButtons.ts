@@ -1,27 +1,23 @@
-import { getCategory } from '@/lib/categories'
 import type { SheetIntent } from '@/components/ExpenseSheet'
+import type { FrequentQuickItem } from '@/hooks/useFrequentQuickItems'
 
-export interface CategoryQuickButton {
+export interface ItemQuickButton {
   key: string
   emoji: string
   label: string
-  intent: Extract<SheetIntent, { type: 'category' }>
+  intent: Extract<SheetIntent, { type: 'quick' }>
 }
 
-/** Categorías fijas en acceso rápido (reemplazan café/helado/cerveza). */
-export const QUICK_CATEGORY_IDS = ['eating-out', 'transport', 'leisure'] as const
-
-export function buildCategoryQuickButtons(): CategoryQuickButton[] {
-  return QUICK_CATEGORY_IDS.flatMap((categoryId) => {
-    const cat = getCategory(categoryId)
-    if (!cat) return []
-    return [
-      {
-        key: categoryId,
-        emoji: cat.emoji,
-        label: cat.label,
-        intent: { type: 'category', categoryId },
-      },
-    ]
-  })
+export function buildRecentQuickButtons(items: FrequentQuickItem[]): ItemQuickButton[] {
+  return items.map((item) => ({
+    key: item.itemId,
+    emoji: item.itemEmoji,
+    label: item.itemLabel,
+    intent: {
+      type: 'quick',
+      itemId: item.itemId,
+      itemEmoji: item.itemEmoji,
+      itemLabel: item.itemLabel,
+    },
+  }))
 }

@@ -1,7 +1,6 @@
-import { getCategory, getItem } from '@/lib/categories'
+import { getItemById } from '@/lib/items'
 
 export interface ExpenseLabelInput {
-  categoryId: string
   itemId?: string
   itemEmoji?: string
   itemLabel?: string
@@ -10,25 +9,27 @@ export interface ExpenseLabelInput {
 }
 
 export function formatExpenseLabel(expense: ExpenseLabelInput): { emoji: string; label: string } {
-  if (expense.store) {
+  if (expense.store && !expense.itemLabel) {
     return { emoji: '🛒', label: expense.store }
   }
 
   if (expense.itemLabel) {
-    const cat = getCategory(expense.categoryId)
     const detail = expense.note?.trim()
     const label = detail || expense.itemLabel
     return {
-      emoji: expense.itemEmoji ?? cat?.emoji ?? '💸',
+      emoji: expense.itemEmoji ?? '💸',
       label,
     }
   }
 
   if (expense.itemId) {
-    const item = getItem(expense.categoryId, expense.itemId)
+    const item = getItemById(expense.itemId)
     if (item) return { emoji: item.emoji, label: item.label }
   }
 
-  const cat = getCategory(expense.categoryId)
-  return { emoji: cat?.emoji ?? '💸', label: cat?.label ?? expense.categoryId }
+  if (expense.store) {
+    return { emoji: '🛒', label: expense.store }
+  }
+
+  return { emoji: '💸', label: 'Gasto' }
 }

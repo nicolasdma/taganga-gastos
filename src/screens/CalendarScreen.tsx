@@ -5,9 +5,11 @@ import { DayDetailSheet } from '@/components/DayDetailSheet'
 import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
+import { ExpenseViewFilter } from '@/components/ExpenseScopeToggle'
 import { ExpenseMonthGrid } from '@/components/ExpenseMonthGrid'
 import type { EditableExpense } from '@/lib/expenseTypes'
 import { formatCOP } from '@/lib/currency'
+import { useExpenseView } from '@/hooks/useExpenseView'
 import { formatMonthKey, subMonths } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -27,12 +29,13 @@ function formatComparison(current: number, previous: number): string | null {
 export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: EditableExpense) => void }) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const { view, setView } = useExpenseView()
 
   const monthKey = formatMonthKey(currentMonth)
   const prevMonthKey = formatMonthKey(subMonths(currentMonth, 1))
 
-  const byDay = useQuery(api.expenses.expensesByDay, { month: monthKey })
-  const prevByDay = useQuery(api.expenses.expensesByDay, { month: prevMonthKey })
+  const byDay = useQuery(api.expenses.expensesByDay, { month: monthKey, view })
+  const prevByDay = useQuery(api.expenses.expensesByDay, { month: prevMonthKey, view })
 
   const total = useMemo(() => monthTotal(byDay), [byDay])
   const prevTotal = useMemo(() => monthTotal(prevByDay), [prevByDay])
@@ -48,6 +51,11 @@ export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: Edi
       />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="label-stitch">Vista</p>
+          <ExpenseViewFilter value={view} onChange={setView} />
+        </div>
+
         <div className="rounded-3xl card-porcelain-rim shadow-porcelain p-4">
           <p className="label-stitch mb-1">Total del mes</p>
           <p
@@ -88,6 +96,7 @@ export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: Edi
 
       <DayDetailSheet
         date={selectedDate}
+        view={view}
         onClose={() => setSelectedDate(null)}
         onEditExpense={(expense) => {
           setSelectedDate(null)

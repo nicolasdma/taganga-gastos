@@ -24,7 +24,6 @@ function toEditable(expense: ReceiptGroup['items'][0]): EditableExpense | null {
   return {
     _id: expense._id as EditableExpense['_id'],
     amount: expense.amount,
-    categoryId: expense.categoryId,
     itemId: expense.itemId,
     itemLabel: expense.itemLabel,
     itemEmoji: expense.itemEmoji,

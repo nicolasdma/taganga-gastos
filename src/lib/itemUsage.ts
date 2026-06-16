@@ -1,4 +1,4 @@
-import type { CatalogItem } from '@/lib/categories'
+import type { CatalogItem } from '@/lib/items'
 
 const USAGE_KEY = 'gastos-item-usage'
 
@@ -8,10 +8,6 @@ interface ItemUsage {
 }
 
 type UsageStore = Record<string, ItemUsage>
-
-function usageKey(categoryId: string, itemId: string) {
-  return `${categoryId}:${itemId}`
-}
 
 function readStore(): UsageStore {
   try {
@@ -27,19 +23,18 @@ function writeStore(store: UsageStore) {
   localStorage.setItem(USAGE_KEY, JSON.stringify(store))
 }
 
-export function recordItemUsage(categoryId: string, itemId: string, at = Date.now()) {
+export function recordItemUsage(itemId: string, at = Date.now()) {
   const store = readStore()
-  const key = usageKey(categoryId, itemId)
-  const existing = store[key]
-  store[key] = {
+  const existing = store[itemId]
+  store[itemId] = {
     count: (existing?.count ?? 0) + 1,
     lastUsedAt: at,
   }
   writeStore(store)
 }
 
-export function getLocalItemUsage(categoryId: string, itemId: string): ItemUsage | undefined {
-  return readStore()[usageKey(categoryId, itemId)]
+export function getLocalItemUsage(itemId: string): ItemUsage | undefined {
+  return readStore()[itemId]
 }
 
 /** Frecuencia × peso + decaimiento por días desde el último uso. */
@@ -60,7 +55,6 @@ export function computeItemScore(
 
 export function sortCatalogByUsage(
   items: CatalogItem[],
-  categoryId: string,
   serverCounts: Map<string, number>
 ): CatalogItem[] {
   const store = readStore()
@@ -70,17 +64,20 @@ export function sortCatalogByUsage(
     if (a.id === 'other' && b.id !== 'other') return 1
     if (b.id === 'other' && a.id !== 'other') return -1
 
-    const scoreA = computeItemScore(
-      store[usageKey(categoryId, a.id)],
-      serverCounts.get(a.id) ?? 0,
-      now
-    )
-    const scoreB = computeItemScore(
-      store[usageKey(categoryId, b.id)],
-      serverCounts.get(b.id) ?? 0,
-      now
-    )
+    const scoreA = computeItemScore(store[a.id], serverCounts.get(a.id) ?? 0, now)
+    const scoreB = computeItemScore(store[b.id], serverCounts.get(b.id) ?? 0, now)
     if (scoreB !== scoreA) return scoreB - scoreA
     return a.label.localeCompare(b.label, 'es')
   })
+}
+
+/** Top N del catálogo con la misma regla que ItemPicker ("Tus frecuentes primero"). */
+export function getTopCatalogItems(
+  items: CatalogItem[],
+  serverCounts: Map<string, number>,
+  limit: number
+): CatalogItem[] {
+  return sortCatalogByUsage(items, serverCounts)
+    .filter((item) => item.id !== 'other')
+    .slice(0, limit)
 }

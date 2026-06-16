@@ -18,11 +18,12 @@ export function useOutboxSync() {
       try {
         await addReceiptGroup({
           receiptGroupId: group.receiptGroupId,
-          categoryId: group.categoryId,
           store: group.store,
           items: group.items.map((item) => ({
             amount: item.amount,
             itemLabel: item.itemLabel,
+            itemEmoji: item.itemEmoji,
+            itemId: item.itemId,
             clientId: item.clientId,
           })),
           createdAt: group.createdAt,
@@ -39,7 +40,6 @@ export function useOutboxSync() {
       try {
         await addExpense({
           amount: item.amount,
-          categoryId: item.categoryId,
           itemId: item.itemId,
           itemEmoji: item.itemEmoji,
           itemLabel: item.itemLabel,

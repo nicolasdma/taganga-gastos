@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { BottomSheet } from '@/components/BottomSheet'
-import { CategoryPicker } from '@/components/CategoryPicker'
 import { useReceiptSave, type SaveReceiptResult } from '@/hooks/useReceiptSave'
 import { formatCOP } from '@/lib/currency'
-import { inferCategoryFromStore } from '@/lib/receiptGroups'
 import {
   sumItems,
   toEditableItems,
@@ -30,9 +28,6 @@ export function ReceiptReviewSheet({
   const { saveReceipt } = useReceiptSave(onSaved)
   const [items, setItems] = useState<EditableReceiptItem[]>(() =>
     toEditableItems(scanResult.items)
-  )
-  const [categoryId, setCategoryId] = useState<string | null>(
-    () => inferCategoryFromStore(scanResult.store) ?? null
   )
   const [store, setStore] = useState(scanResult.store ?? '')
   const [editingAmountId, setEditingAmountId] = useState<string | null>(null)
@@ -72,14 +67,13 @@ export function ReceiptReviewSheet({
   }
 
   const handleSave = async () => {
-    if (!categoryId || saving) return
+    if (saving) return
     const validItems = items.filter((i) => i.label.trim() && i.amount > 0)
     if (validItems.length === 0) return
 
     setSaving(true)
     try {
       await saveReceipt({
-        categoryId,
         store: store.trim() || undefined,
         items: validItems.map((i) => ({
           itemLabel: i.label.trim(),
@@ -91,7 +85,7 @@ export function ReceiptReviewSheet({
     }
   }
 
-  const canSave = categoryId != null && items.some((i) => i.label.trim() && i.amount > 0)
+  const canSave = items.some((i) => i.label.trim() && i.amount > 0)
 
   return (
     <BottomSheet open={open} onClose={onClose}>
@@ -107,7 +101,6 @@ export function ReceiptReviewSheet({
           </button>
         </div>
 
-        {/* A) Items */}
         <div className="mb-5">
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             Ítems
@@ -189,16 +182,6 @@ export function ReceiptReviewSheet({
           </div>
         </div>
 
-        {/* B) Category */}
-        <CategoryPicker
-          showDetail={false}
-          hideDetailToggle
-          selectedCategoryId={categoryId}
-          onToggleDetail={() => {}}
-          onSelect={setCategoryId}
-        />
-
-        {/* C) Store */}
         <div className="mt-4 mb-5">
           <p className="text-sm font-bold text-foreground mb-2">Nombre del lugar (opcional)</p>
           <input

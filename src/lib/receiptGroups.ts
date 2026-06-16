@@ -1,9 +1,6 @@
-import { getCategory } from '@/lib/categories'
-
 export interface ReceiptItemLike {
   _id: string
   amount: number
-  categoryId: string
   itemId?: string
   itemLabel?: string
   itemEmoji?: string
@@ -20,7 +17,6 @@ export interface ReceiptGroup {
   key: string
   receiptGroupId: string
   store?: string
-  categoryId: string
   total: number
   items: ReceiptItemLike[]
   pending?: boolean
@@ -30,7 +26,6 @@ export interface SessionGroupLike {
   key: string
   sessionId: string
   store?: string
-  categoryId: string
   total: number
   items: ReceiptItemLike[]
 }
@@ -60,7 +55,6 @@ export function groupExpensesForList(expenses: ReceiptItemLike[]): ExpenseListRo
           key,
           receiptGroupId: expense.receiptGroupId,
           store: expense.store,
-          categoryId: expense.categoryId,
           total: 0,
           items: [expense],
           pending: expense.pending,
@@ -76,7 +70,6 @@ export function groupExpensesForList(expenses: ReceiptItemLike[]): ExpenseListRo
           key,
           sessionId: expense.sessionId,
           store: expense.store,
-          categoryId: expense.categoryId,
           total: 0,
           items: [expense],
         })
@@ -106,55 +99,9 @@ export function groupExpensesForList(expenses: ReceiptItemLike[]): ExpenseListRo
   return rows
 }
 
-const SUPERMARKET_HINTS = [
-  'olimpica',
-  'olímpica',
-  'exito',
-  'éxito',
-  'carulla',
-  'd1',
-  'ara',
-  'makro',
-  'jumbo',
-  'surtimax',
-  'justo',
-  'euro',
-  'metro',
-  'carnicer',
-  'panader',
-]
-
-const RESTAURANT_HINTS = [
-  'restaur',
-  'cafe',
-  'café',
-  'juan valdez',
-  'starbucks',
-  'mcdonald',
-  'domino',
-  'kfc',
-  'subway',
-  'burger',
-  'pizza',
-  'sushi',
-  'bar ',
-]
-
-export function inferCategoryFromStore(store?: string): string | undefined {
-  if (!store) return undefined
-  const s = store.toLowerCase()
-
-  if (SUPERMARKET_HINTS.some((h) => s.includes(h))) return 'supermarket'
-  if (RESTAURANT_HINTS.some((h) => s.includes(h))) return 'eating-out'
-
-  return undefined
-}
-
-export function receiptGroupTitle(group: Pick<ReceiptGroup, 'store' | 'categoryId'>) {
+export function receiptGroupTitle(group: Pick<ReceiptGroup, 'store'>) {
   if (group.store) {
-    const cat = getCategory(group.categoryId)
-    return { emoji: cat?.emoji ?? '🧾', title: group.store, subtitle: cat?.label }
+    return { emoji: '🛒', title: group.store, subtitle: 'Compra' }
   }
-  const cat = getCategory(group.categoryId)
-  return { emoji: cat?.emoji ?? '🧾', title: cat?.label ?? 'Ticket', subtitle: undefined }
+  return { emoji: '🧾', title: 'Ticket', subtitle: undefined }
 }

@@ -1,15 +1,17 @@
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { monthKey } from '@/lib/month'
+import type { ExpenseView } from '@/lib/expenseScope'
 import { cn } from '@/lib/utils'
 
 interface InsightHighlightProps {
+  view: ExpenseView
   onOpenStats: () => void
   pulseKey?: number
 }
 
-export function InsightHighlight({ onOpenStats, pulseKey = 0 }: InsightHighlightProps) {
-  const insights = useQuery(api.expenses.insights, { month: monthKey() })
+export function InsightHighlight({ view, onOpenStats, pulseKey = 0 }: InsightHighlightProps) {
+  const insights = useQuery(api.expenses.insights, { month: monthKey(), view })
 
   if (insights === undefined || insights.length === 0) return null
 

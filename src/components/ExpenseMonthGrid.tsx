@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { getCategory } from '@/lib/categories'
 import { formatCOPShort } from '@/lib/currency'
 import {
   addMonths,
@@ -17,9 +16,15 @@ import {
   cn,
 } from '@/lib/utils'
 
+export type DayItemSummary = {
+  emoji: string
+  label: string
+  amount: number
+}
+
 export type DaySummary = {
   total: number
-  categories: Record<string, number>
+  items: Record<string, DayItemSummary>
 }
 
 interface ExpenseMonthGridProps {
@@ -33,11 +38,11 @@ interface ExpenseMonthGridProps {
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
-function topCategoryEmojis(categories: Record<string, number>, limit = 3): string {
-  return Object.entries(categories)
-    .sort((a, b) => b[1] - a[1])
+function topItemEmojis(items: Record<string, DayItemSummary>, limit = 3): string {
+  return Object.values(items)
+    .sort((a, b) => b.amount - a.amount)
     .slice(0, limit)
-    .map(([id]) => getCategory(id)?.emoji ?? '💸')
+    .map((item) => item.emoji)
     .join('')
 }
 
@@ -134,7 +139,7 @@ export function ExpenseMonthGrid({
               {dayHasData && summary && (
                 <>
                   <span className="text-[8px] leading-none truncate max-w-full">
-                    {topCategoryEmojis(summary.categories)}
+                    {topItemEmojis(summary.items)}
                   </span>
                   <span
                     className={cn(

@@ -3,17 +3,16 @@ import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { hapticSave } from '@/lib/haptics'
-import { pushRecentCategory, setLastStore } from '@/lib/preferences'
+import { pushRecentItem, setLastStore } from '@/lib/preferences'
 import { recordItemUsage } from '@/lib/itemUsage'
 import { enqueueExpense, removeFromOutbox } from '@/lib/outbox'
 import type { ExpenseScope } from '@/lib/expenseScope'
 
 export interface SaveExpenseInput {
   amount: number
-  categoryId: string
-  itemId?: string
-  itemEmoji?: string
-  itemLabel?: string
+  itemId: string
+  itemEmoji: string
+  itemLabel: string
   sessionId?: string
   store?: string
   note?: string
@@ -36,7 +35,6 @@ export function useExpenseSave(onSaved?: (result: SaveExpenseResult) => void) {
       try {
         expenseId = await addExpense({
           amount: pending.amount,
-          categoryId: pending.categoryId,
           itemId: pending.itemId,
           itemEmoji: pending.itemEmoji,
           itemLabel: pending.itemLabel,
@@ -52,8 +50,8 @@ export function useExpenseSave(onSaved?: (result: SaveExpenseResult) => void) {
         // stays in outbox
       }
 
-      pushRecentCategory(input.categoryId)
-      if (input.itemId) recordItemUsage(input.categoryId, input.itemId)
+      pushRecentItem(input.itemId)
+      recordItemUsage(input.itemId)
       if (input.store) setLastStore(input.store)
       hapticSave()
 

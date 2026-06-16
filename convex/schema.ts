@@ -31,7 +31,8 @@ export default defineSchema({
 
   expenses: defineTable({
     amount: v.number(),
-    categoryId: v.string(),
+    /** @deprecated Solo datos legacy; nuevos gastos no lo usan. */
+    categoryId: v.optional(v.string()),
     itemId: v.optional(v.string()),
     itemEmoji: v.optional(v.string()),
     itemLabel: v.optional(v.string()),

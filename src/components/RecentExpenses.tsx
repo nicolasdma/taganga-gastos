@@ -73,7 +73,6 @@ export function RecentExpenses({
       .map((p) => ({
       _id: p.clientId,
       amount: p.amount,
-      categoryId: p.categoryId,
       itemId: p.itemId,
       itemEmoji: p.itemEmoji,
       itemLabel: p.itemLabel,
@@ -95,7 +94,6 @@ export function RecentExpenses({
       .map((e) => ({
         _id: e._id,
         amount: e.amount,
-        categoryId: e.categoryId,
         itemId: e.itemId,
         itemEmoji: e.itemEmoji,
         itemLabel: e.itemLabel,
@@ -195,7 +193,6 @@ export function RecentExpenses({
                     onEdit?.({
                       _id: expense._id as EditableExpense['_id'],
                       amount: expense.amount,
-                      categoryId: expense.categoryId,
                       itemId: expense.itemId,
                       itemEmoji: expense.itemEmoji,
                       itemLabel: expense.itemLabel,

@@ -3,7 +3,7 @@ import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { hapticSave } from '@/lib/haptics'
-import { pushRecentCategory, setLastStore } from '@/lib/preferences'
+import { setLastStore } from '@/lib/preferences'
 import {
   enqueueReceiptGroup,
   removeReceiptGroupFromOutbox,
@@ -12,9 +12,8 @@ import {
 import type { ExpenseScope } from '@/lib/expenseScope'
 
 export interface SaveReceiptInput {
-  categoryId: string
   store?: string
-  items: Array<{ itemLabel: string; amount: number }>
+  items: Array<{ itemLabel: string; amount: number; itemEmoji?: string; itemId?: string }>
   receiptGroupId?: string
   scope?: ExpenseScope
 }
@@ -38,11 +37,12 @@ export function useReceiptSave(onSaved?: (result: SaveReceiptResult) => void) {
       try {
         const result = await addReceiptGroup({
           receiptGroupId: pending.receiptGroupId,
-          categoryId: pending.categoryId,
           store: pending.store,
           items: pending.items.map((item) => ({
             amount: item.amount,
             itemLabel: item.itemLabel,
+            itemEmoji: item.itemEmoji,
+            itemId: item.itemId,
             clientId: item.clientId,
           })),
           createdAt: pending.createdAt,
@@ -54,7 +54,6 @@ export function useReceiptSave(onSaved?: (result: SaveReceiptResult) => void) {
         // stays in receipt outbox
       }
 
-      pushRecentCategory(input.categoryId)
       if (input.store) setLastStore(input.store)
       hapticSave()
 
@@ -78,7 +77,8 @@ export function pendingReceiptToListRows(group: PendingReceiptGroup) {
   return group.items.map((item) => ({
     _id: item.clientId,
     amount: item.amount,
-    categoryId: group.categoryId,
+    itemId: item.itemId,
+    itemEmoji: item.itemEmoji ?? '🧾',
     itemLabel: item.itemLabel,
     store: group.store,
     receiptGroupId: group.receiptGroupId,
