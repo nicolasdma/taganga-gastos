@@ -102,6 +102,46 @@ export function createRobustAuthStorage(): TokenStorage {
   }
 }
 
+const HANDLED_CODE_KEY = '__convexAuthHandledCode'
+
+function readHandledCode(): string | null {
+  if (typeof window === 'undefined') return null
+  return safeGet(sessionStorage, HANDLED_CODE_KEY) ?? safeGet(localStorage, HANDLED_CODE_KEY)
+}
+
+function writeHandledCode(code: string): void {
+  safeSet(sessionStorage, HANDLED_CODE_KEY, code)
+  safeSet(localStorage, HANDLED_CODE_KEY, code)
+}
+
+/**
+ * Returns `true` at most once per OAuth `code` value, then `false` forever after.
+ *
+ * iOS Safari (and the PWA service worker) can re-navigate to the post-OAuth URL
+ * while `?code=` is still present, so Convex Auth redeems the same code twice.
+ * The second redemption fails server-side ("Invalid verification code") and the
+ * action returns `{ tokens: null }`. Convex Auth's client treats `tokens: null`
+ * as a sign-out and wipes the tokens the first redemption just stored, logging
+ * the user out on the next refresh.
+ *
+ * Used as `ConvexAuthProvider`'s `shouldHandleCode` prop to make redemption
+ * idempotent: the second navigation skips redemption and reads the already
+ * stored tokens instead.
+ */
+export function shouldHandleOAuthCode(): boolean {
+  if (typeof window === 'undefined') return false
+  const code = new URLSearchParams(window.location.search).get('code')
+  if (!code) return false
+  if (readHandledCode() === code) return false
+  writeHandledCode(code)
+  return true
+}
+
+/** Debug helper: whether an OAuth code has already been marked as handled. */
+export function hasHandledOAuthCodeMarker(): boolean {
+  return readHandledCode() !== null
+}
+
 export interface StorageAvailability {
   localWritable: boolean
   sessionWritable: boolean

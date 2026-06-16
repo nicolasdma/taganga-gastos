@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ConvexAuthProvider } from '@convex-dev/auth/react'
 import { ConvexReactClient } from 'convex/react'
-import { createRobustAuthStorage } from '@/lib/authStorage'
+import { createRobustAuthStorage, shouldHandleOAuthCode } from '@/lib/authStorage'
 // Fontsource bundles ship with font-display: swap in @font-face rules.
 import '@fontsource-variable/outfit'
 import '@fontsource-variable/fraunces'
@@ -15,7 +15,11 @@ const convex = convexUrl ? new ConvexReactClient(convexUrl) : null
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {convex ? (
-      <ConvexAuthProvider client={convex} storage={createRobustAuthStorage()}>
+      <ConvexAuthProvider
+        client={convex}
+        storage={createRobustAuthStorage()}
+        shouldHandleCode={shouldHandleOAuthCode}
+      >
         <App />
       </ConvexAuthProvider>
     ) : (

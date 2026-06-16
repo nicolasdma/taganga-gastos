@@ -1,7 +1,11 @@
 import { useMemo } from 'react'
 import { useAuthActions } from '@convex-dev/auth/react'
 import { useConvexAuth } from 'convex/react'
-import { getLocalAuthStoragePresence, getStorageAvailability } from '@/lib/authStorage'
+import {
+  getLocalAuthStoragePresence,
+  getStorageAvailability,
+  hasHandledOAuthCodeMarker,
+} from '@/lib/authStorage'
 
 function escapeNamespace(url: string) {
   return url.replace(/[^a-zA-Z0-9]/g, '')
@@ -38,6 +42,7 @@ export function DebugAuthScreen() {
   const localStoragePresence = useMemo(() => getLocalAuthStoragePresence(convexUrl), [convexUrl])
   const sessionStoragePresence = useMemo(() => getSessionAuthStoragePresence(convexUrl), [convexUrl])
   const storageAvailability = getStorageAvailability()
+  const handledOAuthCode = hasHandledOAuthCodeMarker()
   const localAuthKeys = listConvexAuthKeys(
     typeof window !== 'undefined' ? window.localStorage : undefined
   )
@@ -105,6 +110,10 @@ export function DebugAuthScreen() {
           <div className="flex justify-between gap-4">
             <dt className="text-white/70">sessionWritable</dt>
             <dd className="font-mono">{String(storageAvailability.sessionWritable)}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-white/70">handledOAuthCode</dt>
+            <dd className="font-mono">{String(handledOAuthCode)}</dd>
           </div>
         </dl>
         <div className="mt-4 text-xs text-white/80">
