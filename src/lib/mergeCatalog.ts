@@ -1,4 +1,4 @@
-import { normalizeItemSearchText, type CatalogItem } from '@/lib/items'
+import { normalizeItemSearchText, searchWordVariants, type CatalogItem } from '@/lib/items'
 
 export interface CustomItemRecord {
   itemId: string
@@ -7,9 +7,14 @@ export interface CustomItemRecord {
 }
 
 function labelKeywords(label: string): string[] {
-  return normalizeItemSearchText(label)
+  const words = normalizeItemSearchText(label)
     .split(/\s+/)
     .filter((word) => word.length >= 2)
+  const expanded = new Set<string>()
+  for (const word of words) {
+    for (const variant of searchWordVariants(word)) expanded.add(variant)
+  }
+  return [...expanded]
 }
 
 export function customItemToCatalog(item: CustomItemRecord): CatalogItem {

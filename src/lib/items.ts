@@ -19,8 +19,33 @@ const EXTRA_ITEMS: CatalogItem[] = [
   { id: 'bus', emoji: '🚌', label: 'Bus', keywords: ['bus', 'transmilenio', 'sitp'] },
   { id: 'parking', emoji: '🅿️', label: 'Parqueo', keywords: ['parqueo', 'parking', 'estacionamiento'] },
   { id: 'rent', emoji: '🏠', label: 'Arriendo', keywords: ['arriendo', 'alquiler', 'canon'] },
-  { id: 'utilities', emoji: '💡', label: 'Servicios', keywords: ['servicios', 'luz', 'agua', 'gas'] },
-  { id: 'internet', emoji: '📶', label: 'Internet', keywords: ['internet', 'wifi', 'fibra'] },
+  { id: 'utilities', emoji: '💡', label: 'Servicios', keywords: ['servicios', 'luz', 'agua', 'gas', 'epm', 'codensa', 'gas natural', 'acueducto'] },
+  { id: 'internet', emoji: '📶', label: 'Internet', keywords: ['internet', 'wifi', 'fibra', 'claro hogar', 'tigo hogar', 'movistar hogar'] },
+  {
+    id: 'cellphone',
+    emoji: '📱',
+    label: 'Celular / Plan',
+    keywords: [
+      'celular',
+      'telefono',
+      'movil',
+      'tigo',
+      'claro',
+      'movistar',
+      'wom',
+      'virgin',
+      'plan',
+      'recarga',
+      'operador',
+      'sim',
+    ],
+  },
+  {
+    id: 'digital-wallet',
+    emoji: '💳',
+    label: 'Billetera digital',
+    keywords: ['nequi', 'daviplata', 'bancolombia', 'transferencia', 'billetera'],
+  },
   { id: 'cleaning', emoji: '🧹', label: 'Limpieza', keywords: ['limpieza', 'aseo hogar'] },
   { id: 'household-supplies', emoji: '🧴', label: 'Insumos', keywords: ['insumos', 'detergente'] },
   { id: 'pharmacy', emoji: '💊', label: 'Farmacia', keywords: ['farmacia', 'medicina'] },
@@ -97,13 +122,80 @@ export function normalizeItemSearchText(text: string): string {
     .replace(/\p{Diacritic}/gu, '')
 }
 
+/** Stop words ignoradas al matchear por tokens (frases compuestas). */
+const SEARCH_STOP_WORDS = new Set([
+  'de',
+  'la',
+  'el',
+  'en',
+  'y',
+  'a',
+  'al',
+  'del',
+  'los',
+  'las',
+  'un',
+  'una',
+  'por',
+  'para',
+  'con',
+])
+
+/** Tokens significativos de una query — p.ej. "comida de gatito" → ["comida", "gatito"]. */
+export function tokenizeSearchQuery(query: string): string[] {
+  return normalizeItemSearchText(query.trim())
+    .split(/\s+/)
+    .filter((word) => word.length >= 2 && !SEARCH_STOP_WORDS.has(word))
+}
+
+/** Raíz simple ES: gatitos → gatito, casas → casa. Sin tocar palabras cortas (gas, mes). */
+export function searchWordStem(word: string): string {
+  if (word.length <= 3) return word
+  if (word.endsWith('es') && word.length > 4) return word.slice(0, -2)
+  if (word.endsWith('s') && !word.endsWith('ss')) return word.slice(0, -1)
+  return word
+}
+
+/** Variantes para matchear singular/plural en búsqueda. */
+export function searchWordVariants(word: string): string[] {
+  const stem = searchWordStem(word)
+  const variants = new Set([word])
+  if (stem !== word) variants.add(stem)
+  if (!word.endsWith('s')) variants.add(`${word}s`)
+  if (!word.endsWith('es') && word.length > 3) variants.add(`${word}es`)
+  return [...variants]
+}
+
+/** Un token de la query matchea el haystack (incluye plurales: gatitos ↔ gatito). */
+export function tokenMatchesHaystack(token: string, haystack: string): boolean {
+  const hayWords = haystack.split(/[\s_]+/)
+  for (const variant of searchWordVariants(token)) {
+    if (haystack.includes(variant)) return true
+    for (const hw of hayWords) {
+      if (hw === variant) return true
+      if (searchWordStem(hw) === searchWordStem(variant)) return true
+    }
+  }
+  return false
+}
+
 export function itemSearchHaystack(item: CatalogItem): string {
   const keywords = item.keywords?.join(' ') ?? ''
   return normalizeItemSearchText(`${item.label} ${item.id} ${keywords}`)
 }
 
 export function itemMatchesSearch(item: CatalogItem, query: string): boolean {
-  const normalizedQuery = normalizeItemSearchText(query.trim())
-  if (!normalizedQuery) return true
-  return itemSearchHaystack(item).includes(normalizedQuery)
+  const trimmed = query.trim()
+  if (!trimmed) return true
+
+  const normalizedQuery = normalizeItemSearchText(trimmed)
+  const haystack = itemSearchHaystack(item)
+
+  // Frase completa (incluye "comida de gatito" tal cual)
+  if (haystack.includes(normalizedQuery)) return true
+
+  // Todas las palabras significativas deben matchear (con plurales)
+  const tokens = tokenizeSearchQuery(trimmed)
+  if (tokens.length === 0) return haystack.includes(normalizedQuery)
+  return tokens.every((token) => tokenMatchesHaystack(token, haystack))
 }

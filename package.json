@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:convex": "convex dev",
+    "build:emoji-index": "node scripts/build-emoji-index.mjs",
+    "prebuild": "npm run build:emoji-index",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -33,6 +35,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
+    "emojibase-data": "^17.0.0",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",

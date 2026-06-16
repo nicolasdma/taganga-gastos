@@ -9,11 +9,14 @@ import {
   ItemPicker,
   itemPickerSubtitle,
   itemPickerTitle,
+  parseCreateRequest,
+  type CreateItemRequest,
   type SelectedItem,
 } from '@/components/ItemPicker'
 import { excludedNoticeClass, excludedRowClass } from '@/lib/expenseExcluded'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import type { EditableExpense } from '@/lib/expenseTypes'
+import { useCreateCustomItem } from '@/hooks/useCreateCustomItem'
 
 export type { EditableExpense }
 import { hapticSave } from '@/lib/haptics'
@@ -32,16 +35,18 @@ interface ExpenseEditContentProps {
   expense: EditableExpense
   step: Step
   createQuery: string
+  createEmoji?: string
   onClose: () => void
   onUpdated: () => void
   onStepChange: (step: Step) => void
-  onRequestCreate: (query: string) => void
+  onRequestCreate: (request: CreateItemRequest) => void
 }
 
 function ExpenseEditContent({
   expense,
   step,
   createQuery,
+  createEmoji,
   onClose,
   onUpdated,
   onStepChange,
@@ -49,6 +54,8 @@ function ExpenseEditContent({
 }: ExpenseEditContentProps) {
   const updateExpense = useMutation(api.expenses.updateExpense)
   const setExpenseExcluded = useMutation(api.expenses.setExpenseExcluded)
+  const { createCustomItem } = useCreateCustomItem()
+  const [creatingInline, setCreatingInline] = useState(false)
 
   const [amount, setAmount] = useState(expense.amount)
   const [selectedItem, setSelectedItem] = useState<SelectedItem>({
@@ -102,7 +109,20 @@ function ExpenseEditContent({
           setSelectedItem(item)
           onStepChange('edit')
         }}
-        onRequestCreate={onRequestCreate}
+        onRequestCreate={(request) => {
+          const { query, emoji } = parseCreateRequest(request)
+          if (emoji) {
+            setCreatingInline(true)
+            void createCustomItem({ label: query, emoji })
+              .then((item) => {
+                setSelectedItem(item)
+                onStepChange('edit')
+              })
+              .finally(() => setCreatingInline(false))
+            return
+          }
+          onRequestCreate({ query, emoji })
+        }}
       />
     )
   }
@@ -110,14 +130,19 @@ function ExpenseEditContent({
   if (step === 'create-item') {
     return (
       <CreateCustomItemForm
-        key={createQuery}
+        key={`${createQuery}:${createEmoji ?? ''}`}
         initialLabel={createQuery}
+        initialEmoji={createEmoji}
         onCreated={(item) => {
           setSelectedItem(item)
           onStepChange('edit')
         }}
       />
     )
+  }
+
+  if (creatingInline) {
+    return <p className="text-sm text-muted-foreground text-center py-10">Creando ítem…</p>
   }
 
   return (
@@ -182,6 +207,14 @@ function ExpenseEditSheetBody({
 }) {
   const [step, setStep] = useState<Step>('edit')
   const [createQuery, setCreateQuery] = useState('')
+  const [createEmoji, setCreateEmoji] = useState<string | undefined>()
+
+  const handleRequestCreate = (request: CreateItemRequest) => {
+    const { query, emoji } = parseCreateRequest(request)
+    setCreateQuery(query)
+    setCreateEmoji(emoji)
+    setStep('create-item')
+  }
 
   const handleBack = () => {
     if (step === 'item' || step === 'create-item') {
@@ -213,14 +246,15 @@ function ExpenseEditSheetBody({
         expense={expense}
         step={step}
         createQuery={createQuery}
+        createEmoji={createEmoji}
         sheetTitle={sheetTitle}
         sheetSubtitle={sheetSubtitle}
         headerAction={headerAction}
         onClose={onClose}
         onUpdated={onUpdated}
         handleBack={handleBack}
+        onRequestCreate={handleRequestCreate}
         setStep={setStep}
-        setCreateQuery={setCreateQuery}
       />
     </CraftKeyboardProvider>
   )
@@ -230,26 +264,28 @@ function ExpenseEditSheetPanel({
   expense,
   step,
   createQuery,
+  createEmoji,
   sheetTitle,
   sheetSubtitle,
   headerAction,
   onClose,
   onUpdated,
   handleBack,
+  onRequestCreate,
   setStep,
-  setCreateQuery,
 }: {
   expense: EditableExpense
   step: Step
   createQuery: string
+  createEmoji?: string
   sheetTitle: string | undefined
   sheetSubtitle: string | undefined
   headerAction: 'cancel' | 'back'
   onClose: () => void
   onUpdated: () => void
   handleBack: () => void
+  onRequestCreate: (request: CreateItemRequest) => void
   setStep: (step: Step) => void
-  setCreateQuery: (query: string) => void
 }) {
   const footer = useCraftKeyboardFooterSlot()
 
@@ -269,13 +305,13 @@ function ExpenseEditSheetPanel({
         expense={expense}
         step={step}
         createQuery={createQuery}
+        createEmoji={createEmoji}
         onClose={onClose}
         onUpdated={onUpdated}
-        onStepChange={setStep}
-        onRequestCreate={(query) => {
-          setCreateQuery(query)
-          setStep('create-item')
+        onStepChange={(next) => {
+          setStep(next)
         }}
+        onRequestCreate={onRequestCreate}
       />
     </BottomSheet>
   )

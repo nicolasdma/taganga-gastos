@@ -11,13 +11,21 @@ export default defineConfig({
       includeAssets: ['favicon.png', 'icon-192.png', 'icon-512.png', 'kitty-sprite.png'],
       manifest: false,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,json}'],
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/auth/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.convex\.(cloud|site)\/.*/i,
             handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /\/emoji-search-es\.json$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'emoji-search',
+              expiration: { maxEntries: 1, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
           },
         ],
       },

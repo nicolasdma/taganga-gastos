@@ -7,12 +7,14 @@ import {
   ItemPicker,
   itemPickerSubtitle,
   itemPickerTitle,
+  parseCreateRequest,
+  type CreateItemRequest,
   type SelectedItem,
 } from '@/components/ItemPicker'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import type { ExpenseScope } from '@/lib/expenseScope'
-import type { CreatedCustomItem } from '@/hooks/useCreateCustomItem'
+import { useCreateCustomItem, type CreatedCustomItem } from '@/hooks/useCreateCustomItem'
 
 export type { SaveExpenseResult }
 
@@ -122,10 +124,11 @@ interface ExpenseSheetContentProps {
   step: Step
   selectedItem: SelectedItem | null
   createQuery: string
+  createEmoji?: string
   onClose: () => void
   onSaved: (result: SaveExpenseResult) => void
   onSelectItem: (item: SelectedItem) => void
-  onRequestCreate: (query: string) => void
+  onRequestCreate: (request: CreateItemRequest) => void
   onItemCreated: (item: CreatedCustomItem) => void
 }
 
@@ -134,6 +137,7 @@ function ExpenseSheetContent({
   step,
   selectedItem,
   createQuery,
+  createEmoji,
   onClose,
   onSaved,
   onSelectItem,
@@ -152,8 +156,9 @@ function ExpenseSheetContent({
   if (step === 'create-item') {
     return (
       <CreateCustomItemForm
-        key={createQuery}
+        key={`${createQuery}:${createEmoji ?? ''}`}
         initialLabel={createQuery}
+        initialEmoji={createEmoji}
         onCreated={onItemCreated}
       />
     )
@@ -187,6 +192,9 @@ function ExpenseSheetBody({
   const [step, setStep] = useState<Step>(initial.step)
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(initial.selectedItem)
   const [createQuery, setCreateQuery] = useState('')
+  const [createEmoji, setCreateEmoji] = useState<string | undefined>()
+  const { createCustomItem } = useCreateCustomItem()
+  const [creatingInline, setCreatingInline] = useState(false)
 
   const handleSelectItem = (item: SelectedItem) => {
     setSelectedItem(item)
@@ -195,11 +203,26 @@ function ExpenseSheetBody({
 
   const handleItemCreated = (item: CreatedCustomItem) => {
     setCreateQuery('')
+    setCreateEmoji(undefined)
     handleSelectItem({
       itemId: item.itemId,
       itemEmoji: item.itemEmoji,
       itemLabel: item.itemLabel,
     })
+  }
+
+  const handleRequestCreate = (request: CreateItemRequest) => {
+    const { query, emoji } = parseCreateRequest(request)
+    if (emoji) {
+      setCreatingInline(true)
+      void createCustomItem({ label: query, emoji })
+        .then(handleItemCreated)
+        .finally(() => setCreatingInline(false))
+      return
+    }
+    setCreateQuery(query)
+    setCreateEmoji(undefined)
+    setStep('create-item')
   }
 
   const handleBack = () => {
@@ -233,13 +256,12 @@ function ExpenseSheetBody({
         intent={intent}
         selectedItem={selectedItem}
         createQuery={createQuery}
+        createEmoji={createEmoji}
         onSaved={onSaved}
         onSelectItem={handleSelectItem}
-        onRequestCreate={(query) => {
-          setCreateQuery(query)
-          setStep('create-item')
-        }}
+        onRequestCreate={handleRequestCreate}
         onItemCreated={handleItemCreated}
+        creatingInline={creatingInline}
       />
     </CraftKeyboardProvider>
   )
@@ -256,10 +278,12 @@ function ExpenseSheetPanel({
   intent,
   selectedItem,
   createQuery,
+  createEmoji,
   onSaved,
   onSelectItem,
   onRequestCreate,
   onItemCreated,
+  creatingInline,
 }: {
   open: boolean
   onClose: () => void
@@ -271,10 +295,12 @@ function ExpenseSheetPanel({
   intent: SheetIntent | null
   selectedItem: SelectedItem | null
   createQuery: string
+  createEmoji?: string
   onSaved: (result: SaveExpenseResult) => void
   onSelectItem: (item: SelectedItem) => void
-  onRequestCreate: (query: string) => void
+  onRequestCreate: (request: CreateItemRequest) => void
   onItemCreated: (item: CreatedCustomItem) => void
+  creatingInline?: boolean
 }) {
   const footer = useCraftKeyboardFooterSlot()
 
@@ -290,18 +316,23 @@ function ExpenseSheetPanel({
       scrollKey={step}
       footer={footer}
     >
-      {intent && (
-        <ExpenseSheetContent
-          intent={intent}
-          step={step}
-          selectedItem={selectedItem}
-          createQuery={createQuery}
-          onClose={onClose}
-          onSaved={onSaved}
-          onSelectItem={onSelectItem}
-          onRequestCreate={onRequestCreate}
-          onItemCreated={onItemCreated}
-        />
+      {creatingInline ? (
+        <p className="text-sm text-muted-foreground text-center py-10">Creando ítem…</p>
+      ) : (
+        intent && (
+          <ExpenseSheetContent
+            intent={intent}
+            step={step}
+            selectedItem={selectedItem}
+            createQuery={createQuery}
+            createEmoji={createEmoji}
+            onClose={onClose}
+            onSaved={onSaved}
+            onSelectItem={onSelectItem}
+            onRequestCreate={onRequestCreate}
+            onItemCreated={onItemCreated}
+          />
+        )
       )}
     </BottomSheet>
   )

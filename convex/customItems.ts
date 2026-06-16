@@ -6,6 +6,7 @@ import {
   requireAuthContext,
   type ExpenseView,
 } from './lib/auth'
+import { upsertAliasInternal } from './itemAliases'
 
 const expenseViewValidator = v.union(v.literal('shared'), v.literal('personal'))
 
@@ -128,6 +129,15 @@ export const createCustomItem = mutation({
       householdId,
       createdBy: userId,
       createdAt,
+    })
+
+    await upsertAliasInternal(ctx, {
+      householdId,
+      userId,
+      alias: label,
+      emoji,
+      label,
+      itemId,
     })
 
     return {
