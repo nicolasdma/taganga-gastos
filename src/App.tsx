@@ -22,13 +22,10 @@ import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import type { SaveExpenseResult } from '@/hooks/useExpenseSave'
 import type { SaveReceiptResult } from '@/hooks/useReceiptSave'
 import type { EditableExpense } from '@/lib/expenseTypes'
-import {
-  hasLocalAuthToken,
-  refreshAccessTokenIfNeeded,
-  requestStoragePersistence,
-} from '@/lib/authStorage'
+import { hasLocalAuthToken, requestStoragePersistence } from '@/lib/authStorage'
 import { removeFromOutbox, removeReceiptGroupFromOutbox } from '@/lib/outbox'
 import { useInviteCodeFromPath } from '@/hooks/useInviteCodeFromPath'
+import { DebugAuthScreen } from '@/screens/DebugAuthScreen'
 import { HomeScreen, CalendarScreen, LoginScreen } from '@/screens'
 
 const StatsScreen = lazy(() =>
@@ -192,30 +189,9 @@ function AuthenticatedApp() {
   const ensureUserReady = useMutation(api.households.ensureUserReady)
   const joinHousehold = useMutation(api.households.joinHousehold)
   const [bootstrapping, setBootstrapping] = useState(false)
-  const [recoveryState, setRecoveryState] = useState<'idle' | 'recovering' | 'failed'>('idle')
   const bootstrapAttempted = useRef(false)
 
   useDisplayModeAnalytics()
-
-  useEffect(() => {
-    void requestStoragePersistence()
-  }, [])
-
-  // Fallback: Convex Auth only loads JWT on mount; recover when refresh token remains.
-  useEffect(() => {
-    if (isLoading || isAuthenticated || !convexUrl || !hasStoredSession) return
-    if (recoveryState !== 'idle') return
-    setRecoveryState('recovering')
-
-    void (async () => {
-      const refreshed = await refreshAccessTokenIfNeeded(convexUrl)
-      if (refreshed) {
-        window.location.reload()
-        return
-      }
-      setRecoveryState('failed')
-    })()
-  }, [isLoading, isAuthenticated, convexUrl, hasStoredSession, recoveryState])
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -248,13 +224,7 @@ function AuthenticatedApp() {
     })()
   }, [isAuthenticated, household, inviteCodeFromPath, ensureUserReady, joinHousehold])
 
-  const recoveringSession =
-    !isAuthenticated &&
-    hasStoredSession &&
-    recoveryState !== 'failed' &&
-    (recoveryState === 'recovering' || recoveryState === 'idle')
-
-  if (isLoading || isRefreshing || bootstrapping || recoveringSession) {
+  if (isLoading || isRefreshing || bootstrapping) {
     return <AuthLoadingScreen />
   }
 
@@ -278,9 +248,15 @@ function AuthenticatedApp() {
 
 export default function App() {
   useVisualViewportHeight()
+  const isDebugAuthRoute =
+    typeof window !== 'undefined' && window.location.pathname === '/debug-auth'
 
   if (!import.meta.env.VITE_CONVEX_URL) {
     return <ConvexConfigError />
+  }
+
+  if (isDebugAuthRoute) {
+    return <DebugAuthScreen />
   }
 
   return (
