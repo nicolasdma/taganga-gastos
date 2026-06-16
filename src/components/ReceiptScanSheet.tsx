@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAction } from 'convex/react'
 import { CameraFabIcon } from '@/components/CameraFabIcon'
 import { api } from '../../convex/_generated/api'
 import { BottomSheet } from '@/components/BottomSheet'
-import { ReceiptReviewSheet } from '@/components/ReceiptReviewSheet'
+import {
+  ReceiptReviewContent,
+  type ReceiptReviewFooterState,
+} from '@/components/ReceiptReviewSheet'
 import { resizeReceiptImage } from '@/lib/receiptImage'
 import type { ReceiptScanResult } from '@/lib/receiptScan'
 import { Button } from '@/components/ui/button'
@@ -23,11 +26,13 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
   const [phase, setPhase] = useState<ScanPhase>('idle')
   const [error, setError] = useState<string | null>(null)
   const [scanResult, setScanResult] = useState<ReceiptScanResult | null>(null)
+  const [reviewFooter, setReviewFooter] = useState<ReceiptReviewFooterState | null>(null)
 
   const reset = () => {
     setPhase('idle')
     setError(null)
     setScanResult(null)
+    setReviewFooter(null)
   }
 
   const handleClose = () => {
@@ -67,21 +72,34 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
     }
   }
 
-  if (phase === 'review' && scanResult) {
-    return (
-      <ReceiptReviewSheet
-        open={open}
-        scanResult={scanResult}
-        onClose={handleClose}
-        onSaved={(result) => {
-          handleClose()
-          onSaved(result)
-        }}
-      />
-    )
-  }
+  const handleReviewFooterState = useCallback((state: ReceiptReviewFooterState) => {
+    setReviewFooter(state)
+  }, [])
 
-  const showSheet = open && (phase === 'loading' || phase === 'error')
+  const showSheet = open && (phase === 'loading' || phase === 'error' || phase === 'review')
+
+  const footer = (() => {
+    if (phase === 'error') {
+      return (
+        <Button className="w-full rounded-2xl" size="lg" onClick={openCamera}>
+          Reintentar
+        </Button>
+      )
+    }
+    if (phase === 'review' && reviewFooter) {
+      return (
+        <Button
+          size="lg"
+          className="w-full rounded-2xl"
+          disabled={!reviewFooter.canSave || reviewFooter.saving}
+          onClick={reviewFooter.save}
+        >
+          {reviewFooter.saving ? 'Guardando…' : 'Guardar'}
+        </Button>
+      )
+    }
+    return undefined
+  })()
 
   return (
     <>
@@ -100,7 +118,14 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
         }}
       />
 
-      <BottomSheet open={showSheet} onClose={handleClose}>
+      <BottomSheet
+        open={showSheet}
+        onClose={handleClose}
+        height="tall"
+        title={phase === 'review' ? 'Revisar ticket' : undefined}
+        headerAction="cancel"
+        footer={footer}
+      >
         {phase === 'loading' && (
           <div className="py-12 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-border/40 shadow-sm">
@@ -115,16 +140,20 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
           <div className="py-8 text-center">
             <div className="text-4xl mb-4">😕</div>
             <p className="text-base font-bold text-foreground mb-2">No se pudo leer el ticket</p>
-            <p className="text-sm text-muted-foreground mb-6 px-4">{error}</p>
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={handleClose}>
-                Cancelar
-              </Button>
-              <Button className="flex-1" onClick={openCamera}>
-                Reintentar
-              </Button>
-            </div>
+            <p className="text-sm text-muted-foreground px-4">{error}</p>
           </div>
+        )}
+
+        {phase === 'review' && scanResult && (
+          <ReceiptReviewContent
+            key={scanResult.items.map((i) => `${i.label}:${i.amount}`).join('|')}
+            scanResult={scanResult}
+            onSaved={(result) => {
+              handleClose()
+              onSaved(result)
+            }}
+            onFooterState={handleReviewFooterState}
+          />
         )}
       </BottomSheet>
     </>

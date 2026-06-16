@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
-import { BottomSheet } from '@/components/BottomSheet'
 import { useReceiptSave, type SaveReceiptResult } from '@/hooks/useReceiptSave'
 import { formatCOP } from '@/lib/currency'
 import {
@@ -12,19 +11,23 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-interface ReceiptReviewSheetProps {
-  open: boolean
-  scanResult: ReceiptScanResult
-  onClose: () => void
-  onSaved: (result: SaveReceiptResult) => void
+export interface ReceiptReviewFooterState {
+  canSave: boolean
+  saving: boolean
+  save: () => void
 }
 
-export function ReceiptReviewSheet({
-  open,
+interface ReceiptReviewContentProps {
+  scanResult: ReceiptScanResult
+  onSaved: (result: SaveReceiptResult) => void
+  onFooterState: (state: ReceiptReviewFooterState) => void
+}
+
+export function ReceiptReviewContent({
   scanResult,
-  onClose,
   onSaved,
-}: ReceiptReviewSheetProps) {
+  onFooterState,
+}: ReceiptReviewContentProps) {
   const { saveReceipt } = useReceiptSave(onSaved)
   const [items, setItems] = useState<EditableReceiptItem[]>(() =>
     toEditableItems(scanResult.items)
@@ -66,7 +69,9 @@ export function ReceiptReviewSheet({
     ])
   }
 
-  const handleSave = async () => {
+  const canSave = items.some((i) => i.label.trim() && i.amount > 0)
+
+  const handleSave = useCallback(async () => {
     if (saving) return
     const validItems = items.filter((i) => i.label.trim() && i.amount > 0)
     if (validItems.length === 0) return
@@ -83,130 +88,110 @@ export function ReceiptReviewSheet({
     } finally {
       setSaving(false)
     }
-  }
+  }, [items, saveReceipt, saving, store])
 
-  const canSave = items.some((i) => i.label.trim() && i.amount > 0)
+  useEffect(() => {
+    onFooterState({ canSave, saving, save: () => void handleSave() })
+  }, [canSave, saving, handleSave, onFooterState])
 
   return (
-    <BottomSheet open={open} onClose={onClose}>
-      <div className="pb-4">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm font-bold text-foreground">Revisar ticket</p>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-sm font-semibold text-muted-foreground"
-          >
-            Cancelar
-          </button>
-        </div>
-
-        <div className="mb-5">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Ítems
-          </p>
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-2 rounded-xl border border-border/60 bg-card px-2 py-2"
-              >
-                <span className="text-lg shrink-0">🧾</span>
-                <input
-                  type="text"
-                  value={item.label}
-                  onChange={(e) => updateLabel(item.id, e.target.value)}
-                  placeholder="Nombre del ítem"
-                  inputMode="text"
-                  enterKeyHint="done"
-                  className="flex-1 min-w-0 bg-transparent text-base font-semibold outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    editingAmountId === item.id ? commitAmount() : startEditAmount(item)
-                  }
-                  className={cn(
-                    'text-sm font-extrabold font-tabular shrink-0 px-2 py-1 rounded-lg',
-                    editingAmountId === item.id
-                      ? 'bg-coral/10 text-coral'
-                      : 'bg-muted/50 text-foreground'
-                  )}
-                >
-                  {formatCOP(editingAmountId === item.id ? amountDraft : item.amount)}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeItem(item.id)}
-                  aria-label="Quitar ítem"
-                  className="p-1 text-muted-foreground active:text-coral"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {editingAmountId && (
-            <div className="mt-3 rounded-xl border border-border/60 bg-muted/30 p-3">
-              <p className="text-xs font-semibold text-muted-foreground mb-2">Monto del ítem</p>
+    <div className="pb-2">
+      <div className="mb-5">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+          Ítems
+        </p>
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-2 rounded-xl border border-border/60 bg-card px-2 py-2"
+            >
+              <span className="text-lg shrink-0">🧾</span>
               <input
-                type="number"
-                inputMode="numeric"
+                type="text"
+                value={item.label}
+                onChange={(e) => updateLabel(item.id, e.target.value)}
+                placeholder="Nombre del ítem"
+                inputMode="text"
                 enterKeyHint="done"
-                value={amountDraft || ''}
-                onChange={(e) => setAmountDraft(Math.max(0, Number(e.target.value) || 0))}
-                className="w-full text-2xl font-extrabold font-tabular bg-transparent outline-none mb-2"
+                className="flex-1 min-w-0 bg-transparent text-base font-semibold outline-none"
               />
-              <Button size="sm" className="w-full" onClick={commitAmount}>
-                Listo
-              </Button>
+              <button
+                type="button"
+                onClick={() =>
+                  editingAmountId === item.id ? commitAmount() : startEditAmount(item)
+                }
+                className={cn(
+                  'text-sm font-extrabold font-tabular shrink-0 px-2 py-1 rounded-lg',
+                  editingAmountId === item.id
+                    ? 'bg-coral/10 text-coral'
+                    : 'bg-muted/50 text-foreground'
+                )}
+              >
+                {formatCOP(editingAmountId === item.id ? amountDraft : item.amount)}
+              </button>
+              <button
+                type="button"
+                onClick={() => removeItem(item.id)}
+                aria-label="Quitar ítem"
+                className="p-1 text-muted-foreground active:text-coral"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          )}
+          ))}
+        </div>
 
-          <button
-            type="button"
-            onClick={addItem}
-            className="mt-2 text-sm font-bold text-coral active:opacity-70"
-          >
-            + Agregar ítem
-          </button>
-
-          <div className="mt-3 pt-3 border-t border-border/40">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-muted-foreground">Total</span>
-              <span className="text-lg font-extrabold font-tabular">{formatCOP(itemsTotal)}</span>
-            </div>
-            {totalMismatch && (
-              <p className="text-[11px] text-amber-600 mt-1">
-                Total ticket: {formatCOP(scanResult.total!)} · Suma ítems: {formatCOP(itemsTotal)}
-              </p>
-            )}
+        {editingAmountId && (
+          <div className="mt-3 rounded-xl border border-border/60 bg-muted/30 p-3">
+            <p className="text-xs font-semibold text-muted-foreground mb-2">Monto del ítem</p>
+            <input
+              type="number"
+              inputMode="numeric"
+              enterKeyHint="done"
+              value={amountDraft || ''}
+              onChange={(e) => setAmountDraft(Math.max(0, Number(e.target.value) || 0))}
+              className="w-full text-2xl font-extrabold font-tabular bg-transparent outline-none mb-2"
+            />
+            <Button size="sm" className="w-full" onClick={commitAmount}>
+              Listo
+            </Button>
           </div>
-        </div>
+        )}
 
-        <div className="mt-4 mb-5">
-          <p className="text-sm font-bold text-foreground mb-2">Nombre del lugar (opcional)</p>
-          <input
-            type="text"
-            value={store}
-            onChange={(e) => setStore(e.target.value)}
-            placeholder="Ej: Olímpica, Juan Valdez, Éxito…"
-            inputMode="text"
-            enterKeyHint="done"
-            className="w-full rounded-xl border border-border/60 bg-card px-3 py-2.5 text-base font-semibold outline-none focus:ring-2 focus:ring-coral/30"
-          />
-        </div>
-
-        <Button
-          size="lg"
-          className="w-full rounded-2xl"
-          disabled={!canSave || saving}
-          onClick={() => void handleSave()}
+        <button
+          type="button"
+          onClick={addItem}
+          className="mt-2 text-sm font-bold text-coral active:opacity-70"
         >
-          {saving ? 'Guardando…' : 'Guardar'}
-        </Button>
+          + Agregar ítem
+        </button>
+
+        <div className="mt-3 pt-3 border-t border-border/40">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-muted-foreground">Total</span>
+            <span className="text-lg font-extrabold font-tabular">{formatCOP(itemsTotal)}</span>
+          </div>
+          {totalMismatch && (
+            <p className="text-[11px] text-amber-600 mt-1">
+              Total ticket: {formatCOP(scanResult.total!)} · Suma ítems: {formatCOP(itemsTotal)}
+            </p>
+          )}
+        </div>
       </div>
-    </BottomSheet>
+
+      <div>
+        <p className="text-sm font-bold text-foreground mb-2">Nombre del lugar (opcional)</p>
+        <input
+          type="text"
+          value={store}
+          onChange={(e) => setStore(e.target.value)}
+          placeholder="Ej: Olímpica, Juan Valdez, Éxito…"
+          inputMode="text"
+          enterKeyHint="done"
+          className="w-full rounded-xl border border-border/60 bg-card px-3 py-2.5 text-base font-semibold outline-none focus:ring-2 focus:ring-coral/30"
+        />
+      </div>
+    </div>
   )
 }

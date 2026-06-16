@@ -474,18 +474,6 @@
     line-height: 1.25rem;
   }
 
-  .item-picker--compact .item-picker-search-input {
-    border-radius: 0.75rem;
-    padding: 0.5rem 0.875rem;
-    font-size: 0.9375rem;
-    line-height: 1.125rem;
-  }
-
-  .item-picker--compact .label-stitch {
-    font-size: 0.625rem;
-    margin-bottom: 0.125rem;
-  }
-
   .sheet-panel--open {
     transform: translate3d(0, 0, 0);
   }

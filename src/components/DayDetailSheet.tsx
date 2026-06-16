@@ -135,21 +135,22 @@ export function DayDetailSheet({ date, view, onClose, onEditExpense }: DayDetail
   )
 
   return (
-    <BottomSheet open={!!date} onClose={onClose}>
+    <BottomSheet
+      open={!!date}
+      onClose={onClose}
+      height="tall"
+      title={date ? formatDisplayDate(date) : undefined}
+      subtitle={
+        date
+          ? expenses === undefined
+            ? '—'
+            : formatCOP(dayTotal)
+          : undefined
+      }
+      headerAction="cancel"
+    >
       {date && (
         <div className="pb-4">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-            {formatDisplayDate(date)}
-          </p>
-          <p
-            className={cn(
-              'text-3xl font-extrabold font-tabular text-foreground tracking-tight mb-4',
-              expenses === undefined && 'animate-pulse text-muted-foreground'
-            )}
-          >
-            {expenses === undefined ? '—' : formatCOP(dayTotal)}
-          </p>
-
           {expenses === undefined ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (

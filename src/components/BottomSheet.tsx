@@ -27,6 +27,12 @@ interface BottomSheetProps {
   cancelLabel?: string
   backLabel?: string
   onBack?: () => void
+  /**
+   * Fixed CTA below the scrollable body (does not scroll with content).
+   * Use for primary actions: Guardar, Reintentar, confirmaciones.
+   * Keep secondary edits and lists in children; use body CTAs only when
+   * the action is contextual to scrolled content (e.g. keypad presets).
+   */
   footer?: ReactNode
   /** Render at document.body to escape parent stacking contexts. */
   portal?: boolean

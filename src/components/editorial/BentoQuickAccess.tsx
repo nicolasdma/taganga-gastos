@@ -132,6 +132,8 @@ export function BentoQuickAccess({ view, onOpenSheet, onSaved }: BentoQuickAcces
       </div>
       </div>
 
+      {/* Standalone sheet (not ExpenseSheet wizard): portal+elevated escapes bento
+          stacking context and sits above FABs without nesting a second expense sheet. */}
       <CreateCustomItemSheet
         open={createItemOpen}
         onClose={() => setCreateItemOpen(false)}
