@@ -41,6 +41,12 @@
     --yarn-blush: #e8cfc4;
     --yarn-sage: #b8c4b0;
 
+    /* BottomSheet + craft keyboard — single motion system */
+    --sheet-motion-duration: 420ms;
+    --sheet-motion-ease: cubic-bezier(0.32, 0.72, 0, 1);
+    --keyboard-motion-duration: 420ms;
+    --keyboard-motion-ease: cubic-bezier(0.32, 0.72, 0, 1);
+
     /* Nosotros ↔ Míos — content slide + brandmark kitties (keep in sync with EXPENSE_VIEW_TRANSITION_MS) */
     --expense-view-transition-duration: 800ms;
     --expense-view-transition-ease: cubic-bezier(0.19, 1, 0.22, 1);
@@ -587,41 +593,42 @@
     max-height: min(90dvh, var(--vv-height, 100dvh));
     overflow: hidden;
     transform: translate3d(0, 100%, 0);
-    transition: transform 480ms cubic-bezier(0.32, 0.72, 0, 1);
+    transition: transform var(--sheet-motion-duration) var(--sheet-motion-ease);
   }
 
   .sheet-panel--standard {
     max-height: min(80dvh, var(--vv-height, 100dvh));
   }
 
-  /* Craft keyboard open: lock panel height so filtering results does not collapse the sheet. */
-  .sheet-panel--keyboard-open {
-    min-height: min(90dvh, var(--vv-height, 100dvh));
-    transition:
-      transform 480ms cubic-bezier(0.32, 0.72, 0, 1),
-      min-height 280ms cubic-bezier(0.32, 0.72, 0, 1);
-  }
-
-  .sheet-panel--keyboard-open.sheet-panel--standard {
-    min-height: min(80dvh, var(--vv-height, 100dvh));
-  }
-
-  .sheet-body--keyboard-open {
+  /* Keyboard open: height animated via useSheetPanelHeightTransition (FLIP); class drives body layout. */
+  .sheet-panel--keyboard-open .sheet-body {
     flex: 1 1 auto;
     min-height: 12rem;
+    transition: min-height var(--sheet-motion-duration) var(--sheet-motion-ease);
   }
 
-  .sheet-body--keyboard-open .item-picker-results {
+  .sheet-panel--keyboard-open .item-picker-results {
     min-height: 10rem;
+    transition: min-height var(--sheet-motion-duration) var(--sheet-motion-ease);
+  }
+
+  .sheet-body {
+    transition: min-height var(--sheet-motion-duration) var(--sheet-motion-ease);
+  }
+
+  .sheet-footer {
+    transition:
+      opacity var(--sheet-motion-duration) var(--sheet-motion-ease),
+      transform var(--sheet-motion-duration) var(--sheet-motion-ease);
   }
   .sheet-backdrop {
     background: rgba(26, 39, 68, 0);
     backdrop-filter: blur(0px);
     -webkit-backdrop-filter: blur(0px);
     transition:
-      background 480ms cubic-bezier(0.32, 0.72, 0, 1),
-      backdrop-filter 480ms cubic-bezier(0.32, 0.72, 0, 1),
-      -webkit-backdrop-filter 480ms cubic-bezier(0.32, 0.72, 0, 1);
+      background var(--sheet-motion-duration) var(--sheet-motion-ease),
+      backdrop-filter var(--sheet-motion-duration) var(--sheet-motion-ease),
+      -webkit-backdrop-filter var(--sheet-motion-duration) var(--sheet-motion-ease);
   }
 
   .sheet-backdrop--open {
@@ -663,7 +670,9 @@
     background: linear-gradient(90deg, hsl(218 28% 78%), var(--cobalt-glaze), hsl(218 28% 78%));
     opacity: 0.55;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-    transition: width 200ms ease, opacity 200ms ease;
+    transition:
+      width var(--sheet-motion-duration) var(--sheet-motion-ease),
+      opacity var(--sheet-motion-duration) var(--sheet-motion-ease);
   }
 
   .sheet-panel--open .sheet-handle-bar {
@@ -672,7 +681,7 @@
   }
 
   .sheet-body {
-    animation: sheet-content-in 480ms cubic-bezier(0.32, 0.72, 0, 1) 60ms both;
+    animation: sheet-content-in var(--sheet-motion-duration) var(--sheet-motion-ease) 40ms both;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
   }
@@ -680,7 +689,7 @@
   @keyframes sheet-content-in {
     from {
       opacity: 0;
-      transform: translate3d(0, 12px, 0);
+      transform: translate3d(0, 10px, 0);
     }
     to {
       opacity: 1;
@@ -688,10 +697,14 @@
     }
   }
 
+  .sheet-header {
+    transition: opacity var(--sheet-motion-duration) var(--sheet-motion-ease);
+  }
+
   .craft-keyboard-slide {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 340ms cubic-bezier(0.32, 0.72, 0, 1);
+    transition: grid-template-rows var(--keyboard-motion-duration) var(--keyboard-motion-ease);
   }
 
   .craft-keyboard-slide--open {
@@ -704,8 +717,8 @@
     opacity: 0;
     transform: translate3d(0, 100%, 0);
     transition:
-      transform 340ms cubic-bezier(0.32, 0.72, 0, 1),
-      opacity 340ms cubic-bezier(0.32, 0.72, 0, 1);
+      transform var(--keyboard-motion-duration) var(--keyboard-motion-ease),
+      opacity calc(var(--keyboard-motion-duration) * 0.85) var(--keyboard-motion-ease);
     will-change: transform, opacity;
     pointer-events: none;
   }
@@ -734,14 +747,26 @@
     padding-top: 0;
   }
 
+  .craft-sheet-keyboard-footer {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+    transition:
+      opacity var(--keyboard-motion-duration) var(--keyboard-motion-ease),
+      transform var(--keyboard-motion-duration) var(--keyboard-motion-ease);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .sheet-backdrop,
     .sheet-panel,
     .sheet-body,
+    .sheet-footer,
+    .sheet-header,
     .sheet-handle-bar,
     .craft-keyboard-slide {
       transition-duration: 0.01ms !important;
       transition-delay: 0ms !important;
+      animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
     }
 
     .craft-keyboard-slide__panel {

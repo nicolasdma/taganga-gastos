@@ -10,7 +10,7 @@ interface CraftSheetKeyboardFooterProps {
 /** Keyboard dock + optional actions (e.g. Guardar). Renders nothing when no field is focused. */
 export function CraftSheetKeyboardFooter({ children, onHidden }: CraftSheetKeyboardFooterProps) {
   return (
-    <div className="space-y-2">
+    <div className="craft-sheet-keyboard-footer space-y-2">
       <CraftKeyboardDock onHidden={onHidden} />
       {children}
     </div>

@@ -9,8 +9,10 @@ import {
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 import { useCraftKeyboardPanelOpen } from '@/components/keyboard/CraftSheetKeyboardFooter'
+import { useSheetPanelHeightTransition } from '@/hooks/useSheetPanelHeightTransition'
+import { SHEET_MOTION_MS } from '@/lib/sheetMotion'
 
-const CLOSE_MS = 480
+const CLOSE_MS = SHEET_MOTION_MS
 
 export type SheetHeight = 'standard' | 'tall'
 
@@ -81,6 +83,14 @@ export function BottomSheet({
     headerAction ?? (title !== undefined ? 'cancel' : 'none')
 
   const keyboardOpen = useCraftKeyboardPanelOpen()
+
+  useSheetPanelHeightTransition(panelRef, {
+    keyboardOpen,
+    entered,
+    dragging,
+    closing,
+    heightVariant: height,
+  })
 
   const clearCloseTimer = () => {
     if (closeTimer.current) {
@@ -331,10 +341,7 @@ export function BottomSheet({
 
         <div
           ref={bodyRef}
-          className={cn(
-            'sheet-body flex-auto min-h-0 overflow-y-auto scrollbar-none px-4 pb-safe touch-pan-y',
-            keyboardOpen && 'sheet-body--keyboard-open'
-          )}
+          className="sheet-body flex-auto min-h-0 overflow-y-auto scrollbar-none px-4 pb-safe touch-pan-y"
         >
           {subtitle && (
             <p className="text-[11px] text-muted-foreground font-medium text-center pb-3">
