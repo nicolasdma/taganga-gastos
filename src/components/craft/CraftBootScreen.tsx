@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CraftBootScreenContent } from '@/components/craft/CraftBootScreenContent'
 import { screenMessageA11y } from '@/components/craft/CraftScreenMessage'
-import { cn } from '@/lib/utils'
 
 export const KITTY_SPRITE_SRC = '/kitty-sprite.png'
 
