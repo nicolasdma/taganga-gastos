@@ -806,6 +806,8 @@
 
   /* ─── Kitty pixel sprite (256×256, frames 32×32) ─── */
   .kitty-sprite-wrap {
+    --kitty-rise: 0px;
+    --kitty-flip: 1;
     width: var(--kitty-size, 48px);
     height: var(--kitty-size, 48px);
     flex-shrink: 0;
@@ -813,12 +815,16 @@
   }
 
   .kitty-sprite-wrap--rise {
+    --kitty-rise: 18px;
     overflow: hidden;
   }
 
   .kitty-sprite-wrap--rise .kitty-sprite {
-    transform: translateY(calc(var(--kitty-rise, 18px) * -1));
-    height: calc(100% + var(--kitty-rise, 18px));
+    height: calc(100% + var(--kitty-rise));
+  }
+
+  .kitty-sprite-wrap--flip {
+    --kitty-flip: -1;
   }
 
   .editorial-brandmark {
@@ -907,10 +913,6 @@
     min-height: var(--editorial-brandmark-footprint-h, 6.85rem);
   }
 
-  .kitty-sprite-wrap--flip {
-    transform: scaleX(-1);
-  }
-
   .kitty-sprite {
     --kitty-row: 0;
     width: 100%;
@@ -921,6 +923,7 @@
     background-position: 0 calc(var(--kitty-row) * var(--kitty-size) * -1);
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    transform: translateY(calc(var(--kitty-rise) * -1)) scaleX(var(--kitty-flip));
   }
 
   /* Helpers — Y fijado por --kitty-row, solo anima X */
@@ -942,15 +945,6 @@
     }
   }
 
-  @keyframes kitty-x4-flip {
-    from {
-      background-position: calc(var(--kitty-size) * -3) calc(var(--kitty-row) * var(--kitty-size) * -1);
-    }
-    to {
-      background-position: 0 calc(var(--kitty-row) * var(--kitty-size) * -1);
-    }
-  }
-
   @keyframes kitty-x2 {
     from {
       background-position: 0 calc(var(--kitty-row) * var(--kitty-size) * -1);
@@ -965,11 +959,7 @@
   }
 
   .kitty-sprite--look {
-    animation: kitty-x4 0.6s steps(4) 1 both;
-  }
-
-  .kitty-sprite-wrap--flip .kitty-sprite--look {
-    animation-name: kitty-x4-flip;
+    animation: kitty-x4 0.6s steps(4) 1;
   }
 
   .kitty-sprite--nod {
@@ -977,7 +967,7 @@
   }
 
   .kitty-sprite--stretch {
-    animation: kitty-x2 0.45s steps(2) 2 both;
+    animation: kitty-x2 0.45s steps(2) 2;
   }
 
   .kitty-sprite--static {

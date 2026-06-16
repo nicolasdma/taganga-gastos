@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type AnimationEvent, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 
 export type KittyAnim = 'idle' | 'look' | 'nod' | 'stretch' | 'static'
@@ -32,14 +32,6 @@ const ANIM_CLASS: Record<KittyAnim, string> = {
 
 const PLAYFUL: KittyAnim[] = ['look', 'nod', 'stretch']
 
-const PLAY_MS: Record<KittyAnim, number> = {
-  idle: 0,
-  look: 700,
-  nod: 1100,
-  stretch: 1000,
-  static: 0,
-}
-
 export function KittySprite({
   className,
   size = 64,
@@ -49,8 +41,9 @@ export function KittySprite({
   playful = anim === 'idle',
 }: KittySpriteProps) {
   const [active, setActive] = useState<KittyAnim>(anim)
+  const spriteRef = useRef<HTMLDivElement>(null)
   const playfulTimers = useRef<ReturnType<typeof setTimeout>[]>([])
-  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const onAnimEnd = useRef<(() => void) | null>(null)
   const busy = useRef(false)
 
   const clearPlayfulTimers = () => {
@@ -63,9 +56,30 @@ export function KittySprite({
     playfulTimers.current.push(id)
   }
 
+  const snapToIdleFrame = () => {
+    const el = spriteRef.current
+    if (!el) return
+    el.style.animation = 'none'
+    el.style.setProperty('--kitty-row', String(ROW.idle))
+    void el.offsetWidth
+    el.style.removeProperty('animation')
+  }
+
   const goIdle = () => {
+    onAnimEnd.current = null
+    snapToIdleFrame()
     busy.current = false
     setActive('idle')
+  }
+
+  const handleAnimationEnd = (event: AnimationEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (!event.animationName.startsWith('kitty-x')) return
+
+    const done = onAnimEnd.current
+    if (!done) return
+    onAnimEnd.current = null
+    done()
   }
 
   useEffect(() => {
@@ -76,20 +90,9 @@ export function KittySprite({
   useEffect(() => {
     if (pulseKey <= 0) return
 
-    if (pulseTimer.current) clearTimeout(pulseTimer.current)
     busy.current = true
-
-    pulseTimer.current = setTimeout(() => {
-      setActive('nod')
-      pulseTimer.current = setTimeout(() => {
-        pulseTimer.current = null
-        goIdle()
-      }, PLAY_MS.nod)
-    }, 0)
-
-    return () => {
-      if (pulseTimer.current) clearTimeout(pulseTimer.current)
-    }
+    onAnimEnd.current = goIdle
+    queueMicrotask(() => setActive('nod'))
   }, [pulseKey])
 
   // Acciones random — timers separados del pulse para no romper el loop
@@ -105,20 +108,23 @@ export function KittySprite({
         }
         const pick = PLAYFUL[Math.floor(Math.random() * PLAYFUL.length)]
         busy.current = true
-        setActive(pick)
-        later(() => {
+        onAnimEnd.current = () => {
           goIdle()
           schedule()
-        }, PLAY_MS[pick])
+        }
+        setActive(pick)
       }, wait)
     }
 
     schedule()
-    return clearPlayfulTimers
+    return () => {
+      clearPlayfulTimers()
+      onAnimEnd.current = null
+    }
   }, [playful, anim])
 
-  const wrapStyle = { '--kitty-size': `${size}px` } as React.CSSProperties
-  const spriteStyle = { '--kitty-row': ROW[active] } as React.CSSProperties
+  const wrapStyle = { '--kitty-size': `${size}px` } as CSSProperties
+  const spriteStyle = { '--kitty-row': ROW[active] } as CSSProperties
 
   return (
     <div
@@ -126,8 +132,10 @@ export function KittySprite({
       style={wrapStyle}
     >
       <div
+        ref={spriteRef}
         className={cn('kitty-sprite', ANIM_CLASS[active])}
         style={spriteStyle}
+        onAnimationEnd={handleAnimationEnd}
         role="img"
         aria-label="Gatito Taganga"
       />
