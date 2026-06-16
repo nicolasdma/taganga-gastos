@@ -31,6 +31,8 @@ interface AmountKeypadProps {
   primaryLabel?: string
   scope?: ExpenseScope
   onScopeChange?: (scope: ExpenseScope) => void
+  /** Hide cancel/back row — sheet header owns navigation. */
+  hideNav?: boolean
 }
 
 export function AmountKeypad({
@@ -50,6 +52,7 @@ export function AmountKeypad({
   primaryLabel,
   scope,
   onScopeChange,
+  hideNav = false,
 }: AmountKeypadProps) {
   const [editingLabel, setEditingLabel] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -95,29 +98,31 @@ export function AmountKeypad({
 
   return (
     <div className="flex flex-col pb-2">
-      <div className="flex items-center justify-between mb-3">
-        {onCancel ? (
-          <button type="button" onClick={onCancel} className="text-sm font-semibold text-muted-foreground">
-            Cancelar
-          </button>
-        ) : onBack ? (
-          <button type="button" onClick={onBack} className="text-sm font-semibold text-muted-foreground">
-            Atrás
-          </button>
-        ) : (
+      {!hideNav && (
+        <div className="flex items-center justify-between mb-3">
+          {onCancel ? (
+            <button type="button" onClick={onCancel} className="text-sm font-semibold text-muted-foreground">
+              Cancelar
+            </button>
+          ) : onBack ? (
+            <button type="button" onClick={onBack} className="text-sm font-semibold text-muted-foreground">
+              Atrás
+            </button>
+          ) : (
+            <div className="w-16" />
+          )}
+          {!itemHeader && !categoryHeader && title && (
+            <div className="text-center min-w-0 flex-1 px-3">
+              <p className="font-display text-sm font-bold text-foreground truncate">{title}</p>
+              {subtitle && (
+                <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
+              )}
+            </div>
+          )}
+          {(itemHeader || categoryHeader) && <div className="flex-1" />}
           <div className="w-16" />
-        )}
-        {!itemHeader && !categoryHeader && title && (
-          <div className="text-center min-w-0 flex-1 px-3">
-            <p className="font-display text-sm font-bold text-foreground truncate">{title}</p>
-            {subtitle && (
-              <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
-            )}
-          </div>
-        )}
-        {(itemHeader || categoryHeader) && <div className="flex-1" />}
-        <div className="w-16" />
-      </div>
+        </div>
+      )}
 
       {categoryHeader && (
         <div className="text-center mb-4 px-1">

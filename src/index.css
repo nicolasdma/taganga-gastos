@@ -447,20 +447,9 @@
     transition: transform 480ms cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  /* Item picker search: fill visible area above keyboard (WhatsApp-style). */
-  html[data-item-picker-search] .sheet-panel {
-    max-height: var(--vv-height, 100dvh);
-  }
-
-  html[data-item-picker-search] .sheet-handle {
-    display: none;
-  }
-
-  html[data-item-picker-search] .sheet-content {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding-top: 0.75rem;
+  .sheet-panel--standard {
+    height: min(52dvh, var(--vv-height, 100dvh));
+    max-height: min(52dvh, var(--vv-height, 100dvh));
   }
   .sheet-backdrop {
     background: rgba(26, 39, 68, 0);
@@ -531,9 +520,10 @@
     opacity: 0.7;
   }
 
-  .sheet-content {
+  .sheet-body {
     animation: sheet-content-in 480ms cubic-bezier(0.32, 0.72, 0, 1) 60ms both;
     overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   @keyframes sheet-content-in {
@@ -550,7 +540,7 @@
   @media (prefers-reduced-motion: reduce) {
     .sheet-backdrop,
     .sheet-panel,
-    .sheet-content,
+    .sheet-body,
     .sheet-handle-bar {
       transition-duration: 0.01ms !important;
       transition-delay: 0ms !important;

@@ -1,14 +1,24 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { AmountKeypad } from '@/components/AmountKeypad'
 import { BottomSheet } from '@/components/BottomSheet'
-import { ItemPicker, type SelectedItem } from '@/components/ItemPicker'
+import { CreateCustomItemForm } from '@/components/CreateCustomItemSheet'
+import {
+  ItemPicker,
+  itemPickerSubtitle,
+  itemPickerTitle,
+  type SelectedItem,
+} from '@/components/ItemPicker'
+import { ITEM_CATALOG } from '@/lib/items'
+import { mergeCatalogWithCustom } from '@/lib/mergeCatalog'
+import { useCustomItems } from '@/hooks/useCustomItems'
 import { excludedNoticeClass, excludedRowClass } from '@/lib/expenseExcluded'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import type { EditableExpense } from '@/lib/expenseTypes'
 import { hapticSave } from '@/lib/haptics'
 import { pushRecentItem } from '@/lib/preferences'
+import { useExpenseView } from '@/hooks/useExpenseView'
 import { cn } from '@/lib/utils'
 
 interface ExpenseEditSheetProps {
@@ -17,19 +27,30 @@ interface ExpenseEditSheetProps {
   onUpdated: () => void
 }
 
-type Step = 'edit' | 'item'
+type Step = 'edit' | 'item' | 'create-item'
 
 interface ExpenseEditContentProps {
   expense: EditableExpense
+  step: Step
+  createQuery: string
   onClose: () => void
   onUpdated: () => void
+  onStepChange: (step: Step) => void
+  onRequestCreate: (query: string) => void
 }
 
-function ExpenseEditContent({ expense, onClose, onUpdated }: ExpenseEditContentProps) {
+function ExpenseEditContent({
+  expense,
+  step,
+  createQuery,
+  onClose,
+  onUpdated,
+  onStepChange,
+  onRequestCreate,
+}: ExpenseEditContentProps) {
   const updateExpense = useMutation(api.expenses.updateExpense)
   const setExpenseExcluded = useMutation(api.expenses.setExpenseExcluded)
 
-  const [step, setStep] = useState<Step>('edit')
   const [amount, setAmount] = useState(expense.amount)
   const [selectedItem, setSelectedItem] = useState<SelectedItem>({
     itemId: expense.itemId ?? 'other',
@@ -80,7 +101,20 @@ function ExpenseEditContent({ expense, onClose, onUpdated }: ExpenseEditContentP
       <ItemPicker
         onSelect={(item) => {
           setSelectedItem(item)
-          setStep('edit')
+          onStepChange('edit')
+        }}
+        onRequestCreate={onRequestCreate}
+      />
+    )
+  }
+
+  if (step === 'create-item') {
+    return (
+      <CreateCustomItemForm
+        initialLabel={createQuery}
+        onCreated={(item) => {
+          setSelectedItem(item)
+          onStepChange('edit')
         }}
       />
     )
@@ -96,7 +130,7 @@ function ExpenseEditContent({ expense, onClose, onUpdated }: ExpenseEditContentP
 
       <button
         type="button"
-        onClick={() => setStep('item')}
+        onClick={() => onStepChange('item')}
         className={cn(
           'w-full mb-4 flex items-center justify-between gap-2 rounded-xl px-3 py-2.5',
           'border text-left active:opacity-80',
@@ -112,12 +146,10 @@ function ExpenseEditContent({ expense, onClose, onUpdated }: ExpenseEditContentP
       </button>
 
       <AmountKeypad
-        title={`${display.emoji} ${display.label}`}
-        subtitle={excluded ? 'Editar · no cuenta' : 'Editar monto'}
+        hideNav
         value={amount}
         onChange={setAmount}
         onSave={handleSave}
-        onCancel={onClose}
         saving={saving}
         primaryLabel="Guardar"
       />
@@ -140,14 +172,76 @@ function ExpenseEditContent({ expense, onClose, onUpdated }: ExpenseEditContentP
 }
 
 export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditSheetProps) {
+  const { view } = useExpenseView()
+  const customItems = useCustomItems(view)
+
+  const catalogSize = useMemo(() => {
+    if (customItems === undefined) return ITEM_CATALOG.length
+    return mergeCatalogWithCustom(ITEM_CATALOG, customItems).length
+  }, [customItems])
+
+  const [step, setStep] = useState<Step>('edit')
+  const [createQuery, setCreateQuery] = useState('')
+
+  useEffect(() => {
+    if (expense) {
+      setStep('edit')
+      setCreateQuery('')
+    }
+  }, [expense?._id])
+
+  const handleBack = () => {
+    if (step === 'item' || step === 'create-item') {
+      setStep('edit')
+      return
+    }
+    onClose()
+  }
+
+  const sheetTitle = (() => {
+    if (step === 'item') return itemPickerTitle()
+    if (step === 'create-item') return '✏️ Nuevo ítem'
+    if (expense) {
+      const display = formatExpenseLabel(expense)
+      return `${display.emoji} ${display.label}`
+    }
+    return 'Editar gasto'
+  })()
+
+  const sheetSubtitle = (() => {
+    if (step === 'item') return itemPickerSubtitle(catalogSize)
+    if (step === 'create-item') {
+      return 'Empieza en Míos. Si lo usás en un gasto compartido, queda para todo el hogar.'
+    }
+    if (expense?.excluded) return 'Editar · no cuenta en totales'
+    return 'Editar monto'
+  })()
+
+  const headerAction = step === 'edit' ? 'cancel' : 'back'
+
   return (
-    <BottomSheet open={expense !== null} onClose={onClose}>
+    <BottomSheet
+      open={expense !== null}
+      onClose={onClose}
+      height="standard"
+      title={sheetTitle}
+      subtitle={sheetSubtitle}
+      headerAction={headerAction}
+      onBack={handleBack}
+    >
       {expense && (
         <ExpenseEditContent
           key={`${expense._id}:${expense.excluded}`}
           expense={expense}
+          step={step}
+          createQuery={createQuery}
           onClose={onClose}
           onUpdated={onUpdated}
+          onStepChange={setStep}
+          onRequestCreate={(query) => {
+            setCreateQuery(query)
+            setStep('create-item')
+          }}
         />
       )}
     </BottomSheet>

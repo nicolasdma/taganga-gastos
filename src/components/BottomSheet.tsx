@@ -11,12 +11,24 @@ import { cn } from '@/lib/utils'
 
 const CLOSE_MS = 480
 
+export type SheetHeight = 'standard' | 'tall'
+
 interface BottomSheetProps {
   open: boolean
   onClose: () => void
   children: ReactNode
   className?: string
-  /** Render at document.body to escape parent stacking contexts (e.g. main z-10). */
+  /** standard = 52dvh (expense flows), tall = up to 90dvh (receipts, calendar) */
+  height?: SheetHeight
+  title?: string
+  subtitle?: string
+  /** Left header action. Default cancel when title is set, none otherwise. */
+  headerAction?: 'cancel' | 'back' | 'none'
+  cancelLabel?: string
+  backLabel?: string
+  onBack?: () => void
+  footer?: ReactNode
+  /** Render at document.body to escape parent stacking contexts. */
   portal?: boolean
   /** Above FABs (z-40), nav (z-45) and default sheets (z-50). */
   elevated?: boolean
@@ -27,6 +39,14 @@ export function BottomSheet({
   onClose,
   children,
   className,
+  height = 'tall',
+  title,
+  subtitle,
+  headerAction,
+  cancelLabel = 'Cancelar',
+  backLabel = 'Atrás',
+  onBack,
+  footer,
   portal = false,
   elevated = false,
 }: BottomSheetProps) {
@@ -39,6 +59,7 @@ export function BottomSheet({
   const closingRef = useRef(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
 
   const startY = useRef(0)
   const lastY = useRef(0)
@@ -48,6 +69,9 @@ export function BottomSheet({
   if (children) {
     childRef.current = children
   }
+
+  const resolvedHeaderAction =
+    headerAction ?? (title !== undefined ? 'cancel' : 'none')
 
   const clearCloseTimer = () => {
     if (closeTimer.current) {
@@ -132,6 +156,24 @@ export function BottomSheet({
     beginClose(true)
   }, [beginClose])
 
+  useEffect(() => {
+    if (!mounted || !entered) return
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        if (resolvedHeaderAction === 'back' && onBack) {
+          onBack()
+        } else {
+          dismiss()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [mounted, entered, dismiss, resolvedHeaderAction, onBack])
+
   const onHandleTouchStart = (e: TouchEvent) => {
     if (closingRef.current) return
     const y = e.touches[0].clientY
@@ -170,6 +212,14 @@ export function BottomSheet({
     setDragY(0)
   }
 
+  const handleHeaderAction = () => {
+    if (resolvedHeaderAction === 'back' && onBack) {
+      onBack()
+      return
+    }
+    dismiss()
+  }
+
   if (!mounted) return null
 
   const dragStyle =
@@ -177,10 +227,12 @@ export function BottomSheet({
       ? { transform: `translate3d(0, ${dragY}px, 0)` }
       : undefined
 
+  const showHeader = title !== undefined || resolvedHeaderAction !== 'none'
+
   const sheet = (
     <div
       className={cn(
-        'sheet-root fixed inset-x-0 bottom-0 flex flex-col justify-end',
+        'sheet-root fixed inset-0 flex flex-col justify-end pointer-events-none',
         elevated ? 'z-[60]' : 'z-50'
       )}
       role="presentation"
@@ -188,21 +240,26 @@ export function BottomSheet({
       <button
         type="button"
         aria-label="Cerrar"
-        className={cn('sheet-backdrop absolute inset-0', entered && 'sheet-backdrop--open')}
+        className={cn(
+          'sheet-backdrop absolute inset-0 pointer-events-auto',
+          entered && 'sheet-backdrop--open'
+        )}
         onClick={dismiss}
       />
 
       <div
         ref={panelRef}
         className={cn(
-          'sheet-panel relative sheet-porcelain flex flex-col',
+          'sheet-panel relative sheet-porcelain flex flex-col pointer-events-auto',
           entered && 'sheet-panel--open',
           dragging && 'sheet-panel--dragging',
+          height === 'standard' && 'sheet-panel--standard',
           className
         )}
         style={dragStyle}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={title ? 'sheet-title' : undefined}
       >
         <div
           className="sheet-handle shrink-0 touch-none select-none"
@@ -214,9 +271,52 @@ export function BottomSheet({
           <div className="sheet-handle-bar" />
         </div>
 
-        <div className="sheet-content flex-1 min-h-0 overflow-y-auto scrollbar-none px-4 pb-safe">
+        {showHeader && (
+          <div className="sheet-header shrink-0 px-4 pb-1">
+            <div className="flex items-center justify-between gap-3 min-h-[2rem]">
+              {resolvedHeaderAction !== 'none' ? (
+                <button
+                  type="button"
+                  onClick={handleHeaderAction}
+                  className="text-sm font-semibold text-muted-foreground shrink-0"
+                >
+                  {resolvedHeaderAction === 'back' ? backLabel : cancelLabel}
+                </button>
+              ) : (
+                <div className="w-16 shrink-0" />
+              )}
+
+              {title !== undefined && (
+                <p
+                  id="sheet-title"
+                  className="flex-1 min-w-0 text-center font-display text-[1.1rem] font-bold text-ink tracking-tight truncate"
+                >
+                  {title}
+                </p>
+              )}
+
+              <div className="w-16 shrink-0" aria-hidden />
+            </div>
+          </div>
+        )}
+
+        <div
+          ref={bodyRef}
+          className="sheet-body flex-1 min-h-0 overflow-y-auto scrollbar-none px-4 pb-safe touch-pan-y"
+        >
+          {subtitle && (
+            <p className="text-[11px] text-muted-foreground font-medium text-center pb-3">
+              {subtitle}
+            </p>
+          )}
           {childRef.current}
         </div>
+
+        {footer && (
+          <div className="sheet-footer shrink-0 px-4 pt-2 pb-safe border-t border-stitch/25 bg-porcelain-cream/50">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   )
