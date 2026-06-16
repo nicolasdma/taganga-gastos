@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { useConvexAuth } from '@convex-dev/auth/react'
+import { useConvexAuth } from 'convex/react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../convex/_generated/api'
 import { BottomNav, type TabId } from '@/components/BottomNav'
@@ -179,12 +179,15 @@ function AppShell() {
 }
 
 function AuthenticatedApp() {
-  const { isLoading, isAuthenticated } = useConvexAuth()
+  const { isLoading, isAuthenticated, isRefreshing } = useConvexAuth()
   const offline = useIsOffline()
   const convexUrl = import.meta.env.VITE_CONVEX_URL
   const hasStoredSession = hasLocalAuthToken(convexUrl)
   const offlineWithSession = offline && hasStoredSession
-  const household = useQuery(api.households.getMyHousehold)
+  const household = useQuery(
+    api.households.getMyHousehold,
+    isAuthenticated && !isLoading ? {} : 'skip'
+  )
   const inviteCodeFromPath = useInviteCodeFromPath()
   const ensureUserReady = useMutation(api.households.ensureUserReady)
   const joinHousehold = useMutation(api.households.joinHousehold)
@@ -251,7 +254,7 @@ function AuthenticatedApp() {
     recoveryState !== 'failed' &&
     (recoveryState === 'recovering' || recoveryState === 'idle')
 
-  if (isLoading || bootstrapping || recoveringSession) {
+  if (isLoading || isRefreshing || bootstrapping || recoveringSession) {
     return <AuthLoadingScreen />
   }
 
