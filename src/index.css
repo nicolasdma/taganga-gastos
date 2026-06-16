@@ -764,6 +764,18 @@
       transition-delay: 0ms !important;
     }
 
+    .expense-view-transition__layer--outgoing,
+    .expense-view-transition__layer--incoming {
+      animation: none !important;
+      transform: none !important;
+      opacity: 1 !important;
+      filter: none !important;
+    }
+
+    .expense-view-transition--active .expense-view-transition__layer--incoming {
+      transition: opacity 150ms ease !important;
+    }
+
     .app-brandmark-dock {
       transition-property: top !important;
     }
@@ -888,6 +900,93 @@
     min-width: min(9.5rem, calc(var(--editorial-kitty-size, 76px) * 1.55));
     min-height: var(--editorial-brandmark-footprint-h, 6.85rem);
     flex-shrink: 0;
+  }
+
+  /* ─── Home view slide (Nosotros ↔ Míos) — sync with editorial-brandmark__kitties (520ms) ─── */
+  .expense-view-transition {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .expense-view-transition__layer {
+    width: 100%;
+  }
+
+  .expense-view-transition__layer--outgoing {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
+  .expense-view-transition__layer--incoming {
+    position: relative;
+    z-index: 2;
+    will-change: transform, opacity;
+  }
+
+  .expense-view-transition--active.expense-view-transition--to-shared .expense-view-transition__layer--outgoing {
+    animation: view-exit-left 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    filter: blur(2px);
+  }
+
+  .expense-view-transition--active.expense-view-transition--to-shared .expense-view-transition__layer--incoming {
+    animation: view-enter-right 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .expense-view-transition--active.expense-view-transition--to-personal .expense-view-transition__layer--outgoing {
+    animation: view-exit-right 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    filter: blur(2px);
+  }
+
+  .expense-view-transition--active.expense-view-transition--to-personal .expense-view-transition__layer--incoming {
+    animation: view-enter-left 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes view-exit-left {
+    to {
+      transform: translate3d(-18%, 0, 0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes view-exit-right {
+    to {
+      transform: translate3d(18%, 0, 0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes view-enter-right {
+    from {
+      transform: translate3d(22%, 0, 0);
+      opacity: 0;
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes view-enter-left {
+    from {
+      transform: translate3d(-22%, 0, 0);
+      opacity: 0;
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+  }
+
+  .expense-view-stale {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .insight-highlight-slot {
+    min-height: 2.75rem;
   }
 
   .app-brandmark-dock {

@@ -7,18 +7,23 @@ import { formatCOP, formatCOPEditorial } from '@/lib/currency'
 import type { ExpenseView } from '@/lib/expenseScope'
 import { cn } from '@/lib/utils'
 
+type PanelRole = 'active' | 'outgoing' | 'incoming'
+
 interface EditorialStageProps {
   pulseKey?: number
   view?: ExpenseView
+  panelRole?: PanelRole
 }
 
-export function EditorialStage({ pulseKey = 0, view }: EditorialStageProps) {
-  const { today, week, month } = usePeriodTotals(view)
+export function EditorialStage({ pulseKey = 0, view, panelRole = 'active' }: EditorialStageProps) {
+  const { today, week, month, isStale, isInitialLoad } = usePeriodTotals(view)
 
   const editorial = today !== undefined ? formatCOPEditorial(today) : null
+  const showPlaceholder = isInitialLoad && editorial === null
+  const dimStale = isStale && panelRole !== 'outgoing'
 
   return (
-    <section className="editorial-stage relative">
+    <section className={cn('editorial-stage relative', dimStale && 'expense-view-stale')}>
       <div className="editorial-stage__head panel-ink relative overflow-hidden">
         <MarqueeBand />
         <div className="px-4 pt-2 pb-5 relative">
@@ -32,7 +37,7 @@ export function EditorialStage({ pulseKey = 0, view }: EditorialStageProps) {
                   Gastos
                 </h1>
               </div>
-              <BrandmarkSlot />
+              {panelRole !== 'outgoing' && <BrandmarkSlot />}
             </div>
           </MotionReveal>
         </div>
@@ -57,9 +62,9 @@ export function EditorialStage({ pulseKey = 0, view }: EditorialStageProps) {
                     <span className="type-display-symbol">{editorial.symbol}</span>
                     <span className="type-display-value">{editorial.value}</span>
                   </div>
-                ) : (
+                ) : showPlaceholder ? (
                   <p className="type-display-massive text-ink/30">—</p>
-                )}
+                ) : null}
 
                 <p className="font-display italic text-sm text-muted-foreground mt-2 leading-snug">
                   lo que salió de tu bolsillo hoy
@@ -73,11 +78,15 @@ export function EditorialStage({ pulseKey = 0, view }: EditorialStageProps) {
           <div className="bento-stats grid grid-cols-2 gap-3 mt-3">
             <div className="bento-tile bento-tile--sage p-4 tilt-chip-2">
               <p className="bento-label">Semana</p>
-              <p className="bento-value">{week === undefined ? '—' : formatCOP(week)}</p>
+              <p className="bento-value">
+                {week === undefined && isInitialLoad ? '—' : week !== undefined ? formatCOP(week) : '—'}
+              </p>
             </div>
             <div className="bento-tile bento-tile--blush p-4 tilt-chip-4">
               <p className="bento-label">Mes</p>
-              <p className="bento-value">{month === undefined ? '—' : formatCOP(month)}</p>
+              <p className="bento-value">
+                {month === undefined && isInitialLoad ? '—' : month !== undefined ? formatCOP(month) : '—'}
+              </p>
             </div>
           </div>
         </MotionReveal>

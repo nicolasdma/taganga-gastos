@@ -9,6 +9,7 @@ import { ExpenseDaySectionHeader, ExpenseTimeStamp } from '@/components/ExpenseT
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import { groupListRowsByDay } from '@/lib/expenseTime'
 import { useLocalToday } from '@/hooks/useLocalToday'
+import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import {
   excludedAmountClass,
   excludedBadgeClass,
@@ -33,9 +34,12 @@ import { cn } from '@/lib/utils'
 import type { ExpenseView } from '@/lib/expenseScope'
 import { DEFAULT_EXPENSE_SCOPE, DEFAULT_EXPENSE_VIEW } from '@/lib/expenseScope'
 
+type PanelRole = 'active' | 'outgoing' | 'incoming'
+
 interface RecentExpensesProps {
   limit?: number
   view?: ExpenseView
+  panelRole?: PanelRole
   onEdit?: (expense: EditableExpense) => void
   onPendingRemoved?: () => void
 }
@@ -43,11 +47,13 @@ interface RecentExpensesProps {
 export function RecentExpenses({
   limit = 8,
   view = DEFAULT_EXPENSE_VIEW,
+  panelRole = 'active',
   onEdit,
   onPendingRemoved,
 }: RecentExpensesProps) {
   const { todayKey } = useLocalToday()
-  const expenses = useQuery(api.expenses.recentExpenses, { limit: limit + 20, view })
+  const expensesLive = useQuery(api.expenses.recentExpenses, { limit: limit + 20, view })
+  const { value: expenses, isStale, isInitialLoad } = useStaleWhileLoading(expensesLive, view)
   const [outboxTick, setOutboxTick] = useState(0)
 
   useEffect(() => {
@@ -127,6 +133,7 @@ export function RecentExpenses({
   }
 
   if (!merged) {
+    if (!isInitialLoad) return null
     return (
       <div className="space-y-2" aria-busy="true" aria-live="polite">
         <CraftLoading variant="skeleton-row" count={3} />
@@ -134,17 +141,21 @@ export function RecentExpenses({
     )
   }
 
+  const dimStale = isStale && panelRole !== 'outgoing'
+
   if (merged.every((section) => section.rows.length === 0)) {
     return (
-      <EmptyCraft
-        title="Sin gastos aún"
-        subtitle="Usá acceso rápido, el + de barro, o escaneá un ticket 🐾"
-      />
+      <div className={cn(dimStale && 'expense-view-stale')}>
+        <EmptyCraft
+          title="Sin gastos aún"
+          subtitle="Usá acceso rápido, el + de barro, o escaneá un ticket 🐾"
+        />
+      </div>
     )
   }
 
   return (
-    <div className="space-y-1">
+    <div className={cn('space-y-1', dimStale && 'expense-view-stale')}>
       {merged.map((section) => (
         <div key={section.dayKey} className="mb-1">
           <ExpenseDaySectionHeader label={section.label} />

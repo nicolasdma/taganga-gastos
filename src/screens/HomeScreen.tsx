@@ -3,6 +3,7 @@ import { InsightHighlight } from '@/components/InsightHighlight'
 import { RecentExpenses } from '@/components/RecentExpenses'
 import { BentoQuickAccess } from '@/components/editorial/BentoQuickAccess'
 import { EditorialStage } from '@/components/editorial/EditorialStage'
+import { ExpenseViewTransition } from '@/components/editorial/ExpenseViewTransition'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import type { SaveExpenseResult, SheetIntent } from '@/components/ExpenseSheet'
@@ -27,7 +28,7 @@ export function HomeScreen({
   onEditExpense,
   onPendingRemoved,
 }: HomeScreenProps) {
-  const { view } = useExpenseView()
+  const { view, direction, isTransitioning } = useExpenseView()
   const { reportScroll } = useTabScroll()
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollYRef = useRef(0)
@@ -62,43 +63,52 @@ export function HomeScreen({
       ref={scrollRef}
       className="tab-scroll home-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none"
     >
-      <EditorialStage view={view} pulseKey={pulseKey} />
+      <ExpenseViewTransition view={view} direction={direction} isTransitioning={isTransitioning}>
+        {(panelView, panelRole) => (
+          <>
+            <EditorialStage view={panelView} pulseKey={pulseKey} panelRole={panelRole} />
 
-      <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-7">
-        <MotionReveal step={4}>
-          <InsightHighlight
-            view={view}
-            pulseKey={pulseKey}
-            onOpenStats={onOpenStats}
-          />
-        </MotionReveal>
+            <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-7">
+              <MotionReveal step={4}>
+                <InsightHighlight
+                  view={panelView}
+                  pulseKey={pulseKey}
+                  onOpenStats={onOpenStats}
+                  panelRole={panelRole}
+                />
+              </MotionReveal>
 
-        <section>
-          <MotionReveal step={5}>
-            <SectionLabel overPhoto>Acceso rápido</SectionLabel>
-          </MotionReveal>
-          <BentoQuickAccess
-            view={view}
-            onOpenSheet={onOpenSheet}
-            onSaved={onSaved}
-          />
-        </section>
+              <section>
+                <MotionReveal step={5}>
+                  <SectionLabel overPhoto>Acceso rápido</SectionLabel>
+                </MotionReveal>
+                <BentoQuickAccess
+                  view={panelView}
+                  panelRole={panelRole}
+                  onOpenSheet={onOpenSheet}
+                  onSaved={onSaved}
+                />
+              </section>
 
-        <section>
-          <MotionReveal step={6}>
-            <SectionLabel overPhoto className="mb-2">
-              Recientes
-            </SectionLabel>
-          </MotionReveal>
-          <MotionReveal step={7}>
-            <RecentExpenses
-              view={view}
-              onEdit={onEditExpense}
-              onPendingRemoved={onPendingRemoved}
-            />
-          </MotionReveal>
-        </section>
-      </div>
+              <section>
+                <MotionReveal step={6}>
+                  <SectionLabel overPhoto className="mb-2">
+                    Recientes
+                  </SectionLabel>
+                </MotionReveal>
+                <MotionReveal step={7}>
+                  <RecentExpenses
+                    view={panelView}
+                    panelRole={panelRole}
+                    onEdit={onEditExpense}
+                    onPendingRemoved={onPendingRemoved}
+                  />
+                </MotionReveal>
+              </section>
+            </div>
+          </>
+        )}
+      </ExpenseViewTransition>
     </div>
   )
 }

@@ -10,31 +10,41 @@ import { ITEM_CATALOG } from '@/lib/items'
 import { buildRecentQuickButtons } from '@/lib/quickButtons'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 import { useFrequentQuickItems } from '@/hooks/useFrequentQuickItems'
+import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import type { SheetIntent } from '@/components/ExpenseSheet'
 import { cn } from '@/lib/utils'
 
 import type { ExpenseView } from '@/lib/expenseScope'
 
+type PanelRole = 'active' | 'outgoing' | 'incoming'
+
 interface BentoQuickAccessProps {
   view: ExpenseView
+  panelRole?: PanelRole
   onOpenSheet: (intent: SheetIntent) => void
   onSaved: (result: SaveExpenseResult) => void
 }
 
 export function BentoQuickAccess({
   view,
+  panelRole = 'active',
   onOpenSheet,
   onSaved,
 }: BentoQuickAccessProps) {
   const [createItemOpen, setCreateItemOpen] = useState(false)
-  const recent = useQuery(api.expenses.recentExpenses, { limit: 1, view })
-  const frequentQuickItems = useFrequentQuickItems(view, 3)
+  const recentLive = useQuery(api.expenses.recentExpenses, { limit: 1, view })
+  const { value: recent, isStale: recentStale } = useStaleWhileLoading(recentLive, view)
+  const frequentLive = useFrequentQuickItems(view, 3)
+  const { value: frequentQuickItems, isStale: frequentStale, isInitialLoad: frequentInitial } =
+    useStaleWhileLoading(frequentLive, view)
   const { saveExpense } = useExpenseSave(onSaved)
 
   const lastExpense = recent?.[0]
   const lastDisplay = lastExpense ? formatExpenseLabel(lastExpense) : null
   const quickButtons =
     frequentQuickItems === undefined ? undefined : buildRecentQuickButtons(frequentQuickItems)
+  const showQuickSkeleton = frequentInitial && quickButtons === undefined
+  const dimStale = (recentStale || frequentStale) && panelRole !== 'outgoing'
 
   const handleRepeat = async () => {
     if (!lastExpense?.itemId || !lastExpense.itemEmoji || !lastExpense.itemLabel) return
@@ -49,7 +59,7 @@ export function BentoQuickAccess({
 
   return (
     <>
-      <div className="bento-quick grid gap-2.5">
+      <div className={cn('bento-quick grid gap-2.5', dimStale && 'expense-view-stale')}>
       {lastExpense && lastDisplay && (
         <MotionReveal step={4}>
           <button
@@ -92,9 +102,10 @@ export function BentoQuickAccess({
       </MotionReveal>
 
       <div className="grid grid-cols-4 gap-2.5">
-        {quickButtons === undefined ? (
+        {showQuickSkeleton ? (
           <CraftLoading variant="skeleton-tile" count={3} />
-        ) : quickButtons.map((btn, i) => (
+        ) : (
+          quickButtons?.map((btn, i) => (
               <MotionReveal key={btn.key} step={Math.min(7, 6 + i)}>
                 <button
                   type="button"
@@ -112,7 +123,8 @@ export function BentoQuickAccess({
                   </span>
                 </button>
               </MotionReveal>
-            ))}
+            ))
+        )}
 
         <MotionReveal step={8}>
           <button

@@ -4,6 +4,7 @@ import { api } from '../../convex/_generated/api'
 import { isTimestampInPeriod } from '@/lib/dates'
 import { loadOutbox, loadReceiptOutbox, OUTBOX_CHANGED } from '@/lib/outbox'
 import { useLocalToday } from '@/hooks/useLocalToday'
+import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import { DEFAULT_EXPENSE_SCOPE, DEFAULT_EXPENSE_VIEW, type ExpenseView } from '@/lib/expenseScope'
 
 type Period = 'today' | 'week' | 'month'
@@ -72,9 +73,20 @@ export function usePeriodTotals(view: ExpenseView = DEFAULT_EXPENSE_VIEW) {
     }
   }, [outboxTick, todayKey, tzOffsetMinutes, view])
 
+  const todayLive =
+    todayServer === undefined ? undefined : todayServer + pending.today
+  const weekLive = weekServer === undefined ? undefined : weekServer + pending.week
+  const monthLive = monthServer === undefined ? undefined : monthServer + pending.month
+
+  const { value: today, isStale: todayStale } = useStaleWhileLoading(todayLive, view)
+  const { value: week, isStale: weekStale } = useStaleWhileLoading(weekLive, view)
+  const { value: month, isStale: monthStale } = useStaleWhileLoading(monthLive, view)
+
   return {
-    today: todayServer === undefined ? undefined : todayServer + pending.today,
-    week: weekServer === undefined ? undefined : weekServer + pending.week,
-    month: monthServer === undefined ? undefined : monthServer + pending.month,
+    today,
+    week,
+    month,
+    isStale: todayStale || weekStale || monthStale,
+    isInitialLoad: todayLive === undefined && today === undefined,
   }
 }

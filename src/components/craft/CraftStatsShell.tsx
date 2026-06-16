@@ -34,6 +34,10 @@ interface CraftStatsShellProps {
   /** Single discreet loading line — no kitty */
   statsMessage?: string
   className?: string
+  /** Dim incoming panel while stale query data is shown during view toggle */
+  contentStale?: boolean
+  /** Render only tab content — parent owns scroll shell and header */
+  contentOnly?: boolean
 }
 
 const ROW_WIDTHS = ['72%', '58%', '84%', '64%'] as const
@@ -119,23 +123,20 @@ export function CraftStatsShell({
   insights = [],
   statsMessage,
   className,
+  contentStale = false,
+  contentOnly = false,
 }: CraftStatsShellProps) {
   const itemsLoading = itemsStatus === 'loading'
   const insightsLoading = insightsStatus === 'loading'
   const scrollRef = useReportTabScroll('stats')
 
-  return (
+  const body = (
     <div
-      ref={scrollRef}
-      className={cn('tab-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none', className)}
+      className={cn(
+        'tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-5',
+        contentStale && 'expense-view-stale'
+      )}
     >
-      <EditorialScreenHeader
-        kicker="Contando patitas"
-        title="Estadísticas"
-        subtitle="por ítem 🐾"
-      />
-
-      <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-5">
         <div className="month-nav-over-photo flex items-center justify-between">
           <button
             type="button"
@@ -261,6 +262,23 @@ export function CraftStatsShell({
           )}
         </section>
       </div>
+  )
+
+  if (contentOnly) {
+    return body
+  }
+
+  return (
+    <div
+      ref={scrollRef}
+      className={cn('tab-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none', className)}
+    >
+      <EditorialScreenHeader
+        kicker="Contando patitas"
+        title="Estadísticas"
+        subtitle="por ítem 🐾"
+      />
+      {body}
     </div>
   )
 }
