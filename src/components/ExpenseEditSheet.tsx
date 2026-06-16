@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { AmountKeypad } from '@/components/AmountKeypad'
@@ -10,15 +10,11 @@ import {
   itemPickerTitle,
   type SelectedItem,
 } from '@/components/ItemPicker'
-import { ITEM_CATALOG } from '@/lib/items'
-import { mergeCatalogWithCustom } from '@/lib/mergeCatalog'
-import { useCustomItems } from '@/hooks/useCustomItems'
 import { excludedNoticeClass, excludedRowClass } from '@/lib/expenseExcluded'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import type { EditableExpense } from '@/lib/expenseTypes'
 import { hapticSave } from '@/lib/haptics'
 import { pushRecentItem } from '@/lib/preferences'
-import { useExpenseView } from '@/hooks/useExpenseView'
 import { cn } from '@/lib/utils'
 
 interface ExpenseEditSheetProps {
@@ -172,14 +168,6 @@ function ExpenseEditContent({
 }
 
 export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditSheetProps) {
-  const { view } = useExpenseView()
-  const customItems = useCustomItems(view)
-
-  const catalogSize = useMemo(() => {
-    if (customItems === undefined) return ITEM_CATALOG.length
-    return mergeCatalogWithCustom(ITEM_CATALOG, customItems).length
-  }, [customItems])
-
   const [step, setStep] = useState<Step>('edit')
   const [createQuery, setCreateQuery] = useState('')
 
@@ -209,10 +197,8 @@ export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditShe
   })()
 
   const sheetSubtitle = (() => {
-    if (step === 'item') return itemPickerSubtitle(catalogSize)
-    if (step === 'create-item') {
-      return 'Empieza en Míos. Si lo usás en un gasto compartido, queda para todo el hogar.'
-    }
+    if (step === 'item') return itemPickerSubtitle()
+    if (step === 'create-item') return undefined
     if (expense?.excluded) return 'Editar · no cuenta en totales'
     return 'Editar monto'
   })()
@@ -228,6 +214,7 @@ export function ExpenseEditSheet({ expense, onClose, onUpdated }: ExpenseEditShe
       subtitle={sheetSubtitle}
       headerAction={headerAction}
       onBack={handleBack}
+      scrollKey={step}
     >
       {expense && (
         <ExpenseEditContent

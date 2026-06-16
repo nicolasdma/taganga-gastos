@@ -34,6 +34,8 @@ interface BottomSheetProps {
    * the action is contextual to scrolled content (e.g. keypad presets).
    */
   footer?: ReactNode
+  /** Resets body scroll to top when this value changes (e.g. wizard step). */
+  scrollKey?: string | number
   /** Render at document.body to escape parent stacking contexts. */
   portal?: boolean
   /** Above FABs (z-40), nav (z-45) and default sheets (z-50). */
@@ -53,6 +55,7 @@ export function BottomSheet({
   backLabel = 'Atrás',
   onBack,
   footer,
+  scrollKey,
   portal = false,
   elevated = false,
 }: BottomSheetProps) {
@@ -179,6 +182,11 @@ export function BottomSheet({
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [mounted, entered, dismiss, resolvedHeaderAction, onBack])
+
+  useEffect(() => {
+    if (!mounted || !entered) return
+    bodyRef.current?.scrollTo({ top: 0, left: 0 })
+  }, [mounted, entered, scrollKey])
 
   const onHandleTouchStart = (e: TouchEvent) => {
     if (closingRef.current) return

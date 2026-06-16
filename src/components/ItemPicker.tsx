@@ -125,11 +125,10 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
   )
 }
 
-/** Subtitle for the item-pick step header. */
-export function itemPickerSubtitle(catalogSize: number, storeName?: string): string {
+/** Subtitle for the item-pick step header (e.g. receipt store context). */
+export function itemPickerSubtitle(storeName?: string): string | undefined {
   if (storeName) return 'Elegí un ítem de la compra'
-  if (catalogSize > 16) return `${catalogSize} ítems · elegí y después el monto`
-  return 'Elegí y después el monto'
+  return undefined
 }
 
 /** Title for the item-pick step header. */

@@ -125,6 +125,7 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
         title={phase === 'review' ? 'Revisar ticket' : undefined}
         headerAction="cancel"
         footer={footer}
+        scrollKey={phase}
       >
         {phase === 'loading' && (
           <div className="py-12 text-center">

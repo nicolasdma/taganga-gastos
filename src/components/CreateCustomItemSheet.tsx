@@ -132,7 +132,6 @@ export function CreateCustomItemSheet({
       elevated
       height="standard"
       title="✏️ Nuevo ítem"
-      subtitle="Empieza en Míos. Si lo usás en un gasto compartido, queda para todo el hogar."
       headerAction="cancel"
     >
       <CreateCustomItemForm initialLabel={initialLabel} onCreated={handleCreated} />

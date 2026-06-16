@@ -148,6 +148,7 @@ export function DayDetailSheet({ date, view, onClose, onEditExpense }: DayDetail
           : undefined
       }
       headerAction="cancel"
+      scrollKey={date ?? 'closed'}
     >
       {date && (
         <div className="pb-4">

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AmountKeypad } from '@/components/AmountKeypad'
 import { BottomSheet } from '@/components/BottomSheet'
 import { CreateCustomItemForm } from '@/components/CreateCustomItemSheet'
@@ -8,9 +8,6 @@ import {
   itemPickerTitle,
   type SelectedItem,
 } from '@/components/ItemPicker'
-import { ITEM_CATALOG } from '@/lib/items'
-import { mergeCatalogWithCustom } from '@/lib/mergeCatalog'
-import { useCustomItems } from '@/hooks/useCustomItems'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import type { ExpenseScope } from '@/lib/expenseScope'
@@ -170,13 +167,6 @@ function ExpenseSheetContent({
 
 export function ExpenseSheet({ intent, onClose, onSaved }: ExpenseSheetProps) {
   const open = intent !== null
-  const { view } = useExpenseView()
-  const customItems = useCustomItems(view)
-
-  const catalogSize = useMemo(() => {
-    if (customItems === undefined) return ITEM_CATALOG.length
-    return mergeCatalogWithCustom(ITEM_CATALOG, customItems).length
-  }, [customItems])
 
   const [step, setStep] = useState<Step>('item')
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null)
@@ -221,10 +211,7 @@ export function ExpenseSheet({ intent, onClose, onSaved }: ExpenseSheetProps) {
   })()
 
   const sheetSubtitle = (() => {
-    if (step === 'item') return itemPickerSubtitle(catalogSize)
-    if (step === 'create-item') {
-      return 'Empieza en Míos. Si lo usás en un gasto compartido, queda para todo el hogar.'
-    }
+    if (step === 'item') return itemPickerSubtitle()
     return undefined
   })()
 
@@ -239,6 +226,7 @@ export function ExpenseSheet({ intent, onClose, onSaved }: ExpenseSheetProps) {
       subtitle={sheetSubtitle}
       headerAction={headerAction}
       onBack={handleBack}
+      scrollKey={step}
     >
       {intent && (
         <ExpenseSheetContent
