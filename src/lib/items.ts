@@ -46,6 +46,12 @@ export const ITEM_CATALOG: CatalogItem[] = [
   ...EXTRA_ITEMS,
 ]
 
+export const CUSTOM_ITEM_PREFIX = 'custom:'
+
+export function isCustomItemId(id: string): boolean {
+  return id.startsWith(CUSTOM_ITEM_PREFIX)
+}
+
 const catalogById = new Map(ITEM_CATALOG.map((item) => [item.id, item]))
 
 /** Mapeo de IDs legacy (categoría + ítem viejo) → ID unificado. */

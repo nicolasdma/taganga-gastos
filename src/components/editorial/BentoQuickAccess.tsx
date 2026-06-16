@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
+import { CreateCustomItemSheet } from '@/components/CreateCustomItemSheet'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import { ITEM_CATALOG } from '@/lib/items'
@@ -19,6 +21,7 @@ interface BentoQuickAccessProps {
 }
 
 export function BentoQuickAccess({ view, onOpenSheet, onSaved }: BentoQuickAccessProps) {
+  const [createItemOpen, setCreateItemOpen] = useState(false)
   const recent = useQuery(api.expenses.recentExpenses, { limit: 1, view })
   const frequentQuickItems = useFrequentQuickItems(view, 3)
   const { saveExpense } = useExpenseSave(onSaved)
@@ -40,7 +43,8 @@ export function BentoQuickAccess({ view, onOpenSheet, onSaved }: BentoQuickAcces
   }
 
   return (
-    <div className="bento-quick grid gap-2.5">
+    <>
+      <div className="bento-quick grid gap-2.5">
       {lastExpense && lastDisplay && (
         <MotionReveal step={4}>
           <button
@@ -68,7 +72,7 @@ export function BentoQuickAccess({ view, onOpenSheet, onSaved }: BentoQuickAcces
       <MotionReveal step={5}>
         <button
           type="button"
-          onClick={() => onOpenSheet({ type: 'add' })}
+          onClick={() => setCreateItemOpen(true)}
           className={cn(
             'bento-tile bento-tile--sage bento-tile--wide p-4 text-left',
             'active:translate-y-1 active:shadow-none transition-transform tilt-chip-1'
@@ -126,6 +130,20 @@ export function BentoQuickAccess({ view, onOpenSheet, onSaved }: BentoQuickAcces
           </button>
         </MotionReveal>
       </div>
-    </div>
+      </div>
+
+      <CreateCustomItemSheet
+        open={createItemOpen}
+        onClose={() => setCreateItemOpen(false)}
+        onCreated={(item) =>
+          onOpenSheet({
+            type: 'quick',
+            itemId: item.itemId,
+            itemEmoji: item.itemEmoji,
+            itemLabel: item.itemLabel,
+          })
+        }
+      />
+    </>
   )
 }

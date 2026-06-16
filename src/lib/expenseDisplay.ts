@@ -1,4 +1,4 @@
-import { getItemById } from '@/lib/items'
+import { getItemById, isCustomItemId } from '@/lib/items'
 
 export interface ExpenseLabelInput {
   itemId?: string
@@ -25,6 +25,9 @@ export function formatExpenseLabel(expense: ExpenseLabelInput): { emoji: string;
   if (expense.itemId) {
     const item = getItemById(expense.itemId)
     if (item) return { emoji: item.emoji, label: item.label }
+    if (isCustomItemId(expense.itemId) && expense.itemEmoji) {
+      return { emoji: expense.itemEmoji, label: expense.itemLabel ?? 'Ítem' }
+    }
   }
 
   if (expense.store) {

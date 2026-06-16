@@ -2,7 +2,9 @@ import { useMemo } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { ITEM_CATALOG } from '@/lib/items'
+import { mergeCatalogWithCustom } from '@/lib/mergeCatalog'
 import { getTopCatalogItems } from '@/lib/itemUsage'
+import { useCustomItems } from '@/hooks/useCustomItems'
 import type { ExpenseView } from '@/lib/expenseScope'
 
 export interface FrequentQuickItem {
@@ -31,13 +33,15 @@ export function useFrequentQuickItems(
   limit = 3
 ): FrequentQuickItem[] | undefined {
   const serverCounts = useFrequentItemCounts(view)
+  const customItems = useCustomItems(view)
 
   return useMemo(() => {
-    if (serverCounts === undefined) return undefined
-    return getTopCatalogItems(ITEM_CATALOG, serverCounts, limit).map((item) => ({
+    if (serverCounts === undefined || customItems === undefined) return undefined
+    const merged = mergeCatalogWithCustom(ITEM_CATALOG, customItems)
+    return getTopCatalogItems(merged, serverCounts, limit).map((item) => ({
       itemId: item.id,
       itemEmoji: item.emoji,
       itemLabel: item.label,
     }))
-  }, [serverCounts, limit])
+  }, [serverCounts, customItems, limit])
 }

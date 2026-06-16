@@ -12,6 +12,7 @@ import {
   type ExpenseView,
 } from './lib/auth'
 import { itemGroupKey, resolveItemFields } from './lib/items'
+import { resolveCustomItemForSharedExpense } from './lib/customItemPromotion'
 
 const expenseScopeValidator = v.union(v.literal('shared'), v.literal('personal'))
 const expenseViewValidator = v.union(v.literal('shared'), v.literal('personal'))
@@ -125,6 +126,24 @@ export const addExpense = mutation({
     const { userId, householdId } = await requireAuthContext(ctx)
     const scope = resolveScope(args.scope)
 
+    let itemId = args.itemId
+    let itemEmoji = args.itemEmoji
+    let itemLabel = args.itemLabel
+
+    if (scope === 'shared') {
+      const resolved = await resolveCustomItemForSharedExpense(
+        ctx,
+        userId,
+        householdId,
+        itemId,
+        itemEmoji,
+        itemLabel
+      )
+      itemId = resolved.itemId
+      itemEmoji = resolved.itemEmoji
+      itemLabel = resolved.itemLabel
+    }
+
     if (args.clientId) {
       const existing = await ctx.db
         .query('expenses')
@@ -140,9 +159,9 @@ export const addExpense = mutation({
 
     return await ctx.db.insert('expenses', {
       amount: args.amount,
-      itemId: args.itemId,
-      itemEmoji: args.itemEmoji,
-      itemLabel: args.itemLabel,
+      itemId,
+      itemEmoji,
+      itemLabel,
       sessionId: args.sessionId,
       receiptGroupId: args.receiptGroupId,
       store: args.store,

@@ -6,6 +6,7 @@ import {
   type ReactNode,
   type TouchEvent,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 const CLOSE_MS = 480
@@ -15,9 +16,20 @@ interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
   className?: string
+  /** Render at document.body to escape parent stacking contexts (e.g. main z-10). */
+  portal?: boolean
+  /** Above FABs (z-40), nav (z-45) and default sheets (z-50). */
+  elevated?: boolean
 }
 
-export function BottomSheet({ open, onClose, children, className }: BottomSheetProps) {
+export function BottomSheet({
+  open,
+  onClose,
+  children,
+  className,
+  portal = false,
+  elevated = false,
+}: BottomSheetProps) {
   const [mounted, setMounted] = useState(false)
   const [entered, setEntered] = useState(false)
   const [dragY, setDragY] = useState(0)
@@ -165,8 +177,14 @@ export function BottomSheet({ open, onClose, children, className }: BottomSheetP
       ? { transform: `translate3d(0, ${dragY}px, 0)` }
       : undefined
 
-  return (
-    <div className="sheet-root fixed inset-0 z-50 flex flex-col justify-end" role="presentation">
+  const sheet = (
+    <div
+      className={cn(
+        'sheet-root fixed inset-0 flex flex-col justify-end',
+        elevated ? 'z-[60]' : 'z-50'
+      )}
+      role="presentation"
+    >
       <button
         type="button"
         aria-label="Cerrar"
@@ -202,4 +220,6 @@ export function BottomSheet({ open, onClose, children, className }: BottomSheetP
       </div>
     </div>
   )
+
+  return portal ? createPortal(sheet, document.body) : sheet
 }

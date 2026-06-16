@@ -3,8 +3,8 @@ import { AmountKeypad } from '@/components/AmountKeypad'
 import { BottomSheet } from '@/components/BottomSheet'
 import { ItemPicker, type SelectedItem } from '@/components/ItemPicker'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
+import { useExpenseView } from '@/hooks/useExpenseView'
 import type { ExpenseScope } from '@/lib/expenseScope'
-import { DEFAULT_EXPENSE_SCOPE } from '@/lib/expenseScope'
 
 export type SheetIntent =
   | { type: 'add' }
@@ -57,12 +57,13 @@ interface ExpenseSheetContentProps {
 function ExpenseSheetContent({ intent, onClose, onSaved }: ExpenseSheetContentProps) {
   const initial = resolveInitialState(intent)
   const { saveExpense } = useExpenseSave(onSaved)
+  const { view } = useExpenseView()
 
   const [step, setStep] = useState<Step>(initial.step)
   const [amount, setAmount] = useState(0)
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(initial.selectedItem)
   const [itemDetail, setItemDetail] = useState('')
-  const [scope, setScope] = useState<ExpenseScope>(DEFAULT_EXPENSE_SCOPE)
+  const [scope, setScope] = useState<ExpenseScope>(view)
   const [saving, setSaving] = useState(false)
 
   const close = () => {

@@ -53,4 +53,18 @@ export default defineSchema({
     .index('by_sessionId', ['sessionId'])
     .index('by_receiptGroupId', ['receiptGroupId'])
     .index('by_household_and_createdAt', ['householdId', 'createdAt']),
+
+  customItems: defineTable({
+    itemId: v.string(),
+    label: v.string(),
+    emoji: v.string(),
+    normalizedLabel: v.string(),
+    scope: expenseScope,
+    householdId: v.id('households'),
+    createdBy: v.id('users'),
+    createdAt: v.number(),
+  })
+    .index('by_household_and_scope', ['householdId', 'scope'])
+    .index('by_household_and_createdBy', ['householdId', 'createdBy'])
+    .index('by_itemId', ['itemId']),
 })
