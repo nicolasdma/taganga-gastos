@@ -15,8 +15,8 @@ import {
   type ExpenseView,
 } from '@/lib/expenseScope'
 
-/** Matches editorial-brandmark__kitties width / slot timing in index.css */
-export const EXPENSE_VIEW_TRANSITION_MS = 520
+/** Matches --expense-view-transition-duration in index.css */
+export const EXPENSE_VIEW_TRANSITION_MS = 800
 
 export type ExpenseViewDirection = -1 | 0 | 1
 

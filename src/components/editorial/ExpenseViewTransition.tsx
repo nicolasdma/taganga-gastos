@@ -18,7 +18,7 @@ import {
 } from '@/components/editorial/expenseViewPanelRole'
 
 /** Brief hold after slide ends so animation fill isn't stripped on the same frame */
-const TRANSITION_COOLDOWN_MS = 80
+const TRANSITION_COOLDOWN_MS = 120
 
 const PERSISTENT_VIEWS = ['personal', 'shared'] as const satisfies readonly ExpenseView[]
 
@@ -52,7 +52,7 @@ function resolvePanelRole(
  * Persistent dual panels (personal + shared) — each keeps its own Convex subscriptions.
  * Toggle only swaps roles / slide; panel view props never change, so data never clears.
  *
- * Timing matches .editorial-brandmark__kitties / __kitty-slot in index.css (520ms).
+ * Timing matches --expense-view-transition-duration in index.css (800ms).
  */
 export function ExpenseViewTransition({
   view,
