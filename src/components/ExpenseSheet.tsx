@@ -13,6 +13,8 @@ import { useExpenseView } from '@/hooks/useExpenseView'
 import type { ExpenseScope } from '@/lib/expenseScope'
 import type { CreatedCustomItem } from '@/hooks/useCreateCustomItem'
 
+export type { SaveExpenseResult }
+
 export type SheetIntent =
   | { type: 'add' }
   | {

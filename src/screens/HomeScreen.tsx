@@ -1,15 +1,12 @@
 import { useCallback, useRef } from 'react'
 import { InsightHighlight } from '@/components/InsightHighlight'
-import { RecentExpenses } from '@/components/RecentExpenses'
+import { RecentExpenses, type EditableExpense } from '@/components/RecentExpenses'
 import { BentoQuickAccess } from '@/components/editorial/BentoQuickAccess'
 import { EditorialStage } from '@/components/editorial/EditorialStage'
-import { ExpenseViewFilter } from '@/components/ExpenseScopeToggle'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { SectionLabel } from '@/components/craft/SectionLabel'
-import type { SheetIntent } from '@/components/ExpenseSheet'
-import type { SaveExpenseResult } from '@/hooks/useExpenseSave'
+import type { SaveExpenseResult, SheetIntent } from '@/components/ExpenseSheet'
 import { useExpenseView } from '@/hooks/useExpenseView'
-import type { EditableExpense } from '@/lib/expenseTypes'
 
 interface HomeScreenProps {
   pulseKey: number
@@ -56,7 +53,12 @@ export function HomeScreen({
       onScroll={handleScroll}
       className="tab-scroll home-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none"
     >
-      <EditorialStage pulseKey={pulseKey} pendingCount={pendingCount} view={view} />
+      <EditorialStage
+        pulseKey={pulseKey}
+        pendingCount={pendingCount}
+        view={view}
+        onViewChange={setView}
+      />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-7">
         <MotionReveal step={4}>
@@ -72,12 +74,9 @@ export function HomeScreen({
 
         <section>
           <MotionReveal step={6}>
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <SectionLabel overPhoto className="mb-0">
-                Recientes
-              </SectionLabel>
-              <ExpenseViewFilter value={view} onChange={setView} />
-            </div>
+            <SectionLabel overPhoto className="mb-2">
+              Recientes
+            </SectionLabel>
           </MotionReveal>
           <MotionReveal step={7}>
             <RecentExpenses view={view} onEdit={onEditExpense} onPendingRemoved={onPendingRemoved} />

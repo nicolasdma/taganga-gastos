@@ -17,6 +17,8 @@ import {
   isExpenseExcluded,
 } from '@/lib/expenseExcluded'
 import type { EditableExpense } from '@/lib/expenseTypes'
+
+export type { EditableExpense }
 import { groupExpensesForList, type ReceiptItemLike } from '@/lib/receiptGroups'
 import {
   loadOutbox,

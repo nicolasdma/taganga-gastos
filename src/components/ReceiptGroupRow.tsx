@@ -8,7 +8,7 @@ import {
   excludedLabelClass,
   isExpenseExcluded,
 } from '@/lib/expenseExcluded'
-import type { EditableExpense } from '@/lib/expenseTypes'
+import type { EditableExpense } from '@/components/ExpenseEditSheet'
 import { receiptGroupTitle, type ReceiptGroup } from '@/lib/receiptGroups'
 import { cn } from '@/lib/utils'
 

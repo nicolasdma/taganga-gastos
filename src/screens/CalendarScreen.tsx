@@ -5,9 +5,8 @@ import { DayDetailSheet } from '@/components/DayDetailSheet'
 import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
-import { ExpenseViewFilter } from '@/components/ExpenseScopeToggle'
 import { ExpenseMonthGrid } from '@/components/ExpenseMonthGrid'
-import type { EditableExpense } from '@/lib/expenseTypes'
+import type { EditableExpense } from '@/components/ExpenseEditSheet'
 import { formatCOP } from '@/lib/currency'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import { formatMonthKey, subMonths } from '@/lib/utils'
@@ -46,15 +45,11 @@ export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: Edi
         kicker="Día a día"
         title="Calendario"
         subtitle="con cariño 🐾"
-        catVariant="peek"
+        view={view}
+        onViewChange={setView}
       />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="label-stitch">Vista</p>
-          <ExpenseViewFilter value={view} onChange={setView} />
-        </div>
-
         <div className="rounded-3xl card-porcelain-rim shadow-porcelain p-4">
           <p className="label-stitch mb-1">Total del mes</p>
           {byDay === undefined ? (

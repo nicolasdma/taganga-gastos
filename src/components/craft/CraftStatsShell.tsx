@@ -4,9 +4,9 @@ import ItemDonutChart from '@/components/ItemDonutChart'
 import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
-import { ExpenseViewFilter } from '@/components/ExpenseScopeToggle'
 import { formatCOP } from '@/lib/currency'
 import type { ExpenseScope } from '@/lib/expenseScope'
+import { DEFAULT_EXPENSE_VIEW } from '@/lib/expenseScope'
 import { formatMonthLabel } from '@/lib/month'
 import { cn } from '@/lib/utils'
 
@@ -109,15 +109,6 @@ function CraftStatsInsightsSkeleton() {
   )
 }
 
-function CraftStatsViewFilterSkeleton() {
-  return (
-    <div
-      className="craft-skeleton craft-skeleton--row h-9 w-[7.25rem] rounded-2xl shrink-0"
-      aria-hidden
-    />
-  )
-}
-
 export function CraftStatsShell({
   month,
   onPrevMonth,
@@ -143,50 +134,45 @@ export function CraftStatsShell({
         kicker="Tejido a mano"
         title="Estadísticas"
         subtitle="por ítem 🐾"
-        catVariant="sit"
+        view={view ?? DEFAULT_EXPENSE_VIEW}
+        onViewChange={interactive ? onViewChange : undefined}
+        filterSkeleton={!interactive}
       />
 
       <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="month-nav-over-photo flex items-center justify-between flex-1">
-            <button
-              type="button"
-              onClick={interactive ? onPrevMonth : undefined}
-              disabled={!interactive}
-              tabIndex={interactive ? 0 : -1}
-              className={cn('month-nav-btn', !interactive && 'pointer-events-none opacity-90')}
-              aria-label="Mes anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span
-              className={cn(
-                'text-sm font-bold capitalize text-white editorial-text-shadow',
-                itemsLoading && interactive && 'craft-stats-month-shimmer'
-              )}
-            >
-              {formatMonthLabel(month)}
-            </span>
-            <button
-              type="button"
-              onClick={interactive ? onNextMonth : undefined}
-              disabled={!interactive || nextDisabled}
-              tabIndex={interactive ? 0 : -1}
-              className={cn(
-                'month-nav-btn',
-                !interactive && 'pointer-events-none opacity-90',
-                nextDisabled && 'opacity-30 pointer-events-none'
-              )}
-              aria-label="Mes siguiente"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-          {interactive && view !== undefined && onViewChange ? (
-            <ExpenseViewFilter value={view} onChange={onViewChange} />
-          ) : (
-            <CraftStatsViewFilterSkeleton />
-          )}
+        <div className="month-nav-over-photo flex items-center justify-between">
+          <button
+            type="button"
+            onClick={interactive ? onPrevMonth : undefined}
+            disabled={!interactive}
+            tabIndex={interactive ? 0 : -1}
+            className={cn('month-nav-btn', !interactive && 'pointer-events-none opacity-90')}
+            aria-label="Mes anterior"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span
+            className={cn(
+              'text-sm font-bold capitalize text-white editorial-text-shadow',
+              itemsLoading && interactive && 'craft-stats-month-shimmer'
+            )}
+          >
+            {formatMonthLabel(month)}
+          </span>
+          <button
+            type="button"
+            onClick={interactive ? onNextMonth : undefined}
+            disabled={!interactive || nextDisabled}
+            tabIndex={interactive ? 0 : -1}
+            className={cn(
+              'month-nav-btn',
+              !interactive && 'pointer-events-none opacity-90',
+              nextDisabled && 'opacity-30 pointer-events-none'
+            )}
+            aria-label="Mes siguiente"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
 
         <div className="rounded-3xl card-porcelain-rim shadow-porcelain p-5">

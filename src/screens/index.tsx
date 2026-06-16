@@ -1,6 +1,7 @@
 import { HomeScreen } from '@/screens/HomeScreen'
 import { CalendarScreen } from '@/screens/CalendarScreen'
 import { LoginScreen } from '@/screens/LoginScreen'
+import { DebugAuthScreen } from '@/screens/DebugAuthScreen'
 import { OnboardingScreen } from '@/screens/OnboardingScreen'
 
 export function PlaceholderScreen({ title, emoji }: { title: string; emoji: string }) {
@@ -13,4 +14,4 @@ export function PlaceholderScreen({ title, emoji }: { title: string; emoji: stri
   )
 }
 
-export { HomeScreen, CalendarScreen, LoginScreen, OnboardingScreen }
+export { HomeScreen, CalendarScreen, LoginScreen, OnboardingScreen, DebugAuthScreen }

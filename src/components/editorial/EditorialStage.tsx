@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { CollageSticker } from '@/components/editorial/CollageSticker'
 import { MarqueeBand } from '@/components/editorial/MarqueeBand'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
-import { SyncPendingSticker } from '@/components/editorial/EditorialScreenHeader'
-import { KittySprite } from '@/components/craft/KittySprite'
+import { EditorialBrandmark } from '@/components/editorial/EditorialBrandmark'
 import { usePeriodTotals } from '@/hooks/usePeriodTotals'
 import { formatCOP, formatCOPEditorial } from '@/lib/currency'
 import type { ExpenseView } from '@/lib/expenseScope'
@@ -13,9 +12,15 @@ interface EditorialStageProps {
   pulseKey?: number
   pendingCount?: number
   view?: ExpenseView
+  onViewChange?: (view: ExpenseView) => void
 }
 
-export function EditorialStage({ pulseKey = 0, pendingCount = 0, view }: EditorialStageProps) {
+export function EditorialStage({
+  pulseKey = 0,
+  pendingCount = 0,
+  view,
+  onViewChange,
+}: EditorialStageProps) {
   const { today, week, month } = usePeriodTotals(view)
   const [pulsing, setPulsing] = useState(false)
 
@@ -44,10 +49,12 @@ export function EditorialStage({ pulseKey = 0, pendingCount = 0, view }: Editori
                   Gastos
                 </h1>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <KittySprite size={76} pulseKey={pulseKey} className="opacity-95" />
-                <SyncPendingSticker count={pendingCount} />
-              </div>
+              <EditorialBrandmark
+                view={view}
+                onViewChange={onViewChange}
+                pulseKey={pulseKey}
+                pendingCount={pendingCount}
+              />
             </div>
           </MotionReveal>
         </div>

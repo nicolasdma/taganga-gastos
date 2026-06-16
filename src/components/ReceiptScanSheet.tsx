@@ -12,6 +12,8 @@ import type { SaveReceiptResult } from '@/hooks/useReceiptSave'
 import type { ReceiptScanResult } from '@/lib/receiptScan'
 import { Button } from '@/components/ui/button'
 
+export type { SaveReceiptResult }
+
 interface ReceiptScanSheetProps {
   open: boolean
   onClose: () => void

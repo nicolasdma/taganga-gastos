@@ -13,6 +13,8 @@ import {
 import { excludedNoticeClass, excludedRowClass } from '@/lib/expenseExcluded'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import type { EditableExpense } from '@/lib/expenseTypes'
+
+export type { EditableExpense }
 import { hapticSave } from '@/lib/haptics'
 import { pushRecentItem } from '@/lib/preferences'
 import { cn } from '@/lib/utils'

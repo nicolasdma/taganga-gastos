@@ -1,28 +1,39 @@
 import type { ReactNode } from 'react'
-import { KittySprite, kittyAnimFromVariant, kittyPlayfulFromVariant } from '@/components/craft/KittySprite'
-import { CollageSticker } from '@/components/editorial/CollageSticker'
+import { EditorialBrandmark } from '@/components/editorial/EditorialBrandmark'
 import { MarqueeBand } from '@/components/editorial/MarqueeBand'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
+import type { ExpenseView } from '@/lib/expenseScope'
 import { cn } from '@/lib/utils'
+import { CollageSticker } from '@/components/editorial/CollageSticker'
 
 interface EditorialScreenHeaderProps {
   kicker?: string
   title: string
   subtitle?: string
-  catVariant?: 'peek' | 'sit' | 'sleep'
   showMarquee?: boolean
   sticker?: ReactNode
   className?: string
+  view?: ExpenseView
+  onViewChange?: (view: ExpenseView) => void
+  pulseKey?: number
+  pendingCount?: number
+  filterSkeleton?: boolean
+  kittySize?: number
 }
 
 export function EditorialScreenHeader({
   kicker,
   title,
   subtitle,
-  catVariant = 'peek',
   showMarquee = false,
   sticker,
   className,
+  view,
+  onViewChange,
+  pulseKey,
+  pendingCount,
+  filterSkeleton,
+  kittySize,
 }: EditorialScreenHeaderProps) {
   return (
     <header className={cn('editorial-screen-header shrink-0', className)}>
@@ -31,19 +42,20 @@ export function EditorialScreenHeader({
         <MotionReveal step={1}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              {kicker && (
-                <p className="editorial-kicker">{kicker}</p>
-              )}
+              {kicker && <p className="editorial-kicker">{kicker}</p>}
               <h1 className="type-editorial-title text-white editorial-text-shadow">{title}</h1>
               {subtitle && (
                 <p className="text-xs text-white/75 mt-2 font-medium editorial-text-shadow">{subtitle}</p>
               )}
             </div>
             <div className="flex flex-col items-end gap-2">
-              <KittySprite
-                size={catVariant === 'sit' ? 60 : 68}
-                anim={kittyAnimFromVariant(catVariant)}
-                playful={kittyPlayfulFromVariant(catVariant)}
+              <EditorialBrandmark
+                view={view}
+                onViewChange={onViewChange}
+                pulseKey={pulseKey}
+                pendingCount={pendingCount}
+                filterSkeleton={filterSkeleton}
+                size={kittySize}
               />
               {sticker}
             </div>
