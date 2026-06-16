@@ -34,12 +34,12 @@ import { cn } from '@/lib/utils'
 import type { ExpenseView } from '@/lib/expenseScope'
 import { DEFAULT_EXPENSE_SCOPE, DEFAULT_EXPENSE_VIEW } from '@/lib/expenseScope'
 
-type PanelRole = 'active' | 'outgoing' | 'incoming'
+import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
 
 interface RecentExpensesProps {
   limit?: number
   view?: ExpenseView
-  panelRole?: PanelRole
+  panelRole?: ExpenseViewPanelRole
   onEdit?: (expense: EditableExpense) => void
   onPendingRemoved?: () => void
 }
@@ -141,7 +141,7 @@ export function RecentExpenses({
     )
   }
 
-  const dimStale = isStale && panelRole !== 'outgoing'
+  const dimStale = isStale && panelRole === 'incoming'
 
   if (merged.every((section) => section.rows.length === 0)) {
     return (

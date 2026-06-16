@@ -256,6 +256,16 @@
     animation: stats-reveal-in 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  /* Stats entrance only outside view-toggle slides (replay causes end-of-transition flash) */
+  .expense-view-transition .stats-reveal-total,
+  .expense-view-transition .stats-reveal-chart,
+  .expense-view-transition .stats-reveal-row,
+  .expense-view-transition .stats-reveal-insight {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+
   .stats-reveal-chart {
     transform-origin: center center;
   }
@@ -765,14 +775,14 @@
     }
 
     .expense-view-transition__layer--outgoing,
-    .expense-view-transition__layer--incoming {
+    .expense-view-transition__layer--entering {
       animation: none !important;
       transform: none !important;
       opacity: 1 !important;
       filter: none !important;
     }
 
-    .expense-view-transition--active .expense-view-transition__layer--incoming {
+    .expense-view-transition--active .expense-view-transition__layer--entering {
       transition: opacity 150ms ease !important;
     }
 
@@ -920,10 +930,21 @@
     will-change: transform, opacity;
   }
 
-  .expense-view-transition__layer--incoming {
+  .expense-view-transition__layer--primary {
     position: relative;
     z-index: 2;
-    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+
+  .expense-view-transition__layer--dormant {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    visibility: hidden;
+    pointer-events: none;
+    opacity: 0;
+    overflow: hidden;
   }
 
   .expense-view-transition--active.expense-view-transition--to-shared .expense-view-transition__layer--outgoing {
@@ -931,7 +952,7 @@
     filter: blur(2px);
   }
 
-  .expense-view-transition--active.expense-view-transition--to-shared .expense-view-transition__layer--incoming {
+  .expense-view-transition--active.expense-view-transition--to-shared .expense-view-transition__layer--entering {
     animation: view-enter-right 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
@@ -940,7 +961,7 @@
     filter: blur(2px);
   }
 
-  .expense-view-transition--active.expense-view-transition--to-personal .expense-view-transition__layer--incoming {
+  .expense-view-transition--active.expense-view-transition--to-personal .expense-view-transition__layer--entering {
     animation: view-enter-left 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
@@ -983,6 +1004,7 @@
   .expense-view-stale {
     opacity: 0.4;
     pointer-events: none;
+    transition: opacity 280ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .insight-highlight-slot {

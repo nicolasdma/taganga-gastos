@@ -12,17 +12,47 @@ import {
 } from '@/hooks/useExpenseView'
 import type { ExpenseView } from '@/lib/expenseScope'
 import { cn } from '@/lib/utils'
+import {
+  type ExpenseViewPanelRole,
+  isExpenseViewPanelVisible,
+} from '@/components/editorial/expenseViewPanelRole'
+
+/** Brief hold after slide ends so animation fill isn't stripped on the same frame */
+const TRANSITION_COOLDOWN_MS = 80
+
+const PERSISTENT_VIEWS = ['personal', 'shared'] as const satisfies readonly ExpenseView[]
 
 interface ExpenseViewTransitionProps {
   view: ExpenseView
   direction: ExpenseViewDirection
   isTransitioning: boolean
-  children: (panelView: ExpenseView, role: 'active' | 'outgoing' | 'incoming') => ReactNode
+  children: (panelView: ExpenseView, role: ExpenseViewPanelRole) => ReactNode
+}
+
+function resolvePanelRole(
+  panelView: ExpenseView,
+  targetView: ExpenseView,
+  fromView: ExpenseView | null,
+  motionActive: boolean
+): ExpenseViewPanelRole {
+  if (fromView !== null) {
+    if (panelView === fromView) return 'outgoing'
+    if (panelView === targetView) return 'incoming'
+    return 'dormant'
+  }
+
+  if (motionActive) {
+    return panelView === targetView ? 'incoming' : 'dormant'
+  }
+
+  return panelView === targetView ? 'active' : 'dormant'
 }
 
 /**
- * Horizontal slide for Nosotros ↔ Míos on Home.
- * Timing matches .editorial-brandmark__kitties / __kitty-slot in index.css (520ms, cubic-bezier(0.22, 1, 0.36, 1)).
+ * Persistent dual panels (personal + shared) — each keeps its own Convex subscriptions.
+ * Toggle only swaps roles / slide; panel view props never change, so data never clears.
+ *
+ * Timing matches .editorial-brandmark__kitties / __kitty-slot in index.css (520ms).
  */
 export function ExpenseViewTransition({
   view,
@@ -30,19 +60,32 @@ export function ExpenseViewTransition({
   isTransitioning,
   children,
 }: ExpenseViewTransitionProps) {
+  const [committedView, setCommittedView] = useState(view)
+  const [motionActive, setMotionActive] = useState(false)
   const [minHeight, setMinHeight] = useState<number | undefined>(undefined)
-  const [layers, setLayers] = useState<{
-    outgoing: ExpenseView | null
-    incoming: ExpenseView
-  }>({ outgoing: null, incoming: view })
   const measureRef = useRef<HTMLDivElement>(null)
   const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const fromView = view !== committedView ? committedView : null
+  const dual = fromView !== null
 
   const measure = useCallback(() => {
     const el = measureRef.current
     if (!el) return
     const next = el.offsetHeight
     setMinHeight((prev) => (prev === undefined ? next : Math.max(prev, next)))
+  }, [])
+
+  const clearTimers = useCallback(() => {
+    if (settleTimerRef.current !== null) {
+      clearTimeout(settleTimerRef.current)
+      settleTimerRef.current = null
+    }
+    if (cooldownTimerRef.current !== null) {
+      clearTimeout(cooldownTimerRef.current)
+      cooldownTimerRef.current = null
+    }
   }, [])
 
   useLayoutEffect(() => {
@@ -52,33 +95,30 @@ export function ExpenseViewTransition({
     const ro = new ResizeObserver(() => measure())
     ro.observe(el)
     return () => ro.disconnect()
-  }, [measure, layers.incoming, layers.outgoing])
+  }, [measure, view, committedView, dual, motionActive])
+
+  useEffect(() => () => clearTimers(), [clearTimers])
 
   useEffect(() => {
-    setLayers((prev) => {
-      if (view === prev.incoming) return prev
-      return { outgoing: prev.incoming, incoming: view }
-    })
+    if (view === committedView) return
 
-    if (settleTimerRef.current !== null) {
-      clearTimeout(settleTimerRef.current)
-    }
+    setMotionActive(true)
+    clearTimers()
 
     settleTimerRef.current = setTimeout(() => {
       settleTimerRef.current = null
-      setLayers({ outgoing: null, incoming: view })
+      setCommittedView(view)
       measure()
+      cooldownTimerRef.current = setTimeout(() => {
+        cooldownTimerRef.current = null
+        setMotionActive(false)
+      }, TRANSITION_COOLDOWN_MS)
     }, EXPENSE_VIEW_TRANSITION_MS)
 
-    return () => {
-      if (settleTimerRef.current !== null) {
-        clearTimeout(settleTimerRef.current)
-        settleTimerRef.current = null
-      }
-    }
-  }, [view, measure])
+    return clearTimers
+  }, [view, committedView, measure, clearTimers])
 
-  const dual = layers.outgoing !== null
+  const showMotion = motionActive || isTransitioning || dual
   const dirClass =
     direction === 1
       ? 'expense-view-transition--to-shared'
@@ -88,27 +128,31 @@ export function ExpenseViewTransition({
 
   return (
     <div
-      className={cn('expense-view-transition', dirClass, isTransitioning && 'expense-view-transition--active')}
+      className={cn('expense-view-transition', dirClass, showMotion && 'expense-view-transition--active')}
       style={minHeight !== undefined ? { minHeight } : undefined}
       data-view={view}
     >
-      {dual ? (
-        <>
+      {PERSISTENT_VIEWS.map((panelView) => {
+        const role = resolvePanelRole(panelView, view, fromView, motionActive)
+        const visible = isExpenseViewPanelVisible(role)
+
+        return (
           <div
-            className="expense-view-transition__layer expense-view-transition__layer--outgoing"
-            aria-hidden
+            key={panelView}
+            ref={visible ? measureRef : undefined}
+            className={cn(
+              'expense-view-transition__layer',
+              role === 'dormant' && 'expense-view-transition__layer--dormant',
+              role === 'outgoing' && 'expense-view-transition__layer--outgoing',
+              visible && 'expense-view-transition__layer--primary',
+              role === 'incoming' && dual && 'expense-view-transition__layer--entering'
+            )}
+            aria-hidden={!visible && role !== 'outgoing'}
           >
-            {children(layers.outgoing!, 'outgoing')}
+            {children(panelView, role)}
           </div>
-          <div className="expense-view-transition__layer expense-view-transition__layer--incoming">
-            {children(layers.incoming, 'incoming')}
-          </div>
-        </>
-      ) : (
-        <div ref={measureRef} className="expense-view-transition__layer expense-view-transition__layer--active">
-          {children(layers.incoming, 'active')}
-        </div>
-      )}
+        )
+      })}
     </div>
   )
 }

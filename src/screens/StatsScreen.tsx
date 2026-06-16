@@ -9,9 +9,8 @@ import { monthKey, shiftMonthKey } from '@/lib/month'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import { useReportTabScroll } from '@/hooks/useReportTabScroll'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
+import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
 import type { ExpenseView } from '@/lib/expenseScope'
-
-type PanelRole = 'active' | 'outgoing' | 'incoming'
 
 function StatsViewPanel({
   panelView,
@@ -24,7 +23,7 @@ function StatsViewPanel({
   statsMessage,
 }: {
   panelView: ExpenseView
-  panelRole: PanelRole
+  panelRole: ExpenseViewPanelRole
   active: boolean
   month: string
   onPrevMonth: () => void
@@ -41,10 +40,8 @@ function StatsViewPanel({
     active ? { month, view: panelView } : 'skip'
   )
 
-  const { value: byItem, isStale: byItemStale, isInitialLoad: byItemInitial } =
-    useStaleWhileLoading(byItemLive, panelView)
-  const { value: insights, isStale: insightsStale, isInitialLoad: insightsInitial } =
-    useStaleWhileLoading(insightsLive, panelView)
+  const { value: byItem, isStale: byItemStale } = useStaleWhileLoading(byItemLive, panelView)
+  const { value: insights, isStale: insightsStale } = useStaleWhileLoading(insightsLive, panelView)
 
   const { total, rows } = useMemo(() => {
     if (!byItem) {
@@ -69,15 +66,19 @@ function StatsViewPanel({
   }, [byItem])
 
   const itemsStatus =
-    byItemInitial && byItem === undefined ? 'loading' : rows.length === 0 ? 'empty' : 'ready'
+    byItem === undefined && !byItemStale && panelRole !== 'dormant'
+      ? 'loading'
+      : rows.length === 0
+        ? 'empty'
+        : 'ready'
   const insightsStatus =
-    insightsInitial && insights === undefined
+    insights === undefined && !insightsStale && panelRole !== 'dormant'
       ? 'loading'
       : !insights || insights.length === 0
         ? 'empty'
         : 'ready'
 
-  const contentStale = (byItemStale || insightsStale) && panelRole !== 'outgoing'
+  const contentStale = (byItemStale || insightsStale) && panelRole === 'incoming'
 
   return (
     <CraftStatsShell

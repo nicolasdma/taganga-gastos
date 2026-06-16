@@ -5,14 +5,13 @@ import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { usePeriodTotals } from '@/hooks/usePeriodTotals'
 import { formatCOP, formatCOPEditorial } from '@/lib/currency'
 import type { ExpenseView } from '@/lib/expenseScope'
+import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
 import { cn } from '@/lib/utils'
-
-type PanelRole = 'active' | 'outgoing' | 'incoming'
 
 interface EditorialStageProps {
   pulseKey?: number
   view?: ExpenseView
-  panelRole?: PanelRole
+  panelRole?: ExpenseViewPanelRole
 }
 
 export function EditorialStage({ pulseKey = 0, view, panelRole = 'active' }: EditorialStageProps) {
@@ -20,7 +19,8 @@ export function EditorialStage({ pulseKey = 0, view, panelRole = 'active' }: Edi
 
   const editorial = today !== undefined ? formatCOPEditorial(today) : null
   const showPlaceholder = isInitialLoad && editorial === null
-  const dimStale = isStale && panelRole !== 'outgoing'
+  const dimStale = isStale && panelRole === 'incoming'
+  const showBrandmark = panelRole === 'active'
 
   return (
     <section className={cn('editorial-stage relative', dimStale && 'expense-view-stale')}>
@@ -37,7 +37,7 @@ export function EditorialStage({ pulseKey = 0, view, panelRole = 'active' }: Edi
                   Gastos
                 </h1>
               </div>
-              {panelRole !== 'outgoing' && <BrandmarkSlot />}
+              {showBrandmark && <BrandmarkSlot />}
             </div>
           </MotionReveal>
         </div>

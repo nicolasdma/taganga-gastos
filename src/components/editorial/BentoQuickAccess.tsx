@@ -16,11 +16,11 @@ import { cn } from '@/lib/utils'
 
 import type { ExpenseView } from '@/lib/expenseScope'
 
-type PanelRole = 'active' | 'outgoing' | 'incoming'
+import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
 
 interface BentoQuickAccessProps {
   view: ExpenseView
-  panelRole?: PanelRole
+  panelRole?: ExpenseViewPanelRole
   onOpenSheet: (intent: SheetIntent) => void
   onSaved: (result: SaveExpenseResult) => void
 }
@@ -44,7 +44,7 @@ export function BentoQuickAccess({
   const quickButtons =
     frequentQuickItems === undefined ? undefined : buildRecentQuickButtons(frequentQuickItems)
   const showQuickSkeleton = frequentInitial && quickButtons === undefined
-  const dimStale = (recentStale || frequentStale) && panelRole !== 'outgoing'
+  const dimStale = (recentStale || frequentStale) && panelRole === 'incoming'
 
   const handleRepeat = async () => {
     if (!lastExpense?.itemId || !lastExpense.itemEmoji || !lastExpense.itemLabel) return

@@ -3,15 +3,14 @@ import { api } from '../../convex/_generated/api'
 import { monthKey } from '@/lib/month'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import type { ExpenseView } from '@/lib/expenseScope'
+import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
 import { cn } from '@/lib/utils'
-
-type PanelRole = 'active' | 'outgoing' | 'incoming'
 
 interface InsightHighlightProps {
   view: ExpenseView
   onOpenStats: () => void
   pulseKey?: number
-  panelRole?: PanelRole
+  panelRole?: ExpenseViewPanelRole
 }
 
 export function InsightHighlight({
@@ -24,8 +23,9 @@ export function InsightHighlight({
   const { value: insights, isStale, isInitialLoad } = useStaleWhileLoading(insightsLive, view)
 
   const top = insights && insights.length > 0 ? insights[0] : null
-  const reserveSlot = top !== null || isInitialLoad || (isStale && panelRole !== 'outgoing')
-  const dimStale = isStale && panelRole !== 'outgoing'
+  const reserveSlot =
+    top !== null || isInitialLoad || (isStale && panelRole === 'incoming')
+  const dimStale = isStale && panelRole === 'incoming'
 
   if (!top && !reserveSlot) return null
 

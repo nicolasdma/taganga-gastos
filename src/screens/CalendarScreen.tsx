@@ -12,6 +12,7 @@ import { formatCOP } from '@/lib/currency'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import { useReportTabScroll } from '@/hooks/useReportTabScroll'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
+import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
 import type { ExpenseView } from '@/lib/expenseScope'
 import { formatMonthKey, subMonths, cn } from '@/lib/utils'
 
@@ -28,11 +29,9 @@ function formatComparison(current: number, previous: number): string | null {
   return `${sign}${pct}% vs mes pasado`
 }
 
-type PanelRole = 'active' | 'outgoing' | 'incoming'
-
 interface CalendarViewPanelProps {
   panelView: ExpenseView
-  panelRole: PanelRole
+  panelRole: ExpenseViewPanelRole
   active: boolean
   currentMonth: Date
   onMonthChange: (month: Date) => void
@@ -69,8 +68,8 @@ function CalendarViewPanel({
   const total = useMemo(() => monthTotal(byDay), [byDay])
   const prevTotal = useMemo(() => monthTotal(prevByDay), [prevByDay])
   const comparison = useMemo(() => formatComparison(total, prevTotal), [total, prevTotal])
-  const dimStale = (byDayStale || prevByDayStale) && panelRole !== 'outgoing'
-  const showTotalSkeleton = byDayInitial && byDay === undefined
+  const dimStale = (byDayStale || prevByDayStale) && panelRole === 'incoming'
+  const showTotalSkeleton = byDayInitial && byDay === undefined && panelRole !== 'dormant'
 
   return (
     <div
