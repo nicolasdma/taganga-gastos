@@ -575,8 +575,8 @@
   }
 
   .sheet-panel--standard {
-    height: min(52dvh, var(--vv-height, 100dvh));
-    max-height: min(52dvh, var(--vv-height, 100dvh));
+    height: min(80dvh, var(--vv-height, 100dvh));
+    max-height: min(80dvh, var(--vv-height, 100dvh));
   }
   .sheet-backdrop {
     background: rgba(26, 39, 68, 0);
@@ -653,24 +653,43 @@
   }
 
   .craft-keyboard-slide {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 340ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .craft-keyboard-slide--open {
+    grid-template-rows: 1fr;
+  }
+
+  .craft-keyboard-slide__panel {
+    min-height: 0;
     overflow: hidden;
     opacity: 0;
     transform: translate3d(0, 100%, 0);
     transition:
       transform 340ms cubic-bezier(0.32, 0.72, 0, 1),
-      opacity 280ms cubic-bezier(0.32, 0.72, 0, 1);
+      opacity 340ms cubic-bezier(0.32, 0.72, 0, 1);
     will-change: transform, opacity;
     pointer-events: none;
   }
 
-  .craft-keyboard-slide--open {
+  .craft-keyboard-slide--open .craft-keyboard-slide__panel {
     opacity: 1;
     transform: translate3d(0, 0, 0);
     pointer-events: auto;
   }
 
+  .craft-keyboard-slide__panel--dock {
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid hsl(218 22% 82% / 0.25);
+    background: hsl(40 45% 97% / 0.5);
+  }
+
   .craft-keyboard-dock {
-    padding-top: 0.25rem;
+    padding-top: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -683,7 +702,9 @@
       transition-delay: 0ms !important;
     }
 
-    .craft-keyboard-slide {
+    .craft-keyboard-slide__panel {
+      transition-duration: 0.01ms !important;
+      transition-delay: 0ms !important;
       opacity: 1;
       transform: none;
     }

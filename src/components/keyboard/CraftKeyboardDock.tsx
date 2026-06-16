@@ -49,6 +49,7 @@ export function CraftKeyboardDock({ className, onHidden }: CraftKeyboardDockProp
   return (
     <CraftKeyboardSlide
       visible={visible}
+      variant="dock"
       className={cn('craft-keyboard-dock', className)}
       onHidden={handleHidden}
     >

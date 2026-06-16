@@ -57,15 +57,17 @@ function LetterRow({
   keys,
   onChar,
   keyClassName,
+  keyGap,
   className,
 }: {
   keys: readonly string[]
   onChar: (char: string) => void
   keyClassName: string
+  keyGap: string
   className?: string
 }) {
   return (
-    <div className={cn('flex gap-1', className)}>
+    <div className={cn('flex', keyGap, className)}>
       {keys.map((key) => (
         <KeyButton
           key={key}
@@ -91,16 +93,19 @@ export function CraftKeyboard({
   compact = false,
   className,
 }: CraftKeyboardProps) {
-  const keyH = compact ? 'h-9 text-[13px]' : 'h-10 text-sm'
-  const doneH = compact ? 'h-9 text-xs' : 'h-10 text-sm'
+  const keyH = compact ? 'h-10 text-sm' : 'h-11 text-[15px]'
+  const keyGap = compact ? 'gap-0.5' : 'gap-1'
+  const rowGap = compact ? 'gap-1' : 'gap-1.5'
+  const sideKeyW = compact ? 'w-11' : 'w-12'
+  const doneH = compact ? 'h-10 text-sm' : 'h-11 text-sm'
   const doneLabel = doneLabelForLayout(layout)
 
   if (layout === 'alphanumeric') {
     return (
       <div className={cn('craft-keyboard select-none', className)} role="group" aria-label="Teclado alfanumérico">
-        <div className="grid gap-1.5">
+        <div className={cn('grid', rowGap)}>
           {ALPHANUMERIC_ROWS.map((row, ri) => (
-            <div key={ri} className="flex gap-1">
+            <div key={ri} className={cn('flex', keyGap)}>
               {row.map((key) => (
                 <KeyButton
                   key={key}
@@ -113,13 +118,13 @@ export function CraftKeyboard({
               ))}
             </div>
           ))}
-          <div className="flex gap-1.5">
+          <div className={cn('flex', compact ? 'gap-1' : 'gap-1.5')}>
             <KeyButton
               onClick={onBackspace}
               ariaLabel="Borrar"
               className={cn('flex-1 rounded-xl flex items-center justify-center', doneH)}
             >
-              <Delete className="h-4 w-4 text-muted-foreground" />
+              <Delete className="h-[1.125rem] w-[1.125rem] text-muted-foreground" />
             </KeyButton>
             <KeyButton onClick={onDone} primary className={cn('flex-[2] rounded-xl', doneH)}>
               {doneLabel}

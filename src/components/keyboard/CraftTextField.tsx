@@ -9,7 +9,7 @@ import { useCraftKeyboardContext, useCraftKeyboardField } from './useCraftKeyboa
  * Craft text entry: readOnly display + custom keyboard.
  * We never focus an editable <input> — iOS/Android would open the OS keyboard,
  * shrink visualViewport, and hide nav/FABs. inputMode="none" + readOnly keeps
- * the craft UI stable inside BottomSheet (52dvh).
+ * the craft UI stable inside BottomSheet.
  *
  * With CraftKeyboardProvider + CraftKeyboardDock, the keyboard docks at the
  * sheet footer instead of appearing below this field.

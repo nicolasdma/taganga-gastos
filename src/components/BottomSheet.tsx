@@ -18,7 +18,7 @@ interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
   className?: string
-  /** standard = 52dvh (expense flows), tall = up to 90dvh */
+  /** standard = 80dvh (expense flows), tall = up to 90dvh */
   height?: SheetHeight
   title?: string
   subtitle?: string
@@ -338,7 +338,7 @@ export function BottomSheet({
         </div>
 
         {footer && (
-          <div className="sheet-footer shrink-0 px-4 pt-2 pb-safe border-t border-stitch/25 bg-porcelain-cream/50">
+          <div className="sheet-footer shrink-0 overflow-hidden px-4 pt-2 pb-safe">
             {footer}
           </div>
         )}
