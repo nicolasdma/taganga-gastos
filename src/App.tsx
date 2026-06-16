@@ -22,7 +22,11 @@ import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import type { SaveExpenseResult } from '@/hooks/useExpenseSave'
 import type { SaveReceiptResult } from '@/hooks/useReceiptSave'
 import type { EditableExpense } from '@/lib/expenseTypes'
-import { hasLocalAuthToken, requestStoragePersistence } from '@/lib/authStorage'
+import {
+  hasLocalAuthToken,
+  refreshAccessTokenIfNeeded,
+  requestStoragePersistence,
+} from '@/lib/authStorage'
 import { removeFromOutbox, removeReceiptGroupFromOutbox } from '@/lib/outbox'
 import { useInviteCodeFromPath } from '@/hooks/useInviteCodeFromPath'
 import { HomeScreen, CalendarScreen, LoginScreen } from '@/screens'
@@ -178,17 +182,38 @@ function AuthenticatedApp() {
   const { isLoading, isAuthenticated } = useConvexAuth()
   const offline = useIsOffline()
   const convexUrl = import.meta.env.VITE_CONVEX_URL
-  const offlineWithSession = offline && hasLocalAuthToken(convexUrl)
+  const hasStoredSession = hasLocalAuthToken(convexUrl)
+  const offlineWithSession = offline && hasStoredSession
   const household = useQuery(api.households.getMyHousehold)
   const inviteCodeFromPath = useInviteCodeFromPath()
   const ensureUserReady = useMutation(api.households.ensureUserReady)
   const joinHousehold = useMutation(api.households.joinHousehold)
   const [bootstrapping, setBootstrapping] = useState(false)
+  const [recoveryState, setRecoveryState] = useState<'idle' | 'recovering' | 'failed'>('idle')
   const bootstrapAttempted = useRef(false)
 
   useDisplayModeAnalytics()
 
-  // Request persistent storage after login (Safari tab vs PWA = separate partitions on iOS).
+  useEffect(() => {
+    void requestStoragePersistence()
+  }, [])
+
+  // Fallback: Convex Auth only loads JWT on mount; recover when refresh token remains.
+  useEffect(() => {
+    if (isLoading || isAuthenticated || !convexUrl || !hasStoredSession) return
+    if (recoveryState !== 'idle') return
+    setRecoveryState('recovering')
+
+    void (async () => {
+      const refreshed = await refreshAccessTokenIfNeeded(convexUrl)
+      if (refreshed) {
+        window.location.reload()
+        return
+      }
+      setRecoveryState('failed')
+    })()
+  }, [isLoading, isAuthenticated, convexUrl, hasStoredSession, recoveryState])
+
   useEffect(() => {
     if (!isAuthenticated) return
     void requestStoragePersistence()
@@ -220,7 +245,10 @@ function AuthenticatedApp() {
     })()
   }, [isAuthenticated, household, inviteCodeFromPath, ensureUserReady, joinHousehold])
 
-  if (isLoading || bootstrapping) {
+  const recoveringSession =
+    recoveryState === 'recovering' || (hasStoredSession && recoveryState === 'idle')
+
+  if (isLoading || bootstrapping || recoveringSession) {
     return <AuthLoadingScreen />
   }
 

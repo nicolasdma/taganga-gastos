@@ -6,6 +6,7 @@
   :root {
     --vv-height: 100dvh;
     --vv-offset-top: 0px;
+    --keyboard-height: 0px;
     --background: 38 48% 94%;
     --foreground: 222 42% 16%;
     --card: 40 55% 98%;
@@ -440,16 +441,26 @@
     will-change: transform;
   }
 
-  /* Anchor sheets to the visible viewport (keyboard-aware on iOS). */
-  .sheet-root {
-    top: var(--vv-offset-top);
-    height: var(--vv-height);
-  }
-
   .sheet-panel {
-    max-height: min(90%, var(--vv-height));
+    max-height: min(90dvh, var(--vv-height, 100dvh));
     transform: translate3d(0, 100%, 0);
     transition: transform 480ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Item picker search: fill visible area above keyboard (WhatsApp-style). */
+  html[data-item-picker-search] .sheet-panel {
+    max-height: var(--vv-height, 100dvh);
+  }
+
+  html[data-item-picker-search] .sheet-handle {
+    display: none;
+  }
+
+  html[data-item-picker-search] .sheet-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-top: 0.75rem;
   }
   .sheet-backdrop {
     background: rgba(26, 39, 68, 0);
@@ -467,13 +478,23 @@
     -webkit-backdrop-filter: blur(10px);
   }
 
-  /* Item picker: keep results above the keyboard when the filtered grid is short. */
-  .item-picker {
-    min-height: min(75dvh, var(--vv-height));
+  .item-picker-search-input {
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    line-height: 1.25rem;
   }
 
-  .item-picker-results--searching {
-    min-height: max(11rem, calc(var(--vv-height) * 0.32));
+  .item-picker--compact .item-picker-search-input {
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.9375rem;
+    line-height: 1.125rem;
+  }
+
+  .item-picker--compact .label-stitch {
+    font-size: 0.625rem;
+    margin-bottom: 0.125rem;
   }
 
   .sheet-panel--open {

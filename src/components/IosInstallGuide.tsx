@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 
+/** Re-enable when we want to prompt iOS Safari users to install the PWA. */
+const ENABLED = false
+
 const VISIT_KEY = 'gastos_visit_count'
 const IOS_DISMISS_KEY = 'gastos_ios_install_dismissed'
 
@@ -19,6 +22,7 @@ export function IosInstallGuide() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    if (!ENABLED) return
     if (!isIos() || isStandaloneMode()) return
 
     const visits = Number(localStorage.getItem(VISIT_KEY) ?? '0') + 1
@@ -29,7 +33,7 @@ export function IosInstallGuide() {
     }
   }, [])
 
-  if (!visible) return null
+  if (!ENABLED || !visible) return null
 
   const dismiss = () => {
     localStorage.setItem(IOS_DISMISS_KEY, '1')

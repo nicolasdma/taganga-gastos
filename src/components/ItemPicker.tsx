@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ExpenseChip } from '@/components/ExpenseChip'
 import { CreateCustomItemSheet } from '@/components/CreateCustomItemSheet'
 import { ITEM_CATALOG, itemMatchesSearch } from '@/lib/items'
@@ -7,6 +7,7 @@ import { sortCatalogByUsage } from '@/lib/itemUsage'
 import { useCustomItems } from '@/hooks/useCustomItems'
 import { useFrequentItemCounts } from '@/hooks/useFrequentQuickItems'
 import { useExpenseView } from '@/hooks/useExpenseView'
+import { useKeyboardOpen } from '@/hooks/useKeyboardOpen'
 import { cn } from '@/lib/utils'
 
 export interface SelectedItem {
@@ -23,10 +24,14 @@ interface ItemPickerProps {
 /** Minimum query length before offering inline custom-item creation. */
 const CREATE_CTA_MIN_QUERY = 2
 
+const SEARCH_MODE_ATTR = 'data-item-picker-search'
+
 export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
   const [search, setSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
-  const resultsRef = useRef<HTMLDivElement>(null)
+  const [searchFocused, setSearchFocused] = useState(false)
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const keyboardOpen = useKeyboardOpen()
   const { view } = useExpenseView()
   const customItems = useCustomItems(view)
   const catalog = useMemo(
@@ -44,7 +49,7 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
   }, [catalog, search, serverCounts, customItems])
 
   const trimmedSearch = search.trim()
-  const isSearching = trimmedSearch.length > 0
+  const compact = searchFocused || keyboardOpen
   const showCreateCta =
     customItems !== undefined &&
     serverCounts !== undefined &&
@@ -52,17 +57,33 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
     displayItems.length === 0
 
   useEffect(() => {
-    if (!isSearching) return
-    const scroll = () =>
-      resultsRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
-    requestAnimationFrame(scroll)
-    const timeoutId = window.setTimeout(scroll, 280)
-    return () => window.clearTimeout(timeoutId)
-  }, [isSearching, displayItems.length, showCreateCta])
+    const root = document.documentElement
+    if (compact) {
+      root.setAttribute(SEARCH_MODE_ATTR, '')
+    } else {
+      root.removeAttribute(SEARCH_MODE_ATTR)
+    }
+    return () => root.removeAttribute(SEARCH_MODE_ATTR)
+  }, [compact])
 
-  const scrollResultsIntoView = useCallback(() => {
-    resultsRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
-  }, [])
+  const handleSearchFocus = () => {
+    if (blurTimer.current) {
+      clearTimeout(blurTimer.current)
+      blurTimer.current = null
+    }
+    setSearchFocused(true)
+  }
+
+  const handleSearchBlur = () => {
+    blurTimer.current = window.setTimeout(() => setSearchFocused(false), 120)
+  }
+
+  useEffect(
+    () => () => {
+      if (blurTimer.current) clearTimeout(blurTimer.current)
+    },
+    []
+  )
 
   const handleCreated = (item: {
     itemId: string
@@ -86,42 +107,47 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
 
   return (
     <>
-      <div className="item-picker flex flex-col pb-3 -mx-1">
-        <div className="sticky top-0 z-10 shrink-0 -mx-1 px-1 pt-0.5 pb-3 bg-gradient-to-b from-[hsl(40_60%_99%)] from-75% to-transparent">
-          <div className="text-center mb-3">
+      <div
+        className={cn(
+          'item-picker flex min-h-0 flex-1 flex-col',
+          compact && 'item-picker--compact'
+        )}
+      >
+        {!compact && (
+          <div className="shrink-0 pb-3 text-center">
             <p className="font-display text-[1.35rem] font-bold text-ink tracking-tight">
               {titleEmoji} {title}
             </p>
             <p className="text-[11px] text-muted-foreground font-medium mt-1">{subtitle}</p>
           </div>
+        )}
 
-          {isLargeCatalog && (
+        {isLargeCatalog && (
+          <div className="item-picker-search shrink-0 pb-2">
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onFocus={scrollResultsIntoView}
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
               placeholder="Buscar pescado, taxi, arriendo…"
               inputMode="search"
               enterKeyHint="search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               className={cn(
-                'w-full rounded-2xl pl-4 pr-4 py-3 text-base font-medium',
+                'item-picker-search-input w-full font-medium',
                 'bg-porcelain-cream/90 border-2 border-stitch/45',
                 'placeholder:text-muted-foreground/55',
                 'focus:outline-none focus:border-cobalt-glaze/55 focus:ring-2 focus:ring-cobalt-glaze/15',
                 'shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]'
               )}
             />
-          )}
-        </div>
+          </div>
+        )}
 
-        <div
-          ref={resultsRef}
-          className={cn(
-            'space-y-2.5 flex-1',
-            isSearching && 'item-picker-results--searching'
-          )}
-        >
+        <div className="item-picker-results min-h-0 flex-1 space-y-2.5 overflow-y-auto scrollbar-none overscroll-y-contain">
           <p className="label-stitch px-0.5">{sectionLabel}</p>
           {serverCounts === undefined || customItems === undefined ? (
             <div className="grid grid-cols-4 gap-2">
@@ -150,7 +176,7 @@ export function ItemPicker({ storeName, onSelect }: ItemPickerProps) {
               Sin resultados para “{search}”
             </p>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-2 pb-1">
               {displayItems.map((item, i) => (
                 <ExpenseChip
                   key={item.id}

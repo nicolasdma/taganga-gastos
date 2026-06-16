@@ -7,8 +7,10 @@ export function useVisualViewportHeight() {
     if (!vv) return
 
     const update = () => {
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
       document.documentElement.style.setProperty('--vv-height', `${vv.height}px`)
       document.documentElement.style.setProperty('--vv-offset-top', `${vv.offsetTop}px`)
+      document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`)
     }
 
     vv.addEventListener('resize', update)
@@ -20,6 +22,7 @@ export function useVisualViewportHeight() {
       vv.removeEventListener('scroll', update)
       document.documentElement.style.removeProperty('--vv-height')
       document.documentElement.style.removeProperty('--vv-offset-top')
+      document.documentElement.style.removeProperty('--keyboard-height')
     }
   }, [])
 }
