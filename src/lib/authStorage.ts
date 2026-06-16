@@ -1,3 +1,5 @@
+import type { TokenStorage } from '@convex-dev/auth/react'
+
 const JWT_KEY = '__convexAuthJWT'
 const REFRESH_KEY = '__convexAuthRefreshToken'
 
@@ -38,6 +40,85 @@ export function getLocalAuthStoragePresence(convexUrl?: string): AuthStoragePres
     hasJwt: Boolean(localStorage.getItem(keys.jwt)),
     hasRefresh: Boolean(localStorage.getItem(keys.refresh)),
   }
+}
+
+function safeGet(storage: Storage, key: string): string | null {
+  try {
+    return storage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function safeSet(storage: Storage, key: string, value: string): boolean {
+  try {
+    storage.setItem(key, value)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function safeRemove(storage: Storage, key: string): void {
+  try {
+    storage.removeItem(key)
+  } catch {
+    // Ignore storage failures in constrained browser contexts (iOS Safari).
+  }
+}
+
+/**
+ * iOS Safari can reject localStorage writes in some contexts. This storage
+ * writes to sessionStorage first and mirrors to localStorage when possible.
+ */
+export function createRobustAuthStorage(): TokenStorage {
+  const memory = new Map<string, string>()
+
+  return {
+    getItem(key: string): string | null {
+      const fromSession = safeGet(sessionStorage, key)
+      if (fromSession !== null) return fromSession
+
+      const fromLocal = safeGet(localStorage, key)
+      if (fromLocal !== null) return fromLocal
+
+      return memory.get(key) ?? null
+    },
+    setItem(key: string, value: string): void {
+      const wroteSession = safeSet(sessionStorage, key, value)
+      const wroteLocal = safeSet(localStorage, key, value)
+
+      if (!wroteSession && !wroteLocal) {
+        memory.set(key, value)
+      } else {
+        memory.delete(key)
+      }
+    },
+    removeItem(key: string): void {
+      safeRemove(sessionStorage, key)
+      safeRemove(localStorage, key)
+      memory.delete(key)
+    },
+  }
+}
+
+export interface StorageAvailability {
+  localWritable: boolean
+  sessionWritable: boolean
+}
+
+export function getStorageAvailability(): StorageAvailability {
+  if (typeof window === 'undefined') {
+    return { localWritable: false, sessionWritable: false }
+  }
+
+  const testKey = '__gastos_storage_test__'
+  const localWritable = safeSet(localStorage, testKey, '1')
+  const sessionWritable = safeSet(sessionStorage, testKey, '1')
+  safeRemove(localStorage, testKey)
+  safeRemove(sessionStorage, testKey)
+
+  return { localWritable, sessionWritable }
 }
 
 /**
