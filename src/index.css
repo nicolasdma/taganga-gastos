@@ -678,14 +678,20 @@
     opacity: 1;
     transform: translate3d(0, 0, 0);
     pointer-events: auto;
+    overflow: visible;
   }
 
   .craft-keyboard-slide__panel--dock {
     margin-inline: -1rem;
-    padding-inline: 1rem;
+    padding-inline: 0.75rem;
     padding-top: 0.5rem;
+    padding-bottom: 6px;
     border-top: 1px solid hsl(218 22% 82% / 0.25);
     background: hsl(40 45% 97% / 0.5);
+  }
+
+  .craft-keyboard {
+    padding-bottom: 2px;
   }
 
   .craft-keyboard-dock {

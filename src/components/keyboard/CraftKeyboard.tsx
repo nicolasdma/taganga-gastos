@@ -141,19 +141,25 @@ export function CraftKeyboard({
 
   return (
     <div className={cn('craft-keyboard select-none', className)} role="group" aria-label="Teclado de texto">
-      <div className="grid gap-1.5">
-        <LetterRow keys={topRow} onChar={onChar} keyClassName={keyH} />
+      <div className={cn('grid', rowGap)}>
+        <LetterRow keys={topRow} onChar={onChar} keyClassName={keyH} keyGap={keyGap} />
 
-        <LetterRow keys={midRow} onChar={onChar} keyClassName={keyH} className="px-2" />
+        <LetterRow
+          keys={midRow}
+          onChar={onChar}
+          keyClassName={keyH}
+          keyGap={keyGap}
+          className="px-1.5"
+        />
 
-        <div className="flex gap-1 items-stretch">
+        <div className={cn('flex items-stretch', keyGap)}>
           {onToggleCase && (
             <KeyButton
               onClick={onToggleCase}
               ariaLabel={uppercase ? 'Minúsculas' : 'Mayúsculas'}
               className={cn(
                 'shrink-0 rounded-xl px-2.5',
-                compact ? 'w-10' : 'w-11',
+                sideKeyW,
                 keyH,
                 uppercase && 'ring-2 ring-cobalt-glaze/35'
               )}
@@ -161,7 +167,7 @@ export function CraftKeyboard({
               ⇧
             </KeyButton>
           )}
-          <div className="flex flex-1 gap-1 min-w-0">
+          <div className={cn('flex flex-1 min-w-0', keyGap)}>
             {botRow.map((key) => (
               <KeyButton
                 key={key}
@@ -178,15 +184,15 @@ export function CraftKeyboard({
             ariaLabel="Borrar"
             className={cn(
               'shrink-0 rounded-xl flex items-center justify-center',
-              compact ? 'w-10' : 'w-11',
+              sideKeyW,
               keyH
             )}
           >
-            <Delete className="h-4 w-4 text-muted-foreground" />
+            <Delete className="h-[1.125rem] w-[1.125rem] text-muted-foreground" />
           </KeyButton>
         </div>
 
-        <div className="flex gap-1.5">
+        <div className={cn('flex', compact ? 'gap-1' : 'gap-1.5')}>
           <KeyButton
             onClick={() => (onSpace ? onSpace() : onChar(' '))}
             ariaLabel="Espacio"
@@ -200,7 +206,7 @@ export function CraftKeyboard({
             ariaLabel={doneLabel}
             className={cn('flex-1 rounded-xl flex items-center justify-center gap-1', doneH)}
           >
-            <CornerDownLeft className="h-4 w-4 shrink-0" />
+            <CornerDownLeft className="h-[1.125rem] w-[1.125rem] shrink-0" />
             <span>{doneLabel}</span>
           </KeyButton>
         </div>
