@@ -130,7 +130,7 @@ export function CraftStatsShell({
       className={cn('tab-scroll h-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none', className)}
     >
       <EditorialScreenHeader
-        kicker="Tejido a mano"
+        kicker="Contando patitas"
         title="Estadísticas"
         subtitle="por ítem 🐾"
       />

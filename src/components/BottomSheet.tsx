@@ -67,6 +67,7 @@ export function BottomSheet({
   const [bodyContent, setBodyContent] = useState<ReactNode>(null)
 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const closingRef = useRef(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
 
@@ -89,6 +90,7 @@ export function BottomSheet({
     (notifyParent: boolean) => {
       clearCloseTimer()
       closeTimer.current = setTimeout(() => {
+        closingRef.current = false
         setClosing(false)
         setMounted(false)
         setDragY(0)
@@ -102,7 +104,8 @@ export function BottomSheet({
 
   const beginClose = useCallback(
     (notifyParent: boolean, fromDragY = 0) => {
-      if (closing) return
+      if (closingRef.current) return
+      closingRef.current = true
       setClosing(true)
       setDragging(false)
       setEntered(false)
@@ -125,7 +128,7 @@ export function BottomSheet({
       setDragY(0)
       finishClose(notifyParent)
     },
-    [finishClose, closing]
+    [finishClose]
   )
 
   useEffect(() => {
@@ -136,10 +139,14 @@ export function BottomSheet({
 
   useEffect(() => {
     if (open) {
+      if (closingRef.current) return
+
       clearCloseTimer()
       document.body.style.overflow = 'hidden'
 
       const frame = requestAnimationFrame(() => {
+        if (closingRef.current) return
+        closingRef.current = false
         setClosing(false)
         setMounted(true)
         setDragY(0)
@@ -150,10 +157,10 @@ export function BottomSheet({
       return () => cancelAnimationFrame(frame)
     }
 
-    if (mounted && !closing) {
+    if (!open && mounted && !closingRef.current) {
       queueMicrotask(() => beginClose(false))
     }
-  }, [open, mounted, closing, beginClose])
+  }, [open, mounted, beginClose])
 
   useEffect(
     () => () => {
@@ -191,7 +198,7 @@ export function BottomSheet({
   }, [mounted, entered, scrollKey])
 
   const onHandleTouchStart = (e: TouchEvent) => {
-    if (closing) return
+    if (closingRef.current) return
     const y = e.touches[0].clientY
     startY.current = y
     lastY.current = y
@@ -201,7 +208,7 @@ export function BottomSheet({
   }
 
   const onHandleTouchMove = (e: TouchEvent) => {
-    if (!dragging || closing) return
+    if (!dragging || closingRef.current) return
     const y = e.touches[0].clientY
     const now = performance.now()
     const dt = now - lastTime.current
@@ -216,7 +223,7 @@ export function BottomSheet({
   }
 
   const onHandleTouchEnd = () => {
-    if (closing) return
+    if (closingRef.current) return
     setDragging(false)
 
     const shouldDismiss = dragY > 96 || velocity.current > 0.65

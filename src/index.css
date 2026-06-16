@@ -977,7 +977,7 @@
     padding-top: max(env(safe-area-inset-top, 0px), 0.5rem);
   }
 
-  /* Calendario / Estadísticas — título grande; achica solo si la columna se aprieta */
+  /* Calendario / Estadísticas — escala con el ancho antes de partir en 2 líneas */
   .editorial-screen-header .editorial-header__copy {
     container-type: inline-size;
     container-name: header-copy;
@@ -985,24 +985,11 @@
   }
 
   .editorial-screen-header .type-editorial-title {
-    font-size: clamp(2.35rem, 9.5vw, 3.2rem);
+    font-size: clamp(1.75rem, 19cqw, 3.15rem);
     line-height: 0.94;
     letter-spacing: -0.04em;
-  }
-
-  @container header-copy (max-width: 10.5rem) {
-    .editorial-screen-header .type-editorial-title {
-      font-size: clamp(2.1rem, 8.5vw, 2.75rem);
-      line-height: 0.98;
-    }
-  }
-
-  @container header-copy (max-width: 9rem) {
-    .editorial-screen-header .type-editorial-title {
-      font-size: clamp(1.9rem, 7.5vw, 2.35rem);
-      line-height: 1.04;
-      overflow-wrap: break-word;
-    }
+    white-space: nowrap;
+    max-width: 100%;
   }
 
   .editorial-screen-header--stacked .editorial-header__title-row {
