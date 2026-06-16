@@ -246,7 +246,10 @@ function AuthenticatedApp() {
   }, [isAuthenticated, household, inviteCodeFromPath, ensureUserReady, joinHousehold])
 
   const recoveringSession =
-    recoveryState === 'recovering' || (hasStoredSession && recoveryState === 'idle')
+    !isAuthenticated &&
+    hasStoredSession &&
+    recoveryState !== 'failed' &&
+    (recoveryState === 'recovering' || recoveryState === 'idle')
 
   if (isLoading || bootstrapping || recoveringSession) {
     return <AuthLoadingScreen />
