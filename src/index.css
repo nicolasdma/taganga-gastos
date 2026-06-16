@@ -575,8 +575,8 @@
   }
 
   .sheet-panel--standard {
-    height: min(60dvh, var(--vv-height, 100dvh));
-    max-height: min(60dvh, var(--vv-height, 100dvh));
+    height: min(52dvh, var(--vv-height, 100dvh));
+    max-height: min(52dvh, var(--vv-height, 100dvh));
   }
   .sheet-backdrop {
     background: rgba(26, 39, 68, 0);
@@ -1077,12 +1077,12 @@
 
   .nav-float {
     position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin-inline: auto;
     bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
     z-index: 45;
-    width: calc(100% - 2rem);
-    max-width: 22rem;
+    width: min(22rem, calc(100% - 2rem));
     padding: 0.35rem;
     border-radius: 999px;
     background: rgba(251, 247, 240, 0.82);

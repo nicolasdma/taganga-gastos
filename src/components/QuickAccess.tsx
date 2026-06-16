@@ -5,7 +5,7 @@ import { ExpenseChip } from '@/components/ExpenseChip'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import { buildRecentQuickButtons } from '@/lib/quickButtons'
-import { useExpenseSave } from '@/hooks/useExpenseSave'
+import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 import { useFrequentQuickItems } from '@/hooks/useFrequentQuickItems'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import type { SheetIntent } from '@/components/ExpenseSheet'
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 
 interface QuickAccessProps {
   onOpenSheet: (intent: SheetIntent) => void
-  onSaved: (result: import('@/hooks/useExpenseSave').SaveExpenseResult) => void
+  onSaved: (result: SaveExpenseResult) => void
 }
 
 const QUICK_GRID = 'grid-cols-4'

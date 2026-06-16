@@ -8,7 +8,7 @@ import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import { ITEM_CATALOG } from '@/lib/items'
 import { buildRecentQuickButtons } from '@/lib/quickButtons'
-import { useExpenseSave } from '@/hooks/useExpenseSave'
+import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 import { useFrequentQuickItems } from '@/hooks/useFrequentQuickItems'
 import type { SheetIntent } from '@/components/ExpenseSheet'
 import { cn } from '@/lib/utils'
@@ -18,7 +18,7 @@ import type { ExpenseView } from '@/lib/expenseScope'
 interface BentoQuickAccessProps {
   view: ExpenseView
   onOpenSheet: (intent: SheetIntent) => void
-  onSaved: (result: import('@/hooks/useExpenseSave').SaveExpenseResult) => void
+  onSaved: (result: SaveExpenseResult) => void
 }
 
 export function BentoQuickAccess({ view, onOpenSheet, onSaved }: BentoQuickAccessProps) {

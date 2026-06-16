@@ -8,13 +8,14 @@ import {
   type ReceiptReviewFooterState,
 } from '@/components/ReceiptReviewSheet'
 import { resizeReceiptImage } from '@/lib/receiptImage'
+import type { SaveReceiptResult } from '@/hooks/useReceiptSave'
 import type { ReceiptScanResult } from '@/lib/receiptScan'
 import { Button } from '@/components/ui/button'
 
 interface ReceiptScanSheetProps {
   open: boolean
   onClose: () => void
-  onSaved: (result: import('@/hooks/useReceiptSave').SaveReceiptResult) => void
+  onSaved: (result: SaveReceiptResult) => void
 }
 
 type ScanPhase = 'idle' | 'loading' | 'error' | 'review'

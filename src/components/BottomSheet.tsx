@@ -18,7 +18,7 @@ interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
   className?: string
-  /** standard = 60dvh (expense flows), tall = up to 90dvh */
+  /** standard = 52dvh (expense flows), tall = up to 90dvh */
   height?: SheetHeight
   title?: string
   subtitle?: string
