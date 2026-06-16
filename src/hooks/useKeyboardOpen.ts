@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 const DEFAULT_THRESHOLD_PX = 150
 
 /**
- * Detects virtual keyboard via visualViewport shrink (iOS Safari, Chrome Android).
+ * Detects the OS virtual keyboard via visualViewport shrink (iOS Safari, Chrome Android).
+ * CraftTextField uses readOnly + inputMode="none" so this should stay false during custom typing.
  */
 export function useKeyboardOpen(thresholdPx = DEFAULT_THRESHOLD_PX) {
   const [keyboardOpen, setKeyboardOpen] = useState(false)

@@ -1,5 +1,10 @@
+import { CraftTextField } from '@/components/keyboard/CraftTextField'
 import { useState } from 'react'
 import { BottomSheet } from '@/components/BottomSheet'
+import {
+  CraftKeyboardProvider,
+  useCraftKeyboardFooterSlot,
+} from '@/components/keyboard'
 import { useCreateCustomItem, type CreatedCustomItem } from '@/hooks/useCreateCustomItem'
 import { cn } from '@/lib/utils'
 
@@ -44,20 +49,13 @@ export function CreateCustomItemForm({
     <div className="pb-4">
       <label className="block mb-4">
         <span className="label-stitch mb-1.5 block">Nombre</span>
-        <input
-          type="text"
+        <CraftTextField
           value={label}
-          onChange={(e) => setLabel(e.target.value)}
+          onChange={setLabel}
           placeholder="comida de gatito"
-          inputMode="text"
-          enterKeyHint="done"
+          maxLength={40}
           autoFocus
-          className={cn(
-            'w-full rounded-2xl px-4 py-3 text-base font-medium',
-            'bg-porcelain-cream/90 border-2 border-stitch/45',
-            'placeholder:text-muted-foreground/55',
-            'focus:outline-none focus:border-cobalt-glaze/55 focus:ring-2 focus:ring-cobalt-glaze/15'
-          )}
+          compactKeyboard
         />
       </label>
 
@@ -119,6 +117,31 @@ export function CreateCustomItemSheet({
   }
 
   return (
+    <CraftKeyboardProvider dock>
+      <CreateCustomItemSheetPanel
+        open={open}
+        onClose={onClose}
+        initialLabel={initialLabel}
+        onCreated={handleCreated}
+      />
+    </CraftKeyboardProvider>
+  )
+}
+
+function CreateCustomItemSheetPanel({
+  open,
+  onClose,
+  initialLabel,
+  onCreated,
+}: {
+  open: boolean
+  onClose: () => void
+  initialLabel: string
+  onCreated: (item: CreatedCustomItem) => void
+}) {
+  const footer = useCraftKeyboardFooterSlot()
+
+  return (
     <BottomSheet
       open={open}
       onClose={onClose}
@@ -127,8 +150,9 @@ export function CreateCustomItemSheet({
       height="standard"
       title="✏️ Nuevo ítem"
       headerAction="cancel"
+      footer={footer}
     >
-      <CreateCustomItemForm key={initialLabel} initialLabel={initialLabel} onCreated={handleCreated} />
+      <CreateCustomItemForm key={initialLabel} initialLabel={initialLabel} onCreated={onCreated} />
     </BottomSheet>
   )
 }

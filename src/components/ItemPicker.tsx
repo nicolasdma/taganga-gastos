@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { CraftTextField } from '@/components/keyboard/CraftTextField'
 import { CraftSkeletonChipGrid } from '@/components/craft/CraftLoading'
 import { ExpenseChip } from '@/components/ExpenseChip'
 import { ITEM_CATALOG, itemMatchesSearch } from '@/lib/items'
@@ -56,23 +57,14 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
     <div className="item-picker pb-2">
       {isLargeCatalog && (
         <div className="item-picker-search pb-2">
-          <input
-            type="search"
+          <CraftTextField
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={setSearch}
             placeholder="Buscar pescado, taxi, arriendo…"
-            inputMode="search"
-            enterKeyHint="search"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className={cn(
-              'item-picker-search-input w-full font-medium',
-              'bg-porcelain-cream/90 border-2 border-stitch/45',
-              'placeholder:text-muted-foreground/55',
-              'focus:outline-none focus:border-cobalt-glaze/55 focus:ring-2 focus:ring-cobalt-glaze/15',
-              'shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]'
-            )}
+            layout="search"
+            maxLength={60}
+            compactKeyboard
+            inputClassName="item-picker-search-input w-full font-medium"
           />
         </div>
       )}

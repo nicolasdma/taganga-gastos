@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AmountKeypad } from '@/components/AmountKeypad'
 import { BottomSheet } from '@/components/BottomSheet'
+import { CraftKeyboardProvider, useCraftKeyboardFooterSlot } from '@/components/keyboard'
 import { CreateCustomItemForm } from '@/components/CreateCustomItemSheet'
 import {
   ItemPicker,
@@ -220,6 +221,64 @@ function ExpenseSheetBody({
   const headerAction = step === 'item' ? 'cancel' : 'back'
 
   return (
+    <CraftKeyboardProvider dock>
+      <ExpenseSheetPanel
+        open={open}
+        onClose={onClose}
+        sheetTitle={sheetTitle}
+        sheetSubtitle={sheetSubtitle}
+        headerAction={headerAction}
+        handleBack={handleBack}
+        step={step}
+        intent={intent}
+        selectedItem={selectedItem}
+        createQuery={createQuery}
+        onSaved={onSaved}
+        onSelectItem={handleSelectItem}
+        onRequestCreate={(query) => {
+          setCreateQuery(query)
+          setStep('create-item')
+        }}
+        onItemCreated={handleItemCreated}
+      />
+    </CraftKeyboardProvider>
+  )
+}
+
+function ExpenseSheetPanel({
+  open,
+  onClose,
+  sheetTitle,
+  sheetSubtitle,
+  headerAction,
+  handleBack,
+  step,
+  intent,
+  selectedItem,
+  createQuery,
+  onSaved,
+  onSelectItem,
+  onRequestCreate,
+  onItemCreated,
+}: {
+  open: boolean
+  onClose: () => void
+  sheetTitle: string | undefined
+  sheetSubtitle: string | undefined
+  headerAction: 'cancel' | 'back'
+  handleBack: () => void
+  step: Step
+  intent: SheetIntent | null
+  selectedItem: SelectedItem | null
+  createQuery: string
+  onSaved: (result: SaveExpenseResult) => void
+  onSelectItem: (item: SelectedItem) => void
+  onRequestCreate: (query: string) => void
+  onItemCreated: (item: CreatedCustomItem) => void
+}) {
+  const footer = useCraftKeyboardFooterSlot()
+
+  return (
     <BottomSheet
       open={open}
       onClose={onClose}
@@ -229,6 +288,7 @@ function ExpenseSheetBody({
       headerAction={headerAction}
       onBack={handleBack}
       scrollKey={step}
+      footer={footer}
     >
       {intent && (
         <ExpenseSheetContent
@@ -238,12 +298,9 @@ function ExpenseSheetBody({
           createQuery={createQuery}
           onClose={onClose}
           onSaved={onSaved}
-          onSelectItem={handleSelectItem}
-          onRequestCreate={(query) => {
-            setCreateQuery(query)
-            setStep('create-item')
-          }}
-          onItemCreated={handleItemCreated}
+          onSelectItem={onSelectItem}
+          onRequestCreate={onRequestCreate}
+          onItemCreated={onItemCreated}
         />
       )}
     </BottomSheet>

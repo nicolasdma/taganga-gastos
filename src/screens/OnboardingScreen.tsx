@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { CraftTextField } from '@/components/keyboard/CraftTextField'
+import { CraftKeyboardDock, CraftKeyboardProvider } from '@/components/keyboard'
 import { TagangaBackground } from '@/components/TagangaBackground'
 import { cn } from '@/lib/utils'
 
@@ -90,66 +91,76 @@ export function OnboardingScreen({ initialInviteCode }: OnboardingScreenProps) {
             </button>
           </div>
 
-          <div className="rounded-3xl card-porcelain-rim shadow-porcelain p-5 space-y-4">
-            {mode === 'create' ? (
-              <>
-                <div>
-                  <label className="label-stitch mb-2 block" htmlFor="household-name">
-                    Nombre (opcional)
-                  </label>
-                  <Input
-                    id="household-name"
-                    value={householdName}
-                    onChange={(e) => setHouseholdName(e.target.value)}
-                    placeholder="Ej: Casa Taganga"
-                    className="rounded-xl"
-                  />
-                </div>
-                <Button
-                  size="lg"
-                  className="w-full rounded-2xl"
-                  disabled={submitting}
-                  onClick={() => void handleCreate()}
-                >
-                  {submitting ? 'Creando…' : 'Crear hogar'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <div>
-                  <label className="label-stitch mb-2 block" htmlFor="invite-code">
-                    Código de invitación
-                  </label>
-                  <Input
-                    id="invite-code"
-                    value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                    placeholder="ABC12345"
-                    className="rounded-xl uppercase tracking-widest"
-                    autoCapitalize="characters"
-                  />
-                  {lookup?.valid === true && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Hogar encontrado{lookup.householdName ? `: ${lookup.householdName}` : ''}
-                    </p>
-                  )}
-                  {lookup?.valid === false && inviteCode.trim().length >= 6 && (
-                    <p className="text-xs text-red-600 mt-2">Código no encontrado</p>
-                  )}
-                </div>
-                <Button
-                  size="lg"
-                  className="w-full rounded-2xl"
-                  disabled={submitting || inviteCode.trim().length < 6}
-                  onClick={() => void handleJoin()}
-                >
-                  {submitting ? 'Uniéndome…' : 'Unirme al hogar'}
-                </Button>
-              </>
-            )}
+          <CraftKeyboardProvider dock>
+            <div className="rounded-3xl card-porcelain-rim shadow-porcelain p-5 space-y-4">
+              {mode === 'create' ? (
+                <>
+                  <div>
+                    <label className="label-stitch mb-2 block" htmlFor="household-name">
+                      Nombre (opcional)
+                    </label>
+                    <CraftTextField
+                      id="household-name"
+                      value={householdName}
+                      onChange={setHouseholdName}
+                      placeholder="Ej: Casa Taganga"
+                      maxLength={40}
+                      compactKeyboard
+                      inputClassName="rounded-xl"
+                    />
+                  </div>
+                  <Button
+                    size="lg"
+                    className="w-full rounded-2xl"
+                    disabled={submitting}
+                    onClick={() => void handleCreate()}
+                  >
+                    {submitting ? 'Creando…' : 'Crear hogar'}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="label-stitch mb-2 block" htmlFor="invite-code">
+                      Código de invitación
+                    </label>
+                    <CraftTextField
+                      id="invite-code"
+                      value={inviteCode}
+                      onChange={setInviteCode}
+                      placeholder="ABC12345"
+                      layout="alphanumeric"
+                      maxLength={12}
+                      enableShift={false}
+                      compactKeyboard
+                      center
+                      inputClassName="rounded-xl uppercase tracking-widest"
+                    />
+                    {lookup?.valid === true && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Hogar encontrado{lookup.householdName ? `: ${lookup.householdName}` : ''}
+                      </p>
+                    )}
+                    {lookup?.valid === false && inviteCode.trim().length >= 6 && (
+                      <p className="text-xs text-red-600 mt-2">Código no encontrado</p>
+                    )}
+                  </div>
+                  <Button
+                    size="lg"
+                    className="w-full rounded-2xl"
+                    disabled={submitting || inviteCode.trim().length < 6}
+                    onClick={() => void handleJoin()}
+                  >
+                    {submitting ? 'Uniéndome…' : 'Unirme al hogar'}
+                  </Button>
+                </>
+              )}
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
-          </div>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+
+              <CraftKeyboardDock />
+            </div>
+          </CraftKeyboardProvider>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAction } from 'convex/react'
 import { CraftLoading } from '@/components/craft/CraftLoading'
+import { CraftKeyboardProvider, CraftSheetKeyboardFooter } from '@/components/keyboard'
 import { api } from '../../convex/_generated/api'
 import { BottomSheet } from '@/components/BottomSheet'
 import {
@@ -95,14 +96,16 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
     }
     if (phase === 'review' && reviewFooter) {
       return (
-        <Button
-          size="lg"
-          className="w-full rounded-2xl"
-          disabled={!reviewFooter.canSave || reviewFooter.saving}
-          onClick={reviewFooter.save}
-        >
-          {reviewFooter.saving ? 'Guardando…' : 'Guardar'}
-        </Button>
+        <CraftSheetKeyboardFooter>
+          <Button
+            size="lg"
+            className="w-full rounded-2xl"
+            disabled={!reviewFooter.canSave || reviewFooter.saving}
+            onClick={reviewFooter.save}
+          >
+            {reviewFooter.saving ? 'Guardando…' : 'Guardar'}
+          </Button>
+        </CraftSheetKeyboardFooter>
       )
     }
     return undefined
@@ -125,15 +128,16 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
         }}
       />
 
-      <BottomSheet
-        open={showSheet}
-        onClose={handleClose}
-        height="tall"
-        title={phase === 'review' ? 'Revisar ticket' : undefined}
-        headerAction="cancel"
-        footer={footer}
-        scrollKey={phase}
-      >
+      <CraftKeyboardProvider dock>
+        <BottomSheet
+          open={showSheet}
+          onClose={handleClose}
+          height="tall"
+          title={phase === 'review' ? 'Revisar ticket' : undefined}
+          headerAction="cancel"
+          footer={footer}
+          scrollKey={phase}
+        >
         {phase === 'loading' && (
           <div className="relative py-8">
             <div className="craft-paw-collage absolute inset-0 pointer-events-none" aria-hidden />
@@ -169,7 +173,8 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
             onFooterState={handleReviewFooterState}
           />
         )}
-      </BottomSheet>
+        </BottomSheet>
+      </CraftKeyboardProvider>
     </>
   )
 }

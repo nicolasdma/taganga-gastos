@@ -133,7 +133,9 @@ export function BottomSheet({
 
   useEffect(() => {
     if (open && children != null) {
-      queueMicrotask(() => setBodyContent(children))
+      queueMicrotask(() => {
+        setBodyContent((prev) => (prev === children ? prev : children))
+      })
     }
   }, [open, children])
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getLastStore } from '@/lib/preferences'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { CraftTextField } from '@/components/keyboard/CraftTextField'
 
 interface StorePromptProps {
   onConfirm: (store: string) => void
@@ -16,16 +16,18 @@ export function StorePrompt({ onConfirm, onCancel }: StorePromptProps) {
       <p className="text-lg font-bold text-center mb-1">🛒 Supermercado</p>
       <p className="text-xs text-muted-foreground text-center mb-4">¿En qué tienda estás?</p>
 
-      <Input
+      <CraftTextField
         value={store}
-        onChange={(e) => setStore(e.target.value)}
+        onChange={setStore}
         placeholder="Ej. Olímpica, Éxito…"
-        inputMode="text"
-        enterKeyHint="done"
-        autoFocus
-        className="mb-4 text-center"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && store.trim()) onConfirm(store.trim())
+        maxLength={40}
+        enablePaste
+        center
+        compactKeyboard
+        className="mb-4"
+        inputClassName="text-center"
+        onDone={() => {
+          if (store.trim()) onConfirm(store.trim())
         }}
       />
 
