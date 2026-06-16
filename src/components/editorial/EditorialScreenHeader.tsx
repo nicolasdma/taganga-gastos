@@ -58,7 +58,7 @@ export function EditorialScreenHeader({
 export function SyncPendingSticker({ count }: { count: number }) {
   if (count <= 0) return null
   return (
-    <CollageSticker tone="blush" rotate="right" className="animate-pulse">
+    <CollageSticker tone="blush" rotate="right" className="craft-sync-wobble">
       ⏳ {count} sync
     </CollageSticker>
   )

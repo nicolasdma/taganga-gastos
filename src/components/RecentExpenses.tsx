@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { ReceiptGroupRow } from '@/components/ReceiptGroupRow'
+import { CraftLoading } from '@/components/craft/CraftLoading'
 import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { formatCOP } from '@/lib/currency'
 import { ExpenseDaySectionHeader, ExpenseTimeStamp } from '@/components/ExpenseTimeMeta'
@@ -125,10 +126,8 @@ export function RecentExpenses({
 
   if (!merged) {
     return (
-      <div className="space-y-2">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-12 rounded-xl bg-muted/40 animate-pulse" />
-        ))}
+      <div className="space-y-2" aria-busy="true" aria-live="polite">
+        <CraftLoading variant="skeleton-row" count={3} />
       </div>
     )
   }

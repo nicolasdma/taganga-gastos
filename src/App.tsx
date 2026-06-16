@@ -11,6 +11,7 @@ import { AndroidInstallBanner } from '@/components/InstallPromptBanner'
 import { IosInstallGuide } from '@/components/IosInstallGuide'
 import { PwaUpdateBanner } from '@/components/PwaUpdateBanner'
 import { ReceiptScanSheet } from '@/components/ReceiptScanSheet'
+import { CraftLoading, CraftStatsFallback } from '@/components/craft/CraftLoading'
 import { TagangaBackground } from '@/components/TagangaBackground'
 import { Toast } from '@/components/Toast'
 import { useDisplayModeAnalytics } from '@/hooks/useDisplayModeAnalytics'
@@ -35,21 +36,11 @@ const StatsScreen = lazy(() =>
 type ToastState = (SaveExpenseResult & { type?: 'expense' }) | SaveReceiptResult | null
 
 function AuthLoadingScreen() {
-  return (
-    <div className="app-shell flex items-center justify-center">
-      <p className="text-sm font-semibold text-muted-foreground">Cargando…</p>
-    </div>
-  )
+  return <CraftLoading variant="screen" />
 }
 
 function StatsFallback() {
-  return (
-    <div className="tab-scroll h-full min-h-0 overflow-y-auto scrollbar-none px-4">
-      <div className="pt-safe h-24 rounded-2xl bg-porcelain-cream/60 animate-pulse mb-5" />
-      <div className="h-24 rounded-2xl bg-porcelain-cream/60 animate-pulse mb-5" />
-      <div className="h-48 rounded-2xl bg-porcelain-cream/60 animate-pulse" />
-    </div>
-  )
+  return <CraftStatsFallback />
 }
 
 function AppShell() {

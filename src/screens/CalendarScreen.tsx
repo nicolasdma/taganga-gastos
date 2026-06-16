@@ -11,7 +11,6 @@ import type { EditableExpense } from '@/lib/expenseTypes'
 import { formatCOP } from '@/lib/currency'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import { formatMonthKey, subMonths } from '@/lib/utils'
-import { cn } from '@/lib/utils'
 
 function monthTotal(byDay: Record<string, { total: number }> | undefined): number {
   if (!byDay) return 0
@@ -58,14 +57,17 @@ export function CalendarScreen({ onEditExpense }: { onEditExpense: (expense: Edi
 
         <div className="rounded-3xl card-porcelain-rim shadow-porcelain p-4">
           <p className="label-stitch mb-1">Total del mes</p>
-          <p
-            className={cn(
-              'font-display text-3xl font-bold font-tabular text-ink tracking-tight',
-              byDay === undefined && 'animate-pulse text-muted-foreground'
-            )}
-          >
-            {byDay === undefined ? '—' : formatCOP(total)}
-          </p>
+          {byDay === undefined ? (
+            <div
+              className="craft-skeleton craft-skeleton--row h-9 w-36 max-w-full"
+              aria-busy="true"
+              aria-label="Calculando total del mes"
+            />
+          ) : (
+            <p className="font-display text-3xl font-bold font-tabular text-ink tracking-tight">
+              {formatCOP(total)}
+            </p>
+          )}
           {comparison && byDay !== undefined && prevByDay !== undefined && (
             <p className="text-xs text-muted-foreground mt-1">{comparison}</p>
           )}

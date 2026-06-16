@@ -7,6 +7,7 @@ import {
   type TouchEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { useKeyboardOpen } from '@/hooks/useKeyboardOpen'
 import { cn } from '@/lib/utils'
 
 const CLOSE_MS = 480
@@ -18,7 +19,7 @@ interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
   className?: string
-  /** standard = 52dvh (expense flows), tall = up to 90dvh (receipts, calendar) */
+  /** standard = 80dvh (52dvh when keyboard/input focused), tall = up to 90dvh */
   height?: SheetHeight
   title?: string
   subtitle?: string
@@ -63,6 +64,8 @@ export function BottomSheet({
   const [entered, setEntered] = useState(false)
   const [dragY, setDragY] = useState(0)
   const [dragging, setDragging] = useState(false)
+  const [fieldFocused, setFieldFocused] = useState(false)
+  const keyboardOpen = useKeyboardOpen()
 
   const childRef = useRef<ReactNode>(children)
   const closingRef = useRef(false)
@@ -139,6 +142,7 @@ export function BottomSheet({
       setMounted(true)
       setDragY(0)
       setDragging(false)
+      setFieldFocused(false)
       document.body.style.overflow = 'hidden'
 
       const frame = requestAnimationFrame(() => {
@@ -187,6 +191,44 @@ export function BottomSheet({
     if (!mounted || !entered) return
     bodyRef.current?.scrollTo({ top: 0, left: 0 })
   }, [mounted, entered, scrollKey])
+
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel || !mounted) return
+
+    const isField = (el: EventTarget | null) => {
+      if (!(el instanceof HTMLElement)) return false
+      return (
+        el.tagName === 'INPUT' ||
+        el.tagName === 'TEXTAREA' ||
+        el.tagName === 'SELECT' ||
+        el.isContentEditable
+      )
+    }
+
+    const onFocusIn = (e: FocusEvent) => {
+      if (isField(e.target)) setFieldFocused(true)
+    }
+
+    const onFocusOut = () => {
+      requestAnimationFrame(() => {
+        const active = document.activeElement
+        if (!panel.contains(active) || !isField(active)) {
+          setFieldFocused(false)
+        }
+      })
+    }
+
+    panel.addEventListener('focusin', onFocusIn)
+    panel.addEventListener('focusout', onFocusOut)
+    return () => {
+      panel.removeEventListener('focusin', onFocusIn)
+      panel.removeEventListener('focusout', onFocusOut)
+    }
+  }, [mounted])
+
+  const compact =
+    height === 'standard' && (keyboardOpen || fieldFocused)
 
   const onHandleTouchStart = (e: TouchEvent) => {
     if (closingRef.current) return
@@ -268,6 +310,7 @@ export function BottomSheet({
           entered && 'sheet-panel--open',
           dragging && 'sheet-panel--dragging',
           height === 'standard' && 'sheet-panel--standard',
+          compact && 'sheet-panel--compact',
           className
         )}
         style={dragStyle}

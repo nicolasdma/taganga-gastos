@@ -3,6 +3,7 @@ import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Doc } from '../../convex/_generated/dataModel'
 import { BottomSheet } from '@/components/BottomSheet'
+import { CraftLoading } from '@/components/craft/CraftLoading'
 import { ReceiptGroupRow } from '@/components/ReceiptGroupRow'
 import { formatCOP } from '@/lib/currency'
 import { ExpenseTimeOfDaySectionHeader, ExpenseTimeStamp } from '@/components/ExpenseTimeMeta'
@@ -153,10 +154,8 @@ export function DayDetailSheet({ date, view, onClose, onEditExpense }: DayDetail
       {date && (
         <div className="pb-4">
           {expenses === undefined ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 rounded-xl bg-muted/40 animate-pulse" />
-              ))}
+            <div className="space-y-2" aria-busy="true" aria-live="polite">
+              <CraftLoading variant="skeleton-row" count={3} />
             </div>
           ) : expenses.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">

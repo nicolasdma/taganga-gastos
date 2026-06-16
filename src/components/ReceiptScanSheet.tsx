@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAction } from 'convex/react'
-import { CameraFabIcon } from '@/components/CameraFabIcon'
+import { CraftLoading } from '@/components/craft/CraftLoading'
 import { api } from '../../convex/_generated/api'
 import { BottomSheet } from '@/components/BottomSheet'
 import {
@@ -128,12 +128,18 @@ export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetPro
         scrollKey={phase}
       >
         {phase === 'loading' && (
-          <div className="py-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white border border-border/40 shadow-sm">
-              <CameraFabIcon className="h-12 w-12 animate-pulse" />
-            </div>
-            <p className="text-base font-bold text-foreground">Leyendo ticket…</p>
-            <p className="text-sm text-muted-foreground mt-2">Esto puede tardar unos segundos</p>
+          <div className="relative py-8">
+            <div className="craft-paw-collage absolute inset-0 pointer-events-none" aria-hidden />
+            <CraftLoading
+              variant="inline"
+              message="Leyendo ticket…"
+              showKitty
+              showPaws={false}
+              size="lg"
+            />
+            <p className="text-sm text-muted-foreground mt-1 text-center relative z-10">
+              Esto puede tardar unos segundos
+            </p>
           </div>
         )}
 

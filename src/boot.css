@@ -1,0 +1,174 @@
+/* Critical boot styles — paints before full Tailwind bundle. Shared with index.html inline splash. */
+:root {
+  --boot-linen: #f3ebe0;
+  --boot-porcelain: #fbf7f0;
+  --boot-stitch: #b8a898;
+  --boot-kitty-size: 80px;
+  --boot-kitty-row: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Nada visible hasta que el sprite esté listo */
+html:not(.boot-ready),
+html:not(.boot-ready) body {
+  background: #1a2744;
+}
+
+html.boot-ready body {
+  background: linear-gradient(175deg, var(--boot-porcelain) 0%, var(--boot-linen) 55%, #efe6da 100%);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.boot-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(175deg, var(--boot-porcelain) 0%, var(--boot-linen) 55%, #efe6da 100%);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.boot-screen--ready {
+  opacity: 1;
+  visibility: visible;
+}
+
+.boot-screen__paws {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  transform: rotate(-8deg) scale(1.05);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='%233d5a80' opacity='0.9'%3E%3Cellipse cx='24' cy='30' rx='7' ry='6'/%3E%3Ccircle cx='12' cy='18' r='4'/%3E%3Ccircle cx='20' cy='12' r='3.5'/%3E%3Ccircle cx='28' cy='12' r='3.5'/%3E%3Ccircle cx='36' cy='18' r='4'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='%23c4725a' opacity='0.7'%3E%3Cellipse cx='24' cy='30' rx='7' ry='6'/%3E%3Ccircle cx='12' cy='18' r='4'/%3E%3Ccircle cx='20' cy='12' r='3.5'/%3E%3Ccircle cx='28' cy='12' r='3.5'/%3E%3Ccircle cx='36' cy='18' r='4'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 36px 36px, 28px 28px;
+  background-position: 0 0, 18px 14px;
+  background-repeat: repeat;
+}
+
+.boot-screen__kitty-float {
+  position: relative;
+  z-index: 1;
+  animation: boot-kitty-float 4.5s ease-in-out infinite;
+}
+
+.boot-screen__kitty-wrap {
+  transform: scaleX(-1);
+}
+
+.boot-screen__kitty {
+  width: var(--boot-kitty-size);
+  height: var(--boot-kitty-size);
+  flex-shrink: 0;
+  background-image: url('/kitty-sprite.png');
+  background-repeat: no-repeat;
+  background-size: calc(var(--boot-kitty-size) * 8) calc(var(--boot-kitty-size) * 8);
+  background-position: 0 calc(var(--boot-kitty-row) * var(--boot-kitty-size) * -1);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
+}
+
+.boot-screen__kitty--live {
+  animation: boot-kitty-idle 1.4s steps(8) infinite;
+}
+
+.boot-screen__msg {
+  position: relative;
+  z-index: 1;
+  margin: 1rem 0 0;
+  padding: 0 2rem;
+  max-width: 16rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: var(--boot-stitch);
+}
+
+/* Puntos suspensivos — ritmo relax, onda lenta */
+.craft-loading-dots {
+  display: inline-flex;
+  margin-left: 0.05em;
+  letter-spacing: 0;
+}
+
+.craft-loading-dots span {
+  display: inline-block;
+  opacity: 0.2;
+  animation: craft-dot-wave 2.8s ease-in-out infinite;
+}
+
+.craft-loading-dots span:nth-child(2) {
+  animation-delay: 0.45s;
+}
+
+.craft-loading-dots span:nth-child(3) {
+  animation-delay: 0.9s;
+}
+
+@keyframes craft-dot-wave {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: translateY(0);
+  }
+  22% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+  44% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+}
+
+@keyframes boot-kitty-idle {
+  from {
+    background-position: 0 calc(var(--boot-kitty-row) * var(--boot-kitty-size) * -1);
+  }
+  to {
+    background-position: calc(var(--boot-kitty-size) * -8)
+      calc(var(--boot-kitty-row) * var(--boot-kitty-size) * -1);
+  }
+}
+
+@keyframes boot-kitty-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(0.5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-screen__kitty-float {
+    animation: none;
+  }
+
+  .boot-screen__kitty--live {
+    animation: none;
+  }
+
+  .craft-loading-dots span {
+    animation: none;
+    opacity: 0.55;
+  }
+}

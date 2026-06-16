@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { CraftSkeletonChipGrid } from '@/components/craft/CraftLoading'
 import { ExpenseChip } from '@/components/ExpenseChip'
 import { ITEM_CATALOG, itemMatchesSearch } from '@/lib/items'
 import { mergeCatalogWithCustom } from '@/lib/mergeCatalog'
@@ -79,11 +80,7 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
       <div className="item-picker-results space-y-2.5">
         <p className="label-stitch px-0.5">{sectionLabel}</p>
         {serverCounts === undefined || customItems === undefined ? (
-          <div className="grid grid-cols-4 gap-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="h-16 rounded-xl bg-muted/40 animate-pulse" />
-            ))}
-          </div>
+          <CraftSkeletonChipGrid count={8} columns={4} />
         ) : showCreateCta ? (
           <div className="text-center py-8 space-y-4">
             <p className="text-sm text-muted-foreground">

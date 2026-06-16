@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
+import { CraftLoading } from '@/components/craft/CraftLoading'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { CreateCustomItemSheet } from '@/components/CreateCustomItemSheet'
 import { formatCOP } from '@/lib/currency'
@@ -87,14 +88,9 @@ export function BentoQuickAccess({ view, onOpenSheet, onSaved }: BentoQuickAcces
       </MotionReveal>
 
       <div className="grid grid-cols-4 gap-2.5">
-        {quickButtons === undefined
-          ? [1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bento-tile bento-tile--cream h-[76px] animate-pulse bg-muted/30"
-              />
-            ))
-          : quickButtons.map((btn, i) => (
+        {quickButtons === undefined ? (
+          <CraftLoading variant="skeleton-tile" count={3} />
+        ) : quickButtons.map((btn, i) => (
               <MotionReveal key={btn.key} step={Math.min(7, 6 + i)}>
                 <button
                   type="button"

@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '../../convex/_generated/api'
+import { CraftLoading } from '@/components/craft/CraftLoading'
 import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
@@ -85,11 +86,9 @@ export function StatsScreen() {
         <section>
           <SectionLabel overPhoto>Por ítem</SectionLabel>
           {byItem === undefined ? (
-            <div className="rounded-3xl card-porcelain p-4 space-y-3">
-              <div className="h-40 rounded-xl bg-muted/40 animate-pulse" />
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-10 rounded-lg bg-muted/40 animate-pulse" />
-              ))}
+            <div className="rounded-3xl card-porcelain p-4 space-y-3" aria-busy="true" aria-live="polite">
+              <CraftLoading variant="skeleton-row" className="h-40 rounded-xl" />
+              <CraftLoading variant="skeleton-row" count={3} className="h-10 rounded-lg" />
             </div>
           ) : rows.length === 0 ? (
             <EmptyCraft
@@ -100,7 +99,11 @@ export function StatsScreen() {
           ) : (
             <div className="rounded-3xl card-porcelain shadow-porcelain overflow-hidden">
               <Suspense
-                fallback={<div className="h-48 bg-muted/30 animate-pulse border-b border-border/40" />}
+                fallback={
+                  <div className="h-48 border-b border-border/40 flex items-center justify-center">
+                    <CraftLoading variant="inline" message="Horneando el gráfico…" size="sm" showPaws={false} />
+                  </div>
+                }
               >
                 <ItemDonutChart rows={rows} />
               </Suspense>
@@ -131,7 +134,7 @@ export function StatsScreen() {
         <section>
           <SectionLabel overPhoto>Insights</SectionLabel>
           {insights === undefined ? (
-            <div className="rounded-3xl card-stitched p-4 text-sm text-muted-foreground">Cargando…</div>
+            <CraftLoading variant="inline" message="Bordando insights…" size="sm" showPaws={false} className="rounded-3xl card-stitched p-4" />
           ) : insights.length === 0 ? (
             <div className="rounded-3xl card-stitched p-4 text-sm text-muted-foreground">
               Registrá más gastos para ver observaciones automáticas.

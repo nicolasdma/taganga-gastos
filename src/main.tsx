@@ -1,29 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ConvexAuthProvider } from '@convex-dev/auth/react'
-import { ConvexReactClient } from 'convex/react'
-import { createRobustAuthStorage, shouldHandleOAuthCode } from '@/lib/authStorage'
-// Fontsource bundles ship with font-display: swap in @font-face rules.
-import '@fontsource-variable/outfit'
-import '@fontsource-variable/fraunces'
-import './index.css'
-import App from './App.tsx'
+import { CraftBootScreen } from '@/components/craft/CraftBootScreen'
+import '@/boot.css'
 
-const convexUrl = import.meta.env.VITE_CONVEX_URL
-const convex = convexUrl ? new ConvexReactClient(convexUrl) : null
+const root = createRoot(document.getElementById('root')!)
 
-createRoot(document.getElementById('root')!).render(
+// Paint boot gate immediately — before Convex, fonts, or full app chunk.
+root.render(
   <StrictMode>
-    {convex ? (
-      <ConvexAuthProvider
-        client={convex}
-        storage={createRobustAuthStorage()}
-        shouldHandleCode={shouldHandleOAuthCode}
-      >
-        <App />
-      </ConvexAuthProvider>
-    ) : (
-      <App />
-    )}
+    <CraftBootScreen />
   </StrictMode>
 )
+
+void import('@/app-entry').then(({ mountApp }) => mountApp(root))

@@ -1,5 +1,6 @@
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { CraftLoading } from '@/components/craft/CraftLoading'
 import { ExpenseChip } from '@/components/ExpenseChip'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
@@ -102,11 +103,9 @@ export function QuickAccess({ onOpenSheet, onSaved }: QuickAccessProps) {
       />
 
       <div className={cn('grid gap-2.5', QUICK_GRID)}>
-        {quickButtons === undefined
-          ? [1, 2, 3].map((i) => (
-              <div key={i} className="h-16 rounded-2xl bg-muted/40 animate-pulse" />
-            ))
-          : quickButtons.map((btn, i) => (
+        {quickButtons === undefined ? (
+          <CraftLoading variant="skeleton-chip" count={3} />
+        ) : quickButtons.map((btn, i) => (
               <ExpenseChip
                 key={btn.key}
                 emoji={btn.emoji}
