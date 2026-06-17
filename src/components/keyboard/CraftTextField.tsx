@@ -67,15 +67,27 @@ export function CraftTextField({
     onBlur
   )
   const [uppercase, setUppercase] = useState(false)
+  const [draftValue, setDraftValue] = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
   const didAutoFocus = useRef(false)
   const valueRef = useRef(value)
+  const pendingLocalValuesRef = useRef<string[]>([])
 
   const useDock = Boolean(ctx?.dock)
   const showInlineKeyboard = showKeyboard && isFocused && !useDock
 
   useEffect(() => {
+    const pending = pendingLocalValuesRef.current
+    const acknowledgedIndex = pending.indexOf(value)
+
+    if (acknowledgedIndex !== -1 && acknowledgedIndex < pending.length - 1) {
+      pending.splice(0, acknowledgedIndex + 1)
+      return
+    }
+
+    pending.length = 0
     valueRef.current = value
+    setDraftValue(value)
   }, [value])
 
   useEffect(() => {
@@ -84,6 +96,16 @@ export function CraftTextField({
     focus()
   }, [autoFocus, focus])
 
+  const commitValue = useCallback(
+    (next: string) => {
+      valueRef.current = next
+      pendingLocalValuesRef.current.push(next)
+      setDraftValue(next)
+      onChange(next)
+    },
+    [onChange]
+  )
+
   const appendChar = useCallback(
     (char: string) => {
       const current = valueRef.current
@@ -91,17 +113,15 @@ export function CraftTextField({
       const next =
         layout === 'alphanumeric' ? current + char.toUpperCase() : current + char
       const bounded = next.slice(0, maxLength)
-      valueRef.current = bounded
-      onChange(bounded)
+      commitValue(bounded)
     },
-    [maxLength, layout, onChange]
+    [maxLength, layout, commitValue]
   )
 
   const handleBackspace = useCallback(() => {
     const next = valueRef.current.slice(0, -1)
-    valueRef.current = next
-    onChange(next)
-  }, [onChange])
+    commitValue(next)
+  }, [commitValue])
 
   const handleDone = useCallback(() => {
     onDone?.()
@@ -122,12 +142,11 @@ export function CraftTextField({
       if (!text) return
       const trimmed = layout === 'alphanumeric' ? text.toUpperCase() : text
       const next = (valueRef.current + trimmed).slice(0, maxLength)
-      valueRef.current = next
-      onChange(next)
+      commitValue(next)
     } catch {
       // clipboard denied or unavailable
     }
-  }, [layout, maxLength, onChange])
+  }, [layout, maxLength, commitValue])
 
   const showShift = enableShift && (layout === 'text' || layout === 'search')
 
@@ -138,13 +157,16 @@ export function CraftTextField({
     handleDismiss,
     handleToggleCase,
   })
-  handlersRef.current = {
-    appendChar,
-    handleBackspace,
-    handleDone,
-    handleDismiss,
-    handleToggleCase,
-  }
+
+  useEffect(() => {
+    handlersRef.current = {
+      appendChar,
+      handleBackspace,
+      handleDone,
+      handleDismiss,
+      handleToggleCase,
+    }
+  }, [appendChar, handleBackspace, handleDone, handleDismiss, handleToggleCase])
 
   useEffect(() => {
     // showKeyboard=false → parent owns the dock session (e.g. AmountKeypad detail edit).
@@ -199,8 +221,8 @@ export function CraftTextField({
     inputRef.current?.focus({ preventScroll: true })
   }
 
-  const displayValue = value || placeholder || ''
-  const showPlaceholder = !value && placeholder
+  const displayValue = draftValue || placeholder || ''
+  const showPlaceholder = !draftValue && placeholder
 
   return (
     <div className={cn('craft-text-field', className)}>
@@ -235,7 +257,7 @@ export function CraftTextField({
             ref={inputRef}
             id={id}
             type="text"
-            value={value}
+            value={draftValue}
             readOnly
             inputMode="none"
             autoComplete="off"

@@ -1,5 +1,5 @@
 import { CornerDownLeft, Delete } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, type MouseEvent, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
 import { keyTapFeedback } from '@/lib/tapFeedback'
 import {
@@ -41,24 +41,38 @@ function KeyButton({
   primary?: boolean
   haptic?: boolean
 }) {
-  const [flash, setFlash] = useState(false)
+  const lastPointerPressAt = useRef(0)
 
-  const handlePointerDown = () => {
+  const press = () => {
     if (haptic) keyTapFeedback()
-    setFlash(true)
-    window.setTimeout(() => setFlash(false), 50)
+    onClick()
+  }
+
+  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    event.preventDefault()
+    lastPointerPressAt.current = performance.now()
+    press()
+  }
+
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    // Pointer/touch already executed on pointerdown. Keep click for keyboard/screen reader activation.
+    if (performance.now() - lastPointerPressAt.current < 750) {
+      event.preventDefault()
+      return
+    }
+    press()
   }
 
   return (
     <button
       type="button"
       onPointerDown={handlePointerDown}
-      onClick={onClick}
+      onClick={handleClick}
       aria-label={ariaLabel}
       className={cn(
-        'font-display font-bold active:scale-[0.97] transition-transform',
+        'font-display font-bold select-none touch-manipulation active:scale-[0.97] transition-transform',
         primary ? 'btn-cobalt active:shadow-none' : 'chip-tile active:shadow-none',
-        flash && !primary && 'bg-cobalt-glaze/10',
         className
       )}
     >

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { CraftTextField } from '@/components/keyboard/CraftTextField'
 import { CraftSkeletonChipGrid } from '@/components/craft/CraftLoading'
 import { ExpenseChip } from '@/components/ExpenseChip'
@@ -31,7 +31,8 @@ const CREATE_CTA_MIN_QUERY = 2
 const CREATE_EMOJI_LIMIT = 12
 
 export function ItemPicker({ onSelect, onRequestCreate }: ItemPickerProps) {
-  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const deferredSearch = useDeferredValue(searchInput)
   const [emojiIndex, setEmojiIndex] = useState<EmojiSearchIndex | null>(null)
   const [selectedCreateEmoji, setSelectedCreateEmoji] = useState<{
     query: string
@@ -46,27 +47,29 @@ export function ItemPicker({ onSelect, onRequestCreate }: ItemPickerProps) {
   )
 
   const serverCounts = useFrequentItemCounts(view)
-  const trimmedSearch = search.trim()
+  const trimmedInput = searchInput.trim()
+  const trimmedSearch = deferredSearch.trim()
+  const hasInputQuery = trimmedInput.length >= 1
   const hasQuery = trimmedSearch.length >= 1
 
   useEffect(() => {
-    if (!hasQuery || emojiIndex) return
+    if (!hasInputQuery || emojiIndex) return
     void loadEmojiSearchIndex()
       .then(setEmojiIndex)
       .catch(() => {
         /* offline / missing index — catalog + aliases still work */
       })
-  }, [hasQuery, emojiIndex])
+  }, [hasInputQuery, emojiIndex])
 
   const searchResult = useMemo(() => {
     return searchItems({
-      query: search,
+      query: deferredSearch,
       catalog,
       householdAliases,
       emojiIndex,
       emojiLimit: EMOJI_INLINE_LIMIT,
     })
-  }, [search, catalog, householdAliases, emojiIndex])
+  }, [deferredSearch, catalog, householdAliases, emojiIndex])
 
   const displayItems = useMemo(() => {
     if (serverCounts === undefined || customItems === undefined) return []
@@ -124,8 +127,8 @@ export function ItemPicker({ onSelect, onRequestCreate }: ItemPickerProps) {
     <div className="item-picker pb-2">
       <div className="item-picker-search pb-2">
         <CraftTextField
-          value={search}
-          onChange={setSearch}
+          value={searchInput}
+          onChange={setSearchInput}
           placeholder="Buscar pescado, taxi, tigo…"
           layout="search"
           maxLength={60}
