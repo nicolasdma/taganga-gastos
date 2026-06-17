@@ -36,7 +36,7 @@ export function ReceiptScanSheet({ open, onClose }: ReceiptScanSheetProps) {
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-4 rounded-2xl border border-cobalt-glaze/18 bg-cobalt-glaze/8 px-4 py-3">
             <div className="min-w-0">
-              <p className="font-display text-xl font-bold leading-none text-ink">US$1/mes</p>
+              <p className="font-display text-xl font-bold leading-none text-ink">20.000 COP al mes</p>
               <p className="mt-1 text-[11px] font-semibold leading-snug text-muted-foreground">
                 Un upgrade simple para registrar más rápido.
               </p>

@@ -328,21 +328,23 @@ export const recentExpenses = query({
   },
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
-    const since = Date.now() - 120 * 24 * 60 * 60 * 1000
+    const visibleExpenses: Doc<'expenses'>[] = []
 
-    const expenses = await ctx.db
+    for await (const expense of ctx.db
       .query('expenses')
-      .withIndex('by_createdAt', (q) => q.gte('createdAt', since))
-      .order('desc')
-      .collect()
+      .withIndex('by_createdAt')
+      .order('desc')) {
+      if (
+        canViewExpense(expense, userId, householdId) &&
+        matchesView(expense, userId, args.view)
+      ) {
+        visibleExpenses.push(expense)
+      }
 
-    return expenses
-      .filter(
-        (expense) =>
-          canViewExpense(expense, userId, householdId) &&
-          matchesView(expense, userId, args.view)
-      )
-      .slice(0, args.limit)
+      if (visibleExpenses.length >= args.limit) break
+    }
+
+    return visibleExpenses
   },
 })
 

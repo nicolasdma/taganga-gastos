@@ -45,7 +45,7 @@ export async function migrateOrphanExpenses(
     if (expense.householdId !== undefined) continue
     await ctx.db.patch(expense._id, {
       householdId,
-      scope: expense.scope ?? 'shared',
+      scope: expense.scope ?? 'personal',
     })
     count += 1
   }

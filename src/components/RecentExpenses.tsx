@@ -7,7 +7,7 @@ import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { formatCOP } from '@/lib/currency'
 import { ExpenseDaySectionHeader, ExpenseTimeStamp } from '@/components/ExpenseTimeMeta'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
-import { groupListRowsByDay } from '@/lib/expenseTime'
+import { groupListRowsByDay, listRowCreatedAt } from '@/lib/expenseTime'
 import { useLocalToday } from '@/hooks/useLocalToday'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import {
@@ -125,7 +125,9 @@ export function RecentExpenses({
       }))
 
     const all = [...pendingReceiptRows, ...pendingRows, ...serverRows]
-    const rows = groupExpensesForList(all)
+    const rows = groupExpensesForList(all).sort(
+      (a, b) => (listRowCreatedAt(b) ?? 0) - (listRowCreatedAt(a) ?? 0)
+    )
 
     return groupListRowsByDay(rows.slice(0, limit), todayKey)
   }, [expenses, pending, pendingReceipts, pendingClientIds, limit, todayKey, view])

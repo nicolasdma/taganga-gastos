@@ -29,7 +29,11 @@ export async function requireAuthContext(ctx: Ctx) {
 }
 
 export function expenseScope(doc: { scope?: ExpenseScope }): ExpenseScope {
-  return doc.scope ?? 'shared'
+  return doc.scope ?? 'personal'
+}
+
+function isLegacyOwnerlessExpense(expense: { createdBy?: Id<'users'> }): boolean {
+  return expense.createdBy === undefined
 }
 
 export function canViewExpense(
@@ -38,6 +42,7 @@ export function canViewExpense(
   householdId: Id<'households'>
 ): boolean {
   if (expense.householdId && expense.householdId !== householdId) return false
+  if (isLegacyOwnerlessExpense(expense)) return true
   const scope = expenseScope(expense)
   if (scope === 'shared') return true
   return expense.createdBy === userId
@@ -49,6 +54,7 @@ export function canModifyExpense(
   householdId: Id<'households'>
 ): boolean {
   if (!canViewExpense(expense, userId, householdId)) return false
+  if (isLegacyOwnerlessExpense(expense)) return true
   const scope = expenseScope(expense)
   if (scope === 'shared') return true
   return expense.createdBy === userId
@@ -59,6 +65,7 @@ export function matchesView(
   userId: Id<'users'>,
   view: ExpenseView
 ): boolean {
+  if (isLegacyOwnerlessExpense(expense)) return true
   const scope = expenseScope(expense)
   if (view === 'shared') return scope === 'shared'
   return scope === 'personal' && expense.createdBy === userId
