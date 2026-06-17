@@ -13,6 +13,11 @@ import type { EditableExpense } from '@/lib/expenseTypes'
 
 interface HomeScreenProps {
   pulseKey: number
+  ritualLine: {
+    key: number
+    message: string
+    ariaLabel?: string
+  } | null
   onOpenSheet: (intent: SheetIntent) => void
   onOpenStats: () => void
   onSaved: (result: SaveExpenseResult) => void
@@ -22,6 +27,7 @@ interface HomeScreenProps {
 
 export function HomeScreen({
   pulseKey,
+  ritualLine,
   onOpenSheet,
   onOpenStats,
   onSaved,
@@ -66,7 +72,12 @@ export function HomeScreen({
       <ExpenseViewTransition view={view} direction={direction} isTransitioning={isTransitioning}>
         {(panelView, panelRole) => (
           <>
-            <EditorialStage view={panelView} pulseKey={pulseKey} panelRole={panelRole} />
+            <EditorialStage
+              view={panelView}
+              pulseKey={pulseKey}
+              ritualLine={panelRole === 'active' ? ritualLine : null}
+              panelRole={panelRole}
+            />
 
             <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-7">
               <MotionReveal step={4}>

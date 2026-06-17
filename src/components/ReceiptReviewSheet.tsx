@@ -8,6 +8,7 @@ import {
   type EditableReceiptItem,
   type ReceiptScanResult,
 } from '@/lib/receiptScan'
+import { useExpenseView } from '@/hooks/useExpenseView'
 import { CraftTextField } from '@/components/keyboard/CraftTextField'
 import { NumericKeypad } from '@/components/keyboard/NumericKeypad'
 import { cn } from '@/lib/utils'
@@ -30,6 +31,7 @@ export function ReceiptReviewContent({
   onFooterState,
 }: ReceiptReviewContentProps) {
   const { saveReceipt } = useReceiptSave(onSaved)
+  const { view } = useExpenseView()
   const [items, setItems] = useState<EditableReceiptItem[]>(() =>
     toEditableItems(scanResult.items)
   )
@@ -83,6 +85,7 @@ export function ReceiptReviewContent({
     try {
       await saveReceipt({
         store: store.trim() || undefined,
+        scope: view,
         items: validItems.map((i) => ({
           itemLabel: i.label.trim(),
           amount: i.amount,
@@ -91,7 +94,7 @@ export function ReceiptReviewContent({
     } finally {
       setSaving(false)
     }
-  }, [items, saveReceipt, saving, store])
+  }, [items, saveReceipt, saving, store, view])
 
   useEffect(() => {
     onFooterState({ canSave, saving, save: () => void handleSave() })

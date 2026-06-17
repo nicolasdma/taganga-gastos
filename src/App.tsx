@@ -28,6 +28,11 @@ import { ExpenseViewProvider, useExpenseView } from '@/hooks/useExpenseView'
 import { useVisualViewportHeight } from '@/hooks/useVisualViewportHeight'
 import { hasLocalAuthToken, requestStoragePersistence } from '@/lib/authStorage'
 import { removeFromOutbox, removeReceiptGroupFromOutbox } from '@/lib/outbox'
+import {
+  getExpenseSavedRitualCopy,
+  getReceiptSavedRitualCopy,
+  type RitualCopy,
+} from '@/lib/ritualCopy'
 import { cn } from '@/lib/utils'
 import { useInviteCodeFromPath } from '@/hooks/useInviteCodeFromPath'
 import { HomeScreen, CalendarScreen, LoginScreen, DebugAuthScreen } from '@/screens'
@@ -37,6 +42,12 @@ const StatsScreen = lazy(() =>
 )
 
 type ToastState = (SaveExpenseResult & { type?: 'expense' }) | SaveReceiptResult | null
+
+interface RitualLineState {
+  key: number
+  message: string
+  ariaLabel?: string
+}
 
 function AuthLoadingScreen() {
   return <CraftBootScreen />
@@ -55,6 +66,8 @@ function AppShellInner() {
   const [editExpense, setEditExpense] = useState<EditableExpense | null>(null)
   const [pulseKey, setPulseKey] = useState(0)
   const [toast, setToast] = useState<ToastState>(null)
+  const [ritualLine, setRitualLine] = useState<RitualLineState | null>(null)
+  const ritualLineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const keyboardOpen = useKeyboardOpen()
   const homeReady = useHomeFirstViewReady()
   const [bootOverlay, setBootOverlay] = useState<'visible' | 'exiting' | 'gone'>('visible')
@@ -82,6 +95,31 @@ function AppShellInner() {
 
   const bump = useCallback(() => setPulseKey((k) => k + 1), [])
 
+  const showRitualLine = useCallback((copy: RitualCopy) => {
+    setRitualLine((current) => ({
+      key: (current?.key ?? 0) + 1,
+      message: copy.homeLine,
+      ariaLabel: copy.ariaLabel,
+    }))
+
+    if (ritualLineTimerRef.current !== null) {
+      clearTimeout(ritualLineTimerRef.current)
+    }
+
+    ritualLineTimerRef.current = setTimeout(() => {
+      ritualLineTimerRef.current = null
+      setRitualLine(null)
+    }, 5200)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (ritualLineTimerRef.current !== null) {
+        clearTimeout(ritualLineTimerRef.current)
+      }
+    }
+  }, [])
+
   const handleTabChange = useCallback((next: TabId) => {
     if (next === 'stats') setStatsMounted(true)
     setTab(next)
@@ -90,17 +128,32 @@ function AppShellInner() {
   const handleExpenseSaved = useCallback(
     (result: SaveExpenseResult) => {
       bump()
+      showRitualLine(
+        getExpenseSavedRitualCopy({
+          view: result.scope,
+          type: 'expense',
+          itemLabel: result.itemLabel,
+          amount: result.amount,
+        })
+      )
       setToast({ ...result, type: 'expense' })
     },
-    [bump]
+    [bump, showRitualLine]
   )
 
   const handleReceiptSaved = useCallback(
     (result: SaveReceiptResult) => {
       bump()
+      showRitualLine(
+        getReceiptSavedRitualCopy({
+          view: result.scope,
+          type: 'receipt',
+          itemCount: result.itemCount,
+        })
+      )
       setToast(result)
     },
-    [bump]
+    [bump, showRitualLine]
   )
 
   const handleUndo = useCallback(async () => {
@@ -122,10 +175,21 @@ function AppShellInner() {
     bump()
   }, [toast, setExpenseExcluded, excludeReceiptGroup, bump])
 
-  const toastMessage =
+  const toastCopy =
     toast?.type === 'receipt'
-      ? `🐾 Ticket guardado (${toast.itemCount} ítem${toast.itemCount !== 1 ? 's' : ''})`
-      : '🐾 Guardado'
+      ? getReceiptSavedRitualCopy({
+          view: toast.scope,
+          type: 'receipt',
+          itemCount: toast.itemCount,
+        })
+      : toast
+        ? getExpenseSavedRitualCopy({
+            view: toast.scope,
+            type: 'expense',
+            itemLabel: toast.itemLabel,
+            amount: toast.amount,
+          })
+        : null
 
   return (
     <TabScrollProvider>
@@ -155,6 +219,7 @@ function AppShellInner() {
         <div className={cn('h-full', tab !== 'home' && 'hidden')}>
           <HomeScreen
             pulseKey={pulseKey}
+            ritualLine={ritualLine}
             onOpenSheet={setSheetIntent}
             onOpenStats={() => handleTabChange('stats')}
             onSaved={handleExpenseSaved}
@@ -206,7 +271,7 @@ function AppShellInner() {
 
       {toast && !keyboardOpen && (
         <Toast
-          message={toastMessage}
+          message={toastCopy?.toastMessage ?? ''}
           actionLabel="Deshacer"
           onAction={handleUndo}
           onDismiss={() => setToast(null)}

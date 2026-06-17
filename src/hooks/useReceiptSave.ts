@@ -24,6 +24,7 @@ export interface SaveReceiptResult {
   expenseIds?: Id<'expenses'>[]
   clientIds: string[]
   itemCount: number
+  scope: ExpenseScope
 }
 
 export function useReceiptSave(onSaved?: (result: SaveReceiptResult) => void) {
@@ -63,6 +64,7 @@ export function useReceiptSave(onSaved?: (result: SaveReceiptResult) => void) {
         expenseIds,
         clientIds: pending.items.map((i) => i.clientId),
         itemCount: pending.items.length,
+        scope: pending.scope ?? 'personal',
       }
       onSaved?.(result)
       return result

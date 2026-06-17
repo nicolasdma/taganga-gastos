@@ -22,6 +22,9 @@ export interface SaveExpenseInput {
 export interface SaveExpenseResult {
   expenseId?: Id<'expenses'>
   clientId: string
+  scope: ExpenseScope
+  itemLabel: string
+  amount: number
 }
 
 export function useExpenseSave(onSaved?: (result: SaveExpenseResult) => void) {
@@ -55,7 +58,13 @@ export function useExpenseSave(onSaved?: (result: SaveExpenseResult) => void) {
       if (input.store) setLastStore(input.store)
       hapticSave()
 
-      const result = { expenseId, clientId: pending.clientId }
+      const result = {
+        expenseId,
+        clientId: pending.clientId,
+        scope: pending.scope ?? 'personal',
+        itemLabel: pending.itemLabel,
+        amount: pending.amount,
+      }
       onSaved?.(result)
       return result
     },

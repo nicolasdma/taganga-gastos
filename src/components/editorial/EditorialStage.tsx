@@ -11,10 +11,20 @@ import { cn } from '@/lib/utils'
 interface EditorialStageProps {
   pulseKey?: number
   view?: ExpenseView
+  ritualLine?: {
+    key: number
+    message: string
+    ariaLabel?: string
+  } | null
   panelRole?: ExpenseViewPanelRole
 }
 
-export function EditorialStage({ pulseKey = 0, view, panelRole = 'active' }: EditorialStageProps) {
+export function EditorialStage({
+  pulseKey = 0,
+  view,
+  ritualLine,
+  panelRole = 'active',
+}: EditorialStageProps) {
   const { today, week, month, isStale, isInitialLoad } = usePeriodTotals(view)
 
   const editorial = today !== undefined ? formatCOPEditorial(today) : null
@@ -69,6 +79,18 @@ export function EditorialStage({ pulseKey = 0, view, panelRole = 'active' }: Edi
                 <p className="font-display italic text-sm text-muted-foreground mt-2 leading-snug">
                   lo que salió del bolsillo hoy
                 </p>
+
+                <div className="home-ritual-line-slot" aria-live="polite">
+                  {ritualLine && (
+                    <p
+                      key={ritualLine.key}
+                      className="home-ritual-line"
+                      aria-label={ritualLine.ariaLabel}
+                    >
+                      {ritualLine.message}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </MotionReveal>
