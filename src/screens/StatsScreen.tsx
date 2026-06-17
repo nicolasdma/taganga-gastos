@@ -7,6 +7,7 @@ import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHea
 import { ExpenseViewTransition } from '@/components/editorial/ExpenseViewTransition'
 import { monthKey, shiftMonthKey } from '@/lib/month'
 import { useExpenseView } from '@/hooks/useExpenseView'
+import { useLocalToday } from '@/hooks/useLocalToday'
 import { useReportTabScroll } from '@/hooks/useReportTabScroll'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
@@ -17,6 +18,7 @@ function StatsViewPanel({
   panelRole,
   active,
   month,
+  todayKey,
   onPrevMonth,
   onNextMonth,
   nextDisabled,
@@ -26,6 +28,7 @@ function StatsViewPanel({
   panelRole: ExpenseViewPanelRole
   active: boolean
   month: string
+  todayKey: string
   onPrevMonth: () => void
   onNextMonth: () => void
   nextDisabled: boolean
@@ -37,7 +40,7 @@ function StatsViewPanel({
   )
   const insightsLive = useQuery(
     api.expenses.insights,
-    active ? { month, view: panelView } : 'skip'
+    active ? { month, view: panelView, todayKey } : 'skip'
   )
 
   const { value: byItem, isStale: byItemStale } = useStaleWhileLoading(byItemLive, panelView)
@@ -104,6 +107,7 @@ export function StatsScreen({ active = true }: { active?: boolean }) {
   const { view, direction, isTransitioning } = useExpenseView()
   const [statsMessage] = useState(() => pickStatsMessage())
   const scrollRef = useReportTabScroll()
+  const { todayKey } = useLocalToday()
 
   return (
     <div
@@ -123,6 +127,7 @@ export function StatsScreen({ active = true }: { active?: boolean }) {
             panelRole={panelRole}
             active={active}
             month={month}
+            todayKey={todayKey}
             onPrevMonth={() => setMonth((m) => shiftMonthKey(m, -1))}
             onNextMonth={() => setMonth((m) => shiftMonthKey(m, 1))}
             nextDisabled={month >= monthKey()}
