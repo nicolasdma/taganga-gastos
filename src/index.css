@@ -1623,12 +1623,6 @@
   }
 
   .home-hero-card {
-    --home-hero-tab-rise-left: 59.5%;
-    --home-hero-tab-left: 63%;
-    --home-hero-tab-right: 88%;
-    --home-hero-tab-fall-right: 95%;
-    --home-hero-tab-slot-inset: 0.45rem;
-    --home-hero-tab-toggle-top: 0.24rem;
     display: block;
     min-height: 16.25rem;
     padding: 3.65rem 1.05rem 1rem 1.25rem;
@@ -1636,9 +1630,8 @@
     isolation: isolate;
     clip-path: polygon(
       0% 5.5%, 3% 3.5%, 8% 4.8%, 14% 3.4%, 22% 4.6%, 30% 3.3%,
-      38% 4.6%, 47% 3.4%, 56% 4.7%, var(--home-hero-tab-rise-left) 1.2%,
-      var(--home-hero-tab-left) 0%, var(--home-hero-tab-right) 0%,
-      92% 1.1%, var(--home-hero-tab-fall-right) 4.5%, 100% 5.2%,
+      38% 4.6%, 47% 3.4%, 56% 4.7%, 59.5% 1.2%, 63% 0%,
+      88% 0%, 92% 1.1%, 95% 4.5%, 100% 5.2%,
       100% 98%, 97% 100%, 90% 98.5%, 82% 100%, 74% 99%, 66% 100%,
       58% 98.5%, 50% 100%, 42% 99%, 34% 100%, 26% 98.5%, 18% 100%,
       10% 99%, 4% 100%, 0% 98%
@@ -1679,14 +1672,11 @@
   /* Gatonomía Hero View Toggle */
   .home-hero-view-toggle {
     position: absolute;
-    top: var(--home-hero-tab-toggle-top);
-    left: calc(var(--home-hero-tab-left) + var(--home-hero-tab-slot-inset));
-    right: calc(100% - var(--home-hero-tab-right) + var(--home-hero-tab-slot-inset));
+    top: 0.38rem;
+    right: 0.92rem;
     z-index: 5;
-    display: grid;
-    grid-template-columns: minmax(4.25rem, 1.18fr) minmax(2.75rem, 0.82fr);
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 0.16rem;
     min-height: 2.18rem;
     padding: 0;
@@ -1707,10 +1697,9 @@
 
   .home-hero-view-toggle__button {
     min-height: 1.88rem;
-    min-width: 0;
-    width: 100%;
+    min-width: 3.05rem;
     border-radius: 0.82rem 0.88rem 0.62rem 0.66rem / 0.9rem 0.78rem 0.62rem 0.66rem;
-    padding: 0.38rem 0.52rem;
+    padding: 0.38rem 0.64rem;
     color: rgba(23, 38, 66, 0.54);
     font-size: 0.7rem;
     font-weight: 800;
@@ -2205,17 +2194,61 @@
 
   .stats-decor-placeholder {
     position: absolute;
-    right: 0.45rem;
-    bottom: -0.55rem;
-    width: 4.35rem;
-    height: 7.52rem;
+    right: 0.8rem;
+    bottom: 0.8rem;
+    width: 3.75rem;
+    height: 4.8rem;
   }
 
-  .stats-decor-placeholder__image {
-    width: 100%;
-    height: 100%;
-    object-fit: fill;
-    filter: drop-shadow(0 8px 8px rgba(26, 39, 68, 0.14));
+  .stats-decor-placeholder__stem {
+    position: absolute;
+    left: 1.84rem;
+    bottom: 1.45rem;
+    width: 2px;
+    height: 2.6rem;
+    border-radius: 999px;
+    background: rgba(83, 115, 79, 0.76);
+    transform: rotate(-4deg);
+  }
+
+  .stats-decor-placeholder__leaf {
+    position: absolute;
+    width: 1.15rem;
+    height: 0.72rem;
+    border-radius: 999px 0 999px 0;
+    background: rgba(119, 149, 108, 0.76);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
+  }
+
+  .stats-decor-placeholder__leaf--a {
+    left: 0.7rem;
+    top: 0.95rem;
+    transform: rotate(-32deg);
+  }
+
+  .stats-decor-placeholder__leaf--b {
+    right: 0.65rem;
+    top: 1.35rem;
+    transform: rotate(36deg) scale(0.92);
+  }
+
+  .stats-decor-placeholder__leaf--c {
+    left: 1.1rem;
+    top: 2rem;
+    transform: rotate(-24deg) scale(0.82);
+  }
+
+  .stats-decor-placeholder__pot {
+    position: absolute;
+    left: 1.05rem;
+    bottom: 0.15rem;
+    width: 1.9rem;
+    height: 1.45rem;
+    border-radius: 0.25rem 0.25rem 0.65rem 0.65rem;
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 45%),
+      linear-gradient(160deg, #d6906b, #a85a44);
+    box-shadow: 0 5px 8px rgba(26, 39, 68, 0.12);
   }
 
   .home-recents-label {
@@ -2560,18 +2593,11 @@
 
   @media (max-width: 374px) {
     .home-hero-card {
-      --home-hero-tab-rise-left: 59%;
-      --home-hero-tab-left: 63%;
-      --home-hero-tab-right: 89%;
-      --home-hero-tab-fall-right: 96%;
-      --home-hero-tab-slot-inset: 0.32rem;
-      --home-hero-tab-toggle-top: 0.28rem;
       padding: 3.45rem 0.75rem 0.95rem 1rem;
       clip-path: polygon(
         0% 5.8%, 3% 3.8%, 8% 5%, 14% 3.7%, 22% 4.9%, 30% 3.6%,
-        38% 4.8%, 48% 3.7%, 56% 4.9%, var(--home-hero-tab-rise-left) 1.5%,
-        var(--home-hero-tab-left) 0%, var(--home-hero-tab-right) 0%,
-        93% 1.2%, var(--home-hero-tab-fall-right) 4.8%, 100% 5.5%,
+        38% 4.8%, 48% 3.7%, 56% 4.9%, 59% 1.5%, 63% 0%,
+        89% 0%, 93% 1.2%, 96% 4.8%, 100% 5.5%,
         100% 98%, 97% 100%, 90% 98.5%, 82% 100%, 74% 99%, 66% 100%,
         58% 98.5%, 50% 100%, 42% 99%, 34% 100%, 26% 98.5%, 18% 100%,
         10% 99%, 4% 100%, 0% 98%
@@ -2579,12 +2605,14 @@
     }
 
     .home-hero-view-toggle {
+      top: 0.42rem;
+      right: 0.66rem;
       min-height: 1.96rem;
     }
 
     .home-hero-view-toggle__button {
       min-height: 1.66rem;
-      min-width: 0;
+      min-width: 2.6rem;
       padding: 0.31rem 0.5rem;
       font-size: 0.66rem;
     }
