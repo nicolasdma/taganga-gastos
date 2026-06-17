@@ -47,14 +47,14 @@ function scopeLabel(scope?: 'shared' | 'personal'): string {
 }
 
 export function RecentExpenses({
-  limit = 8,
+  limit = 30,
   view = DEFAULT_EXPENSE_VIEW,
   panelRole = 'active',
   onEdit,
   onPendingRemoved,
 }: RecentExpensesProps) {
   const { todayKey } = useLocalToday()
-  const expensesLive = useQuery(api.expenses.recentExpenses, { limit: limit + 20, view })
+  const expensesLive = useQuery(api.expenses.recentExpenses, { limit, view })
   const { value: expenses, isStale, isInitialLoad } = useStaleWhileLoading(expensesLive, view)
   const [outboxTick, setOutboxTick] = useState(0)
 
@@ -177,7 +177,7 @@ export function RecentExpenses({
                   <ReceiptGroupRow
                     key={row.group.key}
                     group={row.group}
-                    defaultExpanded={false}
+                    defaultExpanded
                     variant="recent"
                     onEditExpense={(expense) => onEdit?.(expense)}
                     onPendingDelete={handlePendingReceiptDelete}
@@ -193,7 +193,7 @@ export function RecentExpenses({
                       ...row.group,
                       receiptGroupId: row.group.sessionId,
                     }}
-                    defaultExpanded={false}
+                    defaultExpanded
                     variant="recent"
                     onEditExpense={(expense) => onEdit?.(expense)}
                   />

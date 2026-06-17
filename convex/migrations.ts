@@ -1,6 +1,69 @@
-import { internalMutation } from './_generated/server'
+import { internalMutation, mutation, type MutationCtx } from './_generated/server'
 import { v } from 'convex/values'
+import type { Id } from './_generated/dataModel'
+import { requireAuthContext } from './lib/auth'
 import { resolveItemFields } from './lib/items'
+
+function dayRange(dateKey: string): { start: number; end: number } {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  const start = new Date(year, month - 1, day).getTime()
+  const end = new Date(year, month - 1, day + 1).getTime()
+  return { start, end }
+}
+
+async function markDayAsShared(
+  ctx: MutationCtx,
+  targetHouseholdId: Id<'households'>,
+  dateKey: string,
+  dryRun: boolean | undefined
+) {
+  const { start, end } = dayRange(dateKey)
+  let scanned = 0
+  let matchedHousehold = 0
+  let matchedOrphan = 0
+  let skippedOtherHousehold = 0
+  let alreadyShared = 0
+  let updated = 0
+
+  for await (const expense of ctx.db
+    .query('expenses')
+    .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
+    .order('asc')) {
+    if (expense.createdAt >= end) break
+
+    scanned += 1
+    if (expense.householdId === undefined) {
+      matchedOrphan += 1
+    } else if (expense.householdId === targetHouseholdId) {
+      matchedHousehold += 1
+    } else {
+      skippedOtherHousehold += 1
+      continue
+    }
+
+    if (expense.scope === 'shared' && expense.householdId === targetHouseholdId) {
+      alreadyShared += 1
+      continue
+    }
+
+    if (!dryRun) {
+      await ctx.db.patch(expense._id, {
+        householdId: targetHouseholdId,
+        scope: 'shared',
+      })
+    }
+    updated += 1
+  }
+
+  return {
+    scanned,
+    matchedHousehold,
+    matchedOrphan,
+    skippedOtherHousehold,
+    alreadyShared,
+    updated,
+  }
+}
 
 /** Backfill itemId/itemEmoji/itemLabel desde categoryId legacy. Correr una vez en prod. */
 export const backfillExpenseItems = internalMutation({
@@ -48,5 +111,43 @@ export const backfillExpenseItems = internalMutation({
       done: page.isDone,
       continueCursor: page.isDone ? null : page.continueCursor,
     }
+  },
+})
+
+export const markExpensesForDayAsShared = internalMutation({
+  args: {
+    targetHouseholdId: v.id('households'),
+    dateKey: v.string(),
+    dryRun: v.optional(v.boolean()),
+  },
+  returns: v.object({
+    scanned: v.number(),
+    matchedHousehold: v.number(),
+    matchedOrphan: v.number(),
+    skippedOtherHousehold: v.number(),
+    alreadyShared: v.number(),
+    updated: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    return await markDayAsShared(ctx, args.targetHouseholdId, args.dateKey, args.dryRun)
+  },
+})
+
+export const markMyHouseholdExpensesForDayAsShared = mutation({
+  args: {
+    dateKey: v.string(),
+    dryRun: v.optional(v.boolean()),
+  },
+  returns: v.object({
+    scanned: v.number(),
+    matchedHousehold: v.number(),
+    matchedOrphan: v.number(),
+    skippedOtherHousehold: v.number(),
+    alreadyShared: v.number(),
+    updated: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const { householdId } = await requireAuthContext(ctx)
+    return await markDayAsShared(ctx, householdId, args.dateKey, args.dryRun)
   },
 })

@@ -65,7 +65,9 @@ export function matchesView(
   userId: Id<'users'>,
   view: ExpenseView
 ): boolean {
-  if (isLegacyOwnerlessExpense(expense)) return true
+  if (isLegacyOwnerlessExpense(expense)) {
+    return expense.scope === undefined || expense.scope === view
+  }
   const scope = expenseScope(expense)
   if (view === 'shared') return scope === 'shared'
   return scope === 'personal' && expense.createdBy === userId
