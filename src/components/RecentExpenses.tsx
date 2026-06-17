@@ -12,9 +12,7 @@ import { useLocalToday } from '@/hooks/useLocalToday'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import {
   excludedAmountClass,
-  excludedBadgeClass,
   excludedLabelClass,
-  excludedRowClass,
   isExpenseExcluded,
 } from '@/lib/expenseExcluded'
 import type { EditableExpense } from '@/lib/expenseTypes'
@@ -42,6 +40,10 @@ interface RecentExpensesProps {
   panelRole?: ExpenseViewPanelRole
   onEdit?: (expense: EditableExpense) => void
   onPendingRemoved?: () => void
+}
+
+function scopeLabel(scope?: 'shared' | 'personal'): string {
+  return scope === 'personal' ? 'Míos' : 'Nosotros'
 }
 
 export function RecentExpenses({
@@ -80,23 +82,29 @@ export function RecentExpenses({
     const pendingRows: ReceiptItemLike[] = pending
       .filter((p) => (p.scope ?? DEFAULT_EXPENSE_SCOPE) === view)
       .map((p) => ({
-      _id: p.clientId,
-      amount: p.amount,
-      itemId: p.itemId,
-      itemEmoji: p.itemEmoji,
-      itemLabel: p.itemLabel,
-      sessionId: p.sessionId,
-      receiptGroupId: p.receiptGroupId,
-      store: p.store,
-      note: p.note,
-      createdAt: p.createdAt,
-      excluded: false,
-      pending: true,
-    }))
+        _id: p.clientId,
+        amount: p.amount,
+        itemId: p.itemId,
+        itemEmoji: p.itemEmoji,
+        itemLabel: p.itemLabel,
+        sessionId: p.sessionId,
+        receiptGroupId: p.receiptGroupId,
+        store: p.store,
+        note: p.note,
+        createdAt: p.createdAt,
+        excluded: false,
+        pending: true,
+        scope: p.scope ?? DEFAULT_EXPENSE_SCOPE,
+      }))
 
     const pendingReceiptRows = pendingReceipts
       .filter((group) => (group.scope ?? DEFAULT_EXPENSE_SCOPE) === view)
-      .flatMap(pendingReceiptToListRows)
+      .flatMap((group) =>
+        pendingReceiptToListRows(group).map((row) => ({
+          ...row,
+          scope: group.scope ?? DEFAULT_EXPENSE_SCOPE,
+        }))
+      )
 
     const serverRows: ReceiptItemLike[] = expenses
       .filter((e) => !e.clientId || !pendingClientIds.has(e.clientId))
@@ -113,6 +121,7 @@ export function RecentExpenses({
         createdAt: e.createdAt,
         excluded: e.excluded,
         pending: false,
+        scope: e.scope ?? 'shared',
       }))
 
     const all = [...pendingReceiptRows, ...pendingRows, ...serverRows]
@@ -155,11 +164,11 @@ export function RecentExpenses({
   }
 
   return (
-    <div className={cn('space-y-1', dimStale && 'expense-view-stale')}>
+    <div className={cn('recent-expenses-paper', dimStale && 'expense-view-stale')}>
       {merged.map((section) => (
-        <div key={section.dayKey} className="mb-1">
-          <ExpenseDaySectionHeader label={section.label} />
-          <div className="expense-rows-nest pl-3.5 space-y-2">
+        <div key={section.dayKey} className="recent-expenses-section">
+          <ExpenseDaySectionHeader label={section.label} className="recent-expenses-day" />
+          <div className="recent-expense-rows">
             {section.rows.map((row) => {
               if (row.type === 'receipt') {
                 return (
@@ -167,6 +176,7 @@ export function RecentExpenses({
                     key={row.group.key}
                     group={row.group}
                     defaultExpanded={false}
+                    variant="recent"
                     onEditExpense={(expense) => onEdit?.(expense)}
                     onPendingDelete={handlePendingReceiptDelete}
                   />
@@ -182,6 +192,7 @@ export function RecentExpenses({
                       receiptGroupId: row.group.sessionId,
                     }}
                     defaultExpanded={false}
+                    variant="recent"
                     onEditExpense={(expense) => onEdit?.(expense)}
                   />
                 )
@@ -214,38 +225,46 @@ export function RecentExpenses({
                     })
                   }}
                   className={cn(
-                    'w-full flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left',
-                    'transition-all active:translate-y-px',
-                    excluded
-                      ? excludedRowClass(true)
-                      : 'row-porcelain',
-                    expense.pending && 'opacity-70 border-dashed',
+                    'recent-expense-row',
+                    excluded && 'recent-expense-row--excluded',
+                    expense.pending && 'recent-expense-row--pending',
                     canEdit && !excluded && 'active:opacity-90',
                     expense.pending && 'active:bg-red-500/5'
                   )}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xl shrink-0">{emoji}</span>
-                    <div className="min-w-0 flex flex-col gap-1">
-                      <span className={cn('text-sm font-semibold truncate', excludedLabelClass(excluded))}>
-                        {label}
-                      </span>
+                  <span className="recent-expense-row__icon" aria-hidden>
+                    {emoji}
+                  </span>
+
+                  <div className="recent-expense-row__copy">
+                    <span className={cn('recent-expense-row__title', excludedLabelClass(excluded))}>
+                      {label}
+                    </span>
+                    <span className="recent-expense-row__meta">
                       {expense.createdAt != null && (
                         <ExpenseTimeStamp createdAt={expense.createdAt} />
                       )}
-                    </div>
+                      <span aria-hidden>·</span>
+                      <span>{scopeLabel(expense.scope)}</span>
+                    </span>
+                  </div>
+
+                  <div className="recent-expense-row__trail">
                     {excluded && (
-                      <span className={excludedBadgeClass()}>
+                      <span className="recent-expense-row__badge">
                         No cuenta
                       </span>
                     )}
                     {expense.pending && (
-                      <span className="text-[10px] text-amber-600 shrink-0">⏳ tap quitar</span>
+                      <span className="recent-expense-row__pending">⏳ tap quitar</span>
                     )}
+                    <span className={cn('recent-expense-row__amount', excludedAmountClass(excluded))}>
+                      {formatCOP(expense.amount)}
+                    </span>
+                    <span className="recent-expense-row__chevron" aria-hidden>
+                      ›
+                    </span>
                   </div>
-                  <span className={cn('text-sm font-extrabold font-tabular shrink-0', excludedAmountClass(excluded))}>
-                    {formatCOP(expense.amount)}
-                  </span>
                 </button>
               )
             })}

@@ -11,6 +11,7 @@ export interface ReceiptItemLike {
   excluded?: boolean
   pending?: boolean
   createdAt?: number
+  scope?: 'shared' | 'personal'
 }
 
 export interface ReceiptGroup {

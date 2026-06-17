@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 interface ReceiptGroupRowProps {
   group: ReceiptGroup
   defaultExpanded?: boolean
+  variant?: 'default' | 'recent'
   onEditExpense: (expense: EditableExpense) => void
   onPendingDelete?: (receiptGroupId: string) => void
 }
@@ -36,6 +37,7 @@ function toEditable(expense: ReceiptGroup['items'][0]): EditableExpense | null {
 export function ReceiptGroupRow({
   group,
   defaultExpanded = false,
+  variant = 'default',
   onEditExpense,
   onPendingDelete,
 }: ReceiptGroupRowProps) {
@@ -58,25 +60,35 @@ export function ReceiptGroupRow({
   return (
     <div
       className={cn(
-        'rounded-2xl overflow-hidden row-porcelain',
+        variant === 'recent' ? 'recent-receipt-group' : 'rounded-2xl overflow-hidden row-porcelain',
         group.pending && 'border-dashed opacity-70'
       )}
     >
       <button
         type="button"
         onClick={handleHeaderClick}
-        className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left active:opacity-90"
+        className={cn(
+          'w-full flex items-center justify-between gap-3 text-left active:opacity-90',
+          variant === 'recent' ? 'recent-receipt-group__header' : 'px-3 py-2.5'
+        )}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xl shrink-0">{emoji}</span>
+          <span className={cn(variant === 'recent' ? 'recent-expense-row__icon' : 'text-xl shrink-0')} aria-hidden>
+            {emoji}
+          </span>
           <div className="min-w-0">
-            <span className="text-sm font-semibold text-foreground truncate block">
+            <span
+              className={cn(
+                'text-foreground truncate block',
+                variant === 'recent' ? 'recent-expense-row__title' : 'text-sm font-semibold'
+              )}
+            >
               {title}
               {subtitle ? ` · ${subtitle}` : ''}
             </span>
             {!expanded && (
-              <span className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] text-stitch font-display font-semibold">
+              <span className={cn('flex items-center gap-1.5 flex-wrap', variant === 'recent' && 'recent-expense-row__meta')}>
+                <span className={cn(variant !== 'recent' && 'text-[10px] text-stitch font-display font-semibold')}>
                   {itemCount} ítem{itemCount !== 1 ? 's' : ''}
                 </span>
                 {groupTime != null && <ExpenseTimeStamp createdAt={groupTime} />}
@@ -90,7 +102,7 @@ export function ReceiptGroupRow({
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-sm font-extrabold font-tabular text-foreground">
+          <span className={cn(variant === 'recent' ? 'recent-expense-row__amount' : 'text-sm font-extrabold font-tabular text-foreground')}>
             {formatCOP(group.total)}
           </span>
           {!group.pending &&
