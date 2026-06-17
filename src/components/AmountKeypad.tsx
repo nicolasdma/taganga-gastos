@@ -18,6 +18,7 @@ export interface EditableItemHeader {
   catalogLabel: string
   detail: string
   onDetailChange: (detail: string) => void
+  onEmojiPress?: () => void
 }
 
 interface AmountKeypadProps {
@@ -189,7 +190,18 @@ export function AmountKeypad({
       {itemHeader && (
         <div className="text-center mb-4 px-1">
           <div className="flex items-center justify-center gap-2.5 min-h-[2.75rem]">
-            <span className="text-3xl leading-none shrink-0">{itemHeader.emoji}</span>
+            {itemHeader.onEmojiPress ? (
+              <button
+                type="button"
+                onClick={itemHeader.onEmojiPress}
+                className="text-3xl leading-none shrink-0 rounded-xl px-1 active:scale-95 transition-transform"
+                aria-label="Cambiar emoji"
+              >
+                {itemHeader.emoji}
+              </button>
+            ) : (
+              <span className="text-3xl leading-none shrink-0">{itemHeader.emoji}</span>
+            )}
             {editingLabel ? (
               <CraftTextField
                 variant="dashed"

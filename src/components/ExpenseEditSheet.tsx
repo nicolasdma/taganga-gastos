@@ -5,6 +5,7 @@ import { AmountKeypad } from '@/components/AmountKeypad'
 import { BottomSheet } from '@/components/BottomSheet'
 import { CraftKeyboardProvider, useCraftKeyboardFooterSlot } from '@/components/keyboard'
 import { CreateCustomItemForm } from '@/components/CreateCustomItemSheet'
+import { EmojiSuggestionGrid } from '@/components/items/EmojiSuggestionGrid'
 import {
   ItemPicker,
   itemPickerSubtitle,
@@ -17,6 +18,8 @@ import { excludedNoticeClass, excludedRowClass } from '@/lib/expenseExcluded'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import type { EditableExpense } from '@/lib/expenseTypes'
 import { useCreateCustomItem, newCustomItemId } from '@/hooks/useCreateCustomItem'
+import { useUpdateCustomItem } from '@/hooks/useUpdateCustomItem'
+import { applyEmojiToItem, shouldSyncCustomItemEmoji } from '@/lib/customItemEmoji'
 
 export type { EditableExpense }
 import { hapticSave } from '@/lib/haptics'
@@ -29,7 +32,7 @@ interface ExpenseEditSheetProps {
   onUpdated: () => void
 }
 
-type Step = 'edit' | 'item' | 'create-item'
+type Step = 'edit' | 'item' | 'create-item' | 'edit-emoji'
 
 interface ExpenseEditContentProps {
   expense: EditableExpense
@@ -55,6 +58,7 @@ function ExpenseEditContent({
   const updateExpense = useMutation(api.expenses.updateExpense)
   const setExpenseExcluded = useMutation(api.expenses.setExpenseExcluded)
   const { createCustomItem } = useCreateCustomItem()
+  const { updateCustomItem } = useUpdateCustomItem()
 
   const [amount, setAmount] = useState(expense.amount)
   const [selectedItem, setSelectedItem] = useState<SelectedItem>({
@@ -99,6 +103,31 @@ function ExpenseEditContent({
     setSaving(false)
     onUpdated()
     if (next) onClose()
+  }
+
+  if (step === 'edit-emoji') {
+    return (
+      <div className="pb-4">
+        <p className="label-stitch mb-2 px-0.5">{selectedItem.itemLabel}</p>
+        <div className="flex justify-center mb-4">
+          <span className="text-5xl leading-none" aria-hidden>
+            {selectedItem.itemEmoji}
+          </span>
+        </div>
+        <EmojiSuggestionGrid
+          selectedEmoji={selectedItem.itemEmoji}
+          searchQuery={selectedItem.itemLabel}
+          onSelect={(emoji) => {
+            const next = applyEmojiToItem(selectedItem, emoji)
+            setSelectedItem(next)
+            if (shouldSyncCustomItemEmoji(next.itemId)) {
+              void updateCustomItem({ itemId: next.itemId, emoji })
+            }
+            onStepChange('edit')
+          }}
+        />
+      </div>
+    )
   }
 
   if (step === 'item') {
@@ -149,22 +178,29 @@ function ExpenseEditContent({
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={() => onStepChange('item')}
-        className={cn(
-          'w-full mb-4 flex items-center justify-between gap-2 rounded-xl px-3 py-2.5',
-          'border text-left active:opacity-80',
-          excludedRowClass(excluded) || 'bg-muted/40 border-border/60 active:bg-muted/60'
-        )}
-      >
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      <div className="w-full mb-4 flex items-center gap-2 rounded-xl px-3 py-2.5 border text-left bg-muted/40 border-border/60">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0">
           Ítem
         </span>
-        <span className="text-sm font-bold">
-          {display.emoji} {display.label}
-        </span>
-      </button>
+        <button
+          type="button"
+          onClick={() => onStepChange('edit-emoji')}
+          className="text-2xl leading-none shrink-0 rounded-lg px-1 active:scale-95 transition-transform"
+          aria-label="Cambiar emoji"
+        >
+          {display.emoji}
+        </button>
+        <button
+          type="button"
+          onClick={() => onStepChange('item')}
+          className={cn(
+            'flex-1 min-w-0 text-right text-sm font-bold active:opacity-80',
+            excludedRowClass(excluded)
+          )}
+        >
+          {display.label}
+        </button>
+      </div>
 
       <AmountKeypad
         hideNav
@@ -213,7 +249,7 @@ function ExpenseEditSheetBody({
   }
 
   const handleBack = () => {
-    if (step === 'item' || step === 'create-item') {
+    if (step === 'item' || step === 'create-item' || step === 'edit-emoji') {
       setStep('edit')
       return
     }
@@ -223,6 +259,7 @@ function ExpenseEditSheetBody({
   const sheetTitle = (() => {
     if (step === 'item') return itemPickerTitle()
     if (step === 'create-item') return '✏️ Nuevo ítem'
+    if (step === 'edit-emoji') return 'Elegí un emoji'
     const display = formatExpenseLabel(expense)
     return `${display.emoji} ${display.label}`
   })()
@@ -230,6 +267,7 @@ function ExpenseEditSheetBody({
   const sheetSubtitle = (() => {
     if (step === 'item') return itemPickerSubtitle()
     if (step === 'create-item') return undefined
+    if (step === 'edit-emoji') return undefined
     if (expense.excluded) return 'Editar · no cuenta en totales'
     return 'Editar monto'
   })()

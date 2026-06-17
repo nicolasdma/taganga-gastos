@@ -1,15 +1,14 @@
 import { CraftTextField } from '@/components/keyboard/CraftTextField'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { BottomSheet } from '@/components/BottomSheet'
 import {
   CraftKeyboardProvider,
   useCraftKeyboardContext,
   useCraftKeyboardFooterSlot,
 } from '@/components/keyboard'
+import { EmojiSuggestionGrid } from '@/components/items/EmojiSuggestionGrid'
 import { useCreateCustomItem, type CreatedCustomItem } from '@/hooks/useCreateCustomItem'
-import { EMOJI_INLINE_LIMIT, loadEmojiSearchIndex, searchEmojisFromIndex } from '@/lib/emojiSearch'
-import { lookupHouseholdAlias, lookupStaticAlias } from '@/lib/itemAliases'
-import { useHouseholdItemAliases } from '@/hooks/useHouseholdItemAliases'
+import { useUpdateCustomItem } from '@/hooks/useUpdateCustomItem'
 import { cn } from '@/lib/utils'
 
 const DEFAULT_EMOJI = '✏️'
@@ -17,90 +16,26 @@ const DEFAULT_EMOJI = '✏️'
 export interface CreateCustomItemFormProps {
   initialLabel?: string
   initialEmoji?: string
+  /** Modo edición de ítem custom existente */
+  editItemId?: string
   onCreated: (item: CreatedCustomItem) => void
   onCancel?: () => void
-}
-
-function resolveDefaultEmoji(
-  label: string,
-  emojiIndex: Awaited<ReturnType<typeof loadEmojiSearchIndex>> | null,
-  householdAliases: ReturnType<typeof useHouseholdItemAliases>
-): string {
-  const trimmed = label.trim()
-  if (!trimmed) return DEFAULT_EMOJI
-
-  const household = lookupHouseholdAlias(trimmed, householdAliases)
-  if (household) return household.emoji
-
-  const staticAlias = lookupStaticAlias(trimmed)
-  if (staticAlias) return staticAlias.emoji
-
-  if (emojiIndex) {
-    const hits = searchEmojisFromIndex(emojiIndex, trimmed, 1)
-    if (hits[0]) return hits[0].emoji
-  }
-
-  return DEFAULT_EMOJI
 }
 
 export function CreateCustomItemForm({
   initialLabel = '',
   initialEmoji,
+  editItemId,
   onCreated,
 }: CreateCustomItemFormProps) {
-  const { createCustomItem, isCreating } = useCreateCustomItem()
+  const isEdit = Boolean(editItemId)
+  const { createCustomItem, isCreating: isCreatingNew } = useCreateCustomItem()
+  const { updateCustomItem } = useUpdateCustomItem()
   const keyboardCtx = useCraftKeyboardContext()
-  const householdAliases = useHouseholdItemAliases()
   const [label, setLabel] = useState(initialLabel)
   const [emoji, setEmoji] = useState(initialEmoji ?? DEFAULT_EMOJI)
-  const [suggestedEmojis, setSuggestedEmojis] = useState<Array<{ emoji: string; label: string }>>([])
   const [error, setError] = useState<string | null>(null)
-  const [emojiReady, setEmojiReady] = useState(Boolean(initialEmoji))
-
-  useEffect(() => {
-    if (initialEmoji) {
-      setEmoji(initialEmoji)
-      setEmojiReady(true)
-      return
-    }
-
-    let cancelled = false
-    void loadEmojiSearchIndex()
-      .then((index) => {
-        if (cancelled) return
-        const suggested = resolveDefaultEmoji(initialLabel, index, householdAliases)
-        setEmoji(suggested)
-        setSuggestedEmojis(searchEmojisFromIndex(index, initialLabel || label, EMOJI_INLINE_LIMIT))
-        setEmojiReady(true)
-      })
-      .catch(() => {
-        if (cancelled) return
-        setEmoji(resolveDefaultEmoji(initialLabel, null, householdAliases))
-        setEmojiReady(true)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [initialLabel, initialEmoji, householdAliases])
-
-  useEffect(() => {
-    if (!emojiReady || initialEmoji) return
-    let cancelled = false
-    void loadEmojiSearchIndex()
-      .then((index) => {
-        if (cancelled) return
-        setSuggestedEmojis(searchEmojisFromIndex(index, label, EMOJI_INLINE_LIMIT))
-        if (!label.trim()) return
-        const next = resolveDefaultEmoji(label, index, householdAliases)
-        setEmoji((current) => (current === DEFAULT_EMOJI ? next : current))
-      })
-      .catch(() => undefined)
-
-    return () => {
-      cancelled = true
-    }
-  }, [label, emojiReady, initialEmoji, householdAliases])
+  const [saving, setSaving] = useState(false)
 
   const dismissKeyboard = () => {
     keyboardCtx?.dismissKeyboard()
@@ -114,26 +49,20 @@ export function CreateCustomItemForm({
     }
 
     setError(null)
+    setSaving(true)
     try {
-      const item = await createCustomItem({ label: trimmed, emoji })
+      const item = isEdit && editItemId
+        ? await updateCustomItem({ itemId: editItemId, label: trimmed, emoji })
+        : await createCustomItem({ label: trimmed, emoji })
       onCreated(item)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo crear el ítem')
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el ítem')
+    } finally {
+      setSaving(false)
     }
   }
 
-  const displaySuggested = (() => {
-    const seen = new Set<string>()
-    const list: Array<{ emoji: string; label: string }> = []
-    const add = (emoji: string, label: string) => {
-      if (seen.has(emoji)) return
-      seen.add(emoji)
-      list.push({ emoji, label })
-    }
-    add(emoji, label.trim() || 'Seleccionado')
-    for (const entry of suggestedEmojis) add(entry.emoji, entry.label)
-    return list.slice(0, EMOJI_INLINE_LIMIT)
-  })()
+  const isCreating = isCreatingNew || saving
 
   return (
     <div className="pb-4">
@@ -155,23 +84,12 @@ export function CreateCustomItemForm({
             {emoji}
           </span>
         </div>
-        <div className="grid grid-cols-6 gap-1.5">
-          {displaySuggested.map(({ emoji: e, label: emojiLabel }) => (
-            <button
-              key={e}
-              type="button"
-              title={emojiLabel}
-              onPointerDown={dismissKeyboard}
-              onClick={() => setEmoji(e)}
-              className={cn(
-                'h-10 rounded-xl text-xl flex items-center justify-center transition-all active:scale-95',
-                emoji === e ? 'chip-tile ring-2 ring-cobalt-glaze/40' : 'hover:bg-muted/40'
-              )}
-            >
-              {e}
-            </button>
-          ))}
-        </div>
+        <EmojiSuggestionGrid
+          selectedEmoji={emoji}
+          searchQuery={label}
+          onSelect={setEmoji}
+          onDismissKeyboard={dismissKeyboard}
+        />
       </div>
 
       {error && (
@@ -189,7 +107,7 @@ export function CreateCustomItemForm({
           isCreating && 'opacity-60 pointer-events-none'
         )}
       >
-        {isCreating ? 'Guardando…' : 'Guardar ítem'}
+        {isCreating ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Guardar ítem'}
       </button>
     </div>
   )
@@ -201,6 +119,7 @@ export interface CreateCustomItemSheetProps {
   onCreated: (item: CreatedCustomItem) => void
   initialLabel?: string
   initialEmoji?: string
+  editItemId?: string
 }
 
 export function CreateCustomItemSheet({
@@ -209,6 +128,7 @@ export function CreateCustomItemSheet({
   onCreated,
   initialLabel = '',
   initialEmoji,
+  editItemId,
 }: CreateCustomItemSheetProps) {
   const handleCreated = (item: CreatedCustomItem) => {
     onCreated(item)
@@ -222,6 +142,7 @@ export function CreateCustomItemSheet({
         onClose={onClose}
         initialLabel={initialLabel}
         initialEmoji={initialEmoji}
+        editItemId={editItemId}
         onCreated={handleCreated}
       />
     </CraftKeyboardProvider>
@@ -233,12 +154,14 @@ function CreateCustomItemSheetPanel({
   onClose,
   initialLabel,
   initialEmoji,
+  editItemId,
   onCreated,
 }: {
   open: boolean
   onClose: () => void
   initialLabel: string
   initialEmoji?: string
+  editItemId?: string
   onCreated: (item: CreatedCustomItem) => void
 }) {
   const footer = useCraftKeyboardFooterSlot()
@@ -250,14 +173,15 @@ function CreateCustomItemSheetPanel({
       portal
       elevated
       height="standard"
-      title="✏️ Nuevo ítem"
+      title={editItemId ? '✏️ Editar ítem' : '✏️ Nuevo ítem'}
       headerAction="cancel"
       footer={footer}
     >
       <CreateCustomItemForm
-        key={`${initialLabel}:${initialEmoji ?? ''}`}
+        key={`${editItemId ?? 'new'}:${initialLabel}:${initialEmoji ?? ''}`}
         initialLabel={initialLabel}
         initialEmoji={initialEmoji}
+        editItemId={editItemId}
         onCreated={onCreated}
       />
     </BottomSheet>

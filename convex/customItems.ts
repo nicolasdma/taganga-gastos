@@ -156,3 +156,62 @@ export const createCustomItem = mutation({
     }
   },
 })
+
+export const updateCustomItem = mutation({
+  args: {
+    itemId: v.string(),
+    label: v.optional(v.string()),
+    emoji: v.optional(v.string()),
+  },
+  returns: customItemValidator,
+  handler: async (ctx, args) => {
+    const { userId, householdId } = await requireAuthContext(ctx)
+
+    const existing = await ctx.db
+      .query('customItems')
+      .withIndex('by_itemId', (q) => q.eq('itemId', args.itemId))
+      .unique()
+
+    if (!existing) throw new Error('Ítem no encontrado')
+    if (existing.createdBy !== userId) throw new Error('No podés editar este ítem')
+
+    const updates: {
+      label?: string
+      emoji?: string
+      normalizedLabel?: string
+    } = {}
+
+    if (args.label !== undefined) {
+      const label = args.label.trim()
+      if (!label) throw new Error('El nombre del ítem es obligatorio')
+      updates.label = label
+      updates.normalizedLabel = normalizeCustomLabel(label)
+    }
+
+    if (args.emoji !== undefined) {
+      const emoji = [...args.emoji.trim()][0]
+      if (!emoji) throw new Error('Elegí un emoji')
+      updates.emoji = emoji
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return toCustomItemResponse(existing)
+    }
+
+    await ctx.db.patch(existing._id, updates)
+
+    const nextLabel = updates.label ?? existing.label
+    const nextEmoji = updates.emoji ?? existing.emoji
+
+    await upsertAliasInternal(ctx, {
+      householdId,
+      userId,
+      alias: nextLabel,
+      emoji: nextEmoji,
+      label: nextLabel,
+      itemId: args.itemId,
+    })
+
+    return toCustomItemResponse({ ...existing, ...updates })
+  },
+})
