@@ -4,6 +4,7 @@ import { RecentExpenses } from '@/components/RecentExpenses'
 import { BentoQuickAccess } from '@/components/editorial/BentoQuickAccess'
 import { EditorialStage } from '@/components/editorial/EditorialStage'
 import { ExpenseViewTransition } from '@/components/editorial/ExpenseViewTransition'
+import { HomeStatsSummary } from '@/components/editorial/HomeStatsSummary'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import type { SaveExpenseResult, SheetIntent } from '@/components/ExpenseSheet'
@@ -79,7 +80,7 @@ export function HomeScreen({
               panelRole={panelRole}
             />
 
-            <div className="tab-content px-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] space-y-7">
+            <div className="tab-content gatonomia-home px-4 pb-[calc(8.5rem+env(safe-area-inset-bottom,0px))] space-y-4">
               <MotionReveal step={4}>
                 <InsightHighlight
                   view={panelView}
@@ -89,10 +90,7 @@ export function HomeScreen({
                 />
               </MotionReveal>
 
-              <section>
-                <MotionReveal step={5}>
-                  <SectionLabel overPhoto>Acceso rápido</SectionLabel>
-                </MotionReveal>
+              <section aria-label="Agregar rápido">
                 <BentoQuickAccess
                   view={panelView}
                   panelRole={panelRole}
@@ -101,10 +99,12 @@ export function HomeScreen({
                 />
               </section>
 
+              <HomeStatsSummary view={panelView} panelRole={panelRole} />
+
               <section>
                 <MotionReveal step={6}>
-                  <SectionLabel overPhoto className="mb-2">
-                    Recientes
+                  <SectionLabel overPhoto className="home-recents-label mb-2">
+                    Últimas notas
                   </SectionLabel>
                 </MotionReveal>
                 <MotionReveal step={7}>

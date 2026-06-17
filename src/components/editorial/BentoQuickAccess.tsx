@@ -6,7 +6,6 @@ import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { CreateCustomItemSheet } from '@/components/CreateCustomItemSheet'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
-import { ITEM_CATALOG } from '@/lib/items'
 import { buildRecentQuickButtons } from '@/lib/quickButtons'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 import { useFrequentQuickItems } from '@/hooks/useFrequentQuickItems'
@@ -59,89 +58,85 @@ export function BentoQuickAccess({
 
   return (
     <>
-      <div className={cn('bento-quick grid gap-2.5', dimStale && 'expense-view-stale')}>
-      {lastExpense && lastDisplay && (
-        <MotionReveal step={4}>
+      <div className={cn('quick-actions-panel', dimStale && 'expense-view-stale')}>
+        <div className="quick-actions-panel__header">
+          <p className="quick-actions-panel__title">
+            <span aria-hidden>🐾</span>
+            Agregar rápido
+          </p>
           <button
             type="button"
-            onClick={handleRepeat}
-            className={cn(
-              'bento-tile bento-tile--coral bento-tile--wide p-4 text-left',
-              'flex items-center justify-between gap-3',
-              'active:translate-y-1 active:shadow-none transition-transform'
-            )}
+            onClick={() => setCreateItemOpen(true)}
+            className="quick-actions-panel__custom-link"
           >
-            <div>
-              <p className="bento-label">Repetir</p>
-              <p className="text-base font-display font-bold text-ink mt-0.5">
-                {lastDisplay.emoji} {lastDisplay.label}
-              </p>
-            </div>
-            <span className="text-lg font-display font-bold font-tabular text-ink shrink-0">
-              {formatCOP(lastExpense.amount)}
-            </span>
+            Nuevo ítem
           </button>
-        </MotionReveal>
-      )}
+        </div>
 
-      <MotionReveal step={5}>
-        <button
-          type="button"
-          onClick={() => setCreateItemOpen(true)}
-          className={cn(
-            'bento-tile bento-tile--sage bento-tile--wide p-4 text-left',
-            'active:translate-y-1 active:shadow-none transition-transform tilt-chip-1'
-          )}
-        >
-          <p className="bento-label">Agregar ítem</p>
-          <p className="text-2xl mt-1">✏️</p>
-          <p className="text-xs text-muted-foreground font-medium mt-1">
-            pescado · taxi · arriendo · {ITEM_CATALOG.length} ítems
-          </p>
-        </button>
-      </MotionReveal>
-
-      <div className="grid grid-cols-4 gap-2.5">
-        {showQuickSkeleton ? (
-          <CraftLoading variant="skeleton-tile" count={3} />
-        ) : (
-          quickButtons?.map((btn, i) => (
-              <MotionReveal key={btn.key} step={Math.min(7, 6 + i)}>
-                <button
-                  type="button"
-                  onClick={() => onOpenSheet(btn.intent)}
-                  className={cn(
-                    'bento-tile bento-tile--cream h-[76px] w-full',
-                    'flex flex-col items-center justify-center gap-0.5',
-                    'active:translate-y-1 active:shadow-none transition-transform',
-                    `tilt-chip-${(i % 6) + 1}`
-                  )}
-                >
-                  <span className="text-2xl">{btn.emoji}</span>
-                  <span className="text-[10px] font-bold font-display text-foreground/75 truncate max-w-full px-1">
-                    {btn.label}
-                  </span>
-                </button>
-              </MotionReveal>
-            ))
+        {lastExpense && lastDisplay && (
+          <MotionReveal step={4}>
+            <button
+              type="button"
+              onClick={handleRepeat}
+              aria-label={`Repetir ${lastDisplay.label} por ${formatCOP(lastExpense.amount)}`}
+              className={cn(
+                'quick-action-card quick-action-card--repeat quick-action-card--wide text-left',
+                'active:translate-y-1 active:shadow-none transition-transform'
+              )}
+            >
+              <span className="quick-action-card__emoji" aria-hidden>
+                {lastDisplay.emoji}
+              </span>
+              <span className="quick-action-card__body">
+                <span className="quick-action-card__label">Repetir</span>
+                <span className="quick-action-card__title">{lastDisplay.label}</span>
+              </span>
+              <span className="quick-action-card__amount">{formatCOP(lastExpense.amount)}</span>
+            </button>
+          </MotionReveal>
         )}
 
-        <MotionReveal step={8}>
-          <button
-            type="button"
-            onClick={() => onOpenSheet({ type: 'add' })}
-            className={cn(
-              'bento-tile bento-tile--cream h-[76px] w-full',
-              'flex flex-col items-center justify-center gap-0.5',
-              'active:translate-y-1 active:shadow-none transition-transform tilt-chip-3',
-              'border-dashed border-2 border-stitch/60'
+        <div className="quick-actions-panel__grid">
+          {showQuickSkeleton ? (
+            <CraftLoading variant="skeleton-tile" count={3} />
+          ) : (
+            quickButtons?.slice(0, 3).map((btn, i) => (
+                <MotionReveal key={btn.key} step={Math.min(7, 6 + i)} className="quick-action-cell">
+                  <button
+                    type="button"
+                    onClick={() => onOpenSheet(btn.intent)}
+                    aria-label={`Agregar ${btn.label}`}
+                    className={cn(
+                      'quick-action-card quick-action-card--item',
+                      'active:translate-y-1 active:shadow-none transition-transform'
+                    )}
+                  >
+                    <span className="quick-action-card__emoji" aria-hidden>
+                      {btn.emoji}
+                    </span>
+                    <span className="quick-action-card__title">{btn.label}</span>
+                  </button>
+                </MotionReveal>
+              ))
             )}
-          >
-            <span className="text-2xl font-display font-bold text-ink/60">⋯</span>
-            <span className="text-[10px] font-bold font-display text-foreground/75">Más</span>
-          </button>
-        </MotionReveal>
-      </div>
+
+          <MotionReveal step={8} className="quick-action-cell">
+            <button
+              type="button"
+              onClick={() => onOpenSheet({ type: 'add' })}
+              aria-label="Agregar otro gasto"
+              className={cn(
+                'quick-action-card quick-action-card--other',
+                'active:translate-y-1 active:shadow-none transition-transform'
+              )}
+            >
+              <span className="quick-action-card__plus" aria-hidden>
+                +
+              </span>
+              <span className="quick-action-card__title">Otro</span>
+            </button>
+          </MotionReveal>
+        </div>
       </div>
 
       {/* Standalone sheet (not ExpenseSheet wizard): portal+elevated escapes bento

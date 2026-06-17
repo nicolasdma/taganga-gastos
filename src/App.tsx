@@ -244,6 +244,7 @@ function AppShellInner() {
         onScan={() => setScanOpen(true)}
         pendingCount={pendingCount}
         hidden={keyboardOpen || !contentRevealed}
+        compact={tab === 'home'}
       />
 
       {!keyboardOpen && contentRevealed && <BottomNav active={tab} onChange={handleTabChange} />}

@@ -36,15 +36,23 @@ export function InsightHighlight({
           key={pulseKey}
           type="button"
           onClick={onOpenStats}
+          aria-label={`Abrir estadísticas: ${top}`}
           className={cn(
-            'w-full text-left rounded-2xl px-4 py-3 card-stitched',
-            'text-xs text-muted-foreground leading-snug font-medium',
+            'home-insight-card w-full text-left',
             'active:scale-[0.99] transition-transform',
             dimStale && 'expense-view-stale'
           )}
         >
-          <span className="mr-1.5">💡</span>
-          {top}
+          <span className="home-insight-card__medallion" aria-hidden>
+            💡
+          </span>
+          <span className="home-insight-card__copy">
+            <span className="home-insight-card__eyebrow">Michi encontró algo</span>
+            <span className="home-insight-card__text">{top}</span>
+          </span>
+          <span className="home-insight-card__chevron" aria-hidden>
+            ›
+          </span>
         </button>
       ) : null}
     </div>

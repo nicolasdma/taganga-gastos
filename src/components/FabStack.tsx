@@ -6,16 +6,18 @@ interface FabStackProps {
   onScan: () => void
   pendingCount?: number
   hidden?: boolean
+  compact?: boolean
 }
 
-export function FabStack({ onAdd, onScan, pendingCount = 0, hidden }: FabStackProps) {
+export function FabStack({ onAdd, onScan, pendingCount = 0, hidden, compact }: FabStackProps) {
   if (hidden) return null
 
   return (
     <div
       className={cn(
         'fixed z-40 right-4 bottom-[calc(6.75rem+env(safe-area-inset-bottom,0px))]',
-        'flex flex-col items-center gap-3 fab-stack-wrap'
+        'flex flex-col items-center gap-3 fab-stack-wrap',
+        compact && 'fab-stack-wrap--compact'
       )}
     >
       <button
@@ -23,7 +25,7 @@ export function FabStack({ onAdd, onScan, pendingCount = 0, hidden }: FabStackPr
         onClick={onScan}
         aria-label="Escanear ticket"
         className={cn(
-          'h-14 w-14 btn-cobalt fab-tilt-scan animate-float-gentle',
+          'h-14 w-14 btn-cobalt fab-tilt-scan animate-float-gentle fab-stack__scan',
           'flex items-center justify-center overflow-hidden',
           'active:translate-y-1 active:shadow-none transition-all duration-150'
         )}
@@ -36,7 +38,7 @@ export function FabStack({ onAdd, onScan, pendingCount = 0, hidden }: FabStackPr
         onClick={onAdd}
         aria-label="Agregar gasto"
         className={cn(
-          'relative h-[3.75rem] w-[3.75rem] btn-clay fab-tilt-add',
+          'relative h-[3.75rem] w-[3.75rem] btn-clay fab-tilt-add fab-stack__add',
           'text-2xl font-bold font-display',
           'flex items-center justify-center',
           'active:translate-y-1 active:shadow-none transition-all duration-150'

@@ -11,8 +11,8 @@ interface BottomNavProps {
 
 const TABS: Array<{ id: TabId; emoji: string; label: string }> = [
   { id: 'home', emoji: '🏠', label: 'Inicio' },
-  { id: 'calendar', emoji: '📅', label: 'Días' },
-  { id: 'stats', emoji: '📊', label: 'Stats' },
+  { id: 'calendar', emoji: '📅', label: 'Calendario' },
+  { id: 'stats', emoji: '🏡', label: 'Casa' },
 ]
 
 export function BottomNav({ active, onChange }: BottomNavProps) {
@@ -42,9 +42,9 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
               }}
               onClick={() => onChange(tab.id)}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[44px] py-3 rounded-full transition-all duration-300',
+                'nav-float__button flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[48px] py-3 rounded-full transition-all duration-300',
                 isActive
-                  ? 'bg-cobalt-deep text-porcelain-cream shadow-cobalt scale-[1.02]'
+                  ? 'nav-float__button--active bg-cobalt-deep text-porcelain-cream shadow-cobalt scale-[1.02]'
                   : 'text-muted-foreground active:scale-95'
               )}
             >
