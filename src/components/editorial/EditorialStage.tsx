@@ -2,10 +2,10 @@ import { useMemo } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { CollageSticker } from '@/components/editorial/CollageSticker'
-import { BrandmarkSlot } from '@/components/editorial/AppBrandmarkDock'
 import { MarqueeBand } from '@/components/editorial/MarqueeBand'
 import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { KittySprite } from '@/components/craft/KittySprite'
+import { useExpenseView } from '@/hooks/useExpenseView'
 import { usePeriodTotals } from '@/hooks/usePeriodTotals'
 import { useLocalToday } from '@/hooks/useLocalToday'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
@@ -14,6 +14,7 @@ import { isTimestampInPeriod } from '@/lib/dates'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import type { ExpenseView } from '@/lib/expenseScope'
 import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
+import { isExpenseViewPanelVisible } from '@/components/editorial/expenseViewPanelRole'
 import { cn } from '@/lib/utils'
 
 interface EditorialStageProps {
@@ -33,13 +34,92 @@ function formatMovementLine(count: number | null): string {
   return `${count} movimientos`
 }
 
-function HeroCompanionArtPlaceholder({ pulseKey }: { pulseKey: number }) {
+interface HeroViewToggleProps {
+  value: ExpenseView
+  onChange: (view: ExpenseView) => void
+  interactive: boolean
+}
+
+function HeroViewToggle({ value, onChange, interactive }: HeroViewToggleProps) {
   return (
-    <div className="hero-companion-placeholder illustration-placeholder" aria-hidden>
-      {/* Placeholder for future Gatonomía illustration asset. */}
-      <KittySprite size={86} pulseKey={pulseKey} playful className="hero-companion-placeholder__kitty" />
-      <span className="hero-companion-placeholder__shadow" />
+    <div className="home-hero-view-toggle" role="group" aria-label="Cambiar vista de gastos">
+      {(['shared', 'personal'] as const).map((option) => {
+        const active = value === option
+        return (
+          <button
+            key={option}
+            type="button"
+            className={cn(
+              'home-hero-view-toggle__button',
+              active && 'home-hero-view-toggle__button--active'
+            )}
+            onClick={() => {
+              if (!active) onChange(option)
+            }}
+            aria-pressed={active}
+            disabled={!interactive}
+          >
+            <span className="home-hero-view-toggle__label-full">
+              {option === 'shared' ? 'Nosotros' : 'Míos'}
+            </span>
+            <span className="home-hero-view-toggle__label-short" aria-hidden>
+              {option === 'shared' ? 'Nos.' : 'Míos'}
+            </span>
+          </button>
+        )
+      })}
     </div>
+  )
+}
+
+interface HeroCompanionArtPlaceholderProps {
+  pulseKey: number
+  view: ExpenseView
+  onToggle: () => void
+  interactive: boolean
+}
+
+function HeroCompanionArtPlaceholder({
+  pulseKey,
+  view,
+  onToggle,
+  interactive,
+}: HeroCompanionArtPlaceholderProps) {
+  const nextLabel = view === 'shared' ? 'Cambiar a Míos' : 'Cambiar a Nosotros'
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        'hero-companion-placeholder hero-companion-toggle illustration-placeholder',
+        view === 'shared' ? 'hero-companion-toggle--shared' : 'hero-companion-toggle--personal'
+      )}
+      aria-label={nextLabel}
+      onClick={onToggle}
+      disabled={!interactive}
+    >
+      <span className="hero-companion-placeholder__kitty-slot hero-companion-placeholder__kitty-slot--lead">
+        <KittySprite
+          size={86}
+          pulseKey={pulseKey}
+          playful
+          className="hero-companion-placeholder__kitty"
+        />
+      </span>
+      <span
+        className="hero-companion-placeholder__kitty-slot hero-companion-placeholder__kitty-slot--mate"
+        aria-hidden="true"
+      >
+        <KittySprite
+          size={72}
+          pulseKey={pulseKey}
+          playful
+          flip={false}
+          className="hero-companion-placeholder__kitty"
+        />
+      </span>
+      <span className="hero-companion-placeholder__shadow" />
+    </button>
   )
 }
 
@@ -57,7 +137,12 @@ export function EditorialStage({
   const editorial = today !== undefined ? formatCOPEditorial(today) : null
   const showPlaceholder = isInitialLoad && editorial === null
   const dimStale = isStale && panelRole === 'incoming'
-  const showBrandmark = panelRole === 'active'
+  const { setView } = useExpenseView()
+  const interactive = isExpenseViewPanelVisible(panelRole) && view !== undefined
+  const toggleHeroView = () => {
+    if (!view || !interactive) return
+    setView(view === 'shared' ? 'personal' : 'shared')
+  }
   const todaysExpenses = useMemo(() => {
     if (!recent) return null
     return recent.filter((expense) =>
@@ -100,7 +185,6 @@ export function EditorialStage({
                   Tu libreta de gastos con gatitos ♥
                 </p>
               </div>
-              {showBrandmark && <BrandmarkSlot />}
             </div>
           </MotionReveal>
         </div>
@@ -113,6 +197,9 @@ export function EditorialStage({
               <CollageSticker tone="sage" rotate="right" className="absolute top-1 left-5 z-20">
                 Hoy 🐾
               </CollageSticker>
+              {view && (
+                <HeroViewToggle value={view} onChange={setView} interactive={interactive} />
+              )}
               <div className="home-hero-card torn-sheet">
                 <div className="home-hero-card__copy">
                   {editorial ? (
@@ -162,7 +249,14 @@ export function EditorialStage({
                   </div>
                 </div>
 
-                <HeroCompanionArtPlaceholder pulseKey={pulseKey} />
+                {view && (
+                  <HeroCompanionArtPlaceholder
+                    pulseKey={pulseKey}
+                    view={view}
+                    onToggle={toggleHeroView}
+                    interactive={interactive}
+                  />
+                )}
               </div>
             </div>
           </MotionReveal>

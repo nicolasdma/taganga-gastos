@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ItemIcon } from '@/components/items/ItemIcon'
 import { formatCOP } from '@/lib/currency'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import { ExpenseTimeStamp } from '@/components/ExpenseTimeMeta'
@@ -74,7 +75,7 @@ export function ReceiptGroupRow({
       >
         <div className="flex items-center gap-2 min-w-0">
           <span className={cn(variant === 'recent' ? 'recent-expense-row__icon' : 'text-xl shrink-0')} aria-hidden>
-            {emoji}
+            <ItemIcon emoji={emoji} label={title} />
           </span>
           <div className="min-w-0">
             <span
@@ -134,7 +135,7 @@ export function ReceiptGroupRow({
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <span className={cn('truncate text-left', excludedLabelClass(excluded))}>
-                    {itemEmoji} {label}
+                    <ItemIcon emoji={itemEmoji} label={label} className="mr-1" /> {label}
                     {excluded ? ' · no cuenta' : ''}
                   </span>
                   {item.createdAt != null && (

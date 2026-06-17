@@ -4,6 +4,7 @@ import ItemDonutChart from '@/components/ItemDonutChart'
 import { EmptyCraft } from '@/components/craft/EmptyCraft'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHeader'
+import { ItemIcon } from '@/components/items/ItemIcon'
 import { formatCOP } from '@/lib/currency'
 import { formatMonthLabel } from '@/lib/month'
 import { useReportTabScroll } from '@/hooks/useReportTabScroll'
@@ -128,7 +129,7 @@ export function CraftStatsShell({
 }: CraftStatsShellProps) {
   const itemsLoading = itemsStatus === 'loading'
   const insightsLoading = insightsStatus === 'loading'
-  const scrollRef = useReportTabScroll('stats')
+  const scrollRef = useReportTabScroll()
 
   const body = (
     <div
@@ -219,7 +220,7 @@ export function CraftStatsShell({
                   >
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <span className="text-sm font-semibold text-foreground">
-                        {row.emoji} {row.label}
+                        <ItemIcon emoji={row.emoji} label={row.label} className="mr-1" /> {row.label}
                       </span>
                       <span className="text-sm font-bold font-tabular text-foreground/90">
                         {formatCOP(row.amount)}

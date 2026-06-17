@@ -9,7 +9,6 @@ import { MotionReveal } from '@/components/editorial/MotionReveal'
 import { SectionLabel } from '@/components/craft/SectionLabel'
 import type { SaveExpenseResult, SheetIntent } from '@/components/ExpenseSheet'
 import { useExpenseView } from '@/hooks/useExpenseView'
-import { useTabScroll } from '@/components/editorial/AppBrandmarkDock'
 import type { EditableExpense } from '@/lib/expenseTypes'
 
 interface HomeScreenProps {
@@ -36,7 +35,6 @@ export function HomeScreen({
   onPendingRemoved,
 }: HomeScreenProps) {
   const { view, direction, isTransitioning } = useExpenseView()
-  const { reportScroll } = useTabScroll()
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollYRef = useRef(0)
   const rafRef = useRef<number | null>(null)
@@ -50,20 +48,18 @@ export function HomeScreen({
       const y = el.scrollTop
       if (Math.abs(y - scrollYRef.current) < 2) return
       scrollYRef.current = y
-      reportScroll('home', y)
       el.style.setProperty('--hero-scroll', String(y))
       el.dataset.scrolled = y > 48 ? 'true' : 'false'
       el.dataset.compact = y > 100 ? 'true' : 'false'
     })
-  }, [reportScroll])
+  }, [])
 
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    reportScroll('home', el.scrollTop)
     el.addEventListener('scroll', handleScroll, { passive: true })
     return () => el.removeEventListener('scroll', handleScroll)
-  }, [handleScroll, reportScroll])
+  }, [handleScroll])
 
   return (
     <div

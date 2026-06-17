@@ -15,6 +15,7 @@ import type { ExpenseScope } from '@/lib/expenseScope'
 import { useCreateCustomItem, newCustomItemId, type CreatedCustomItem } from '@/hooks/useCreateCustomItem'
 import { useUpdateCustomItem } from '@/hooks/useUpdateCustomItem'
 import { EmojiSuggestionGrid } from '@/components/items/EmojiSuggestionGrid'
+import { ItemIcon } from '@/components/items/ItemIcon'
 import { applyEmojiToItem, shouldSyncCustomItemEmoji } from '@/lib/customItemEmoji'
 
 export type { SaveExpenseResult }
@@ -104,9 +105,11 @@ function AmountStep({
       <div className="pb-4">
         <p className="label-stitch mb-2 text-center px-0.5">{selectedItem.itemLabel}</p>
         <div className="flex justify-center mb-4">
-          <span className="text-5xl leading-none" aria-hidden>
-            {selectedItem.itemEmoji}
-          </span>
+          <ItemIcon
+            emoji={selectedItem.itemEmoji}
+            label={selectedItem.itemLabel}
+            className="text-5xl leading-none"
+          />
         </div>
         <EmojiSuggestionGrid
           selectedEmoji={selectedItem.itemEmoji}

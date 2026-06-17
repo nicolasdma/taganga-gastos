@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ItemIcon } from '@/components/items/ItemIcon'
 import { EMOJI_INLINE_LIMIT, loadEmojiSearchIndex, searchEmojisFromIndex } from '@/lib/emojiSearch'
 import { cn } from '@/lib/utils'
 
@@ -61,7 +62,7 @@ export function EmojiSuggestionGrid({
             selectedEmoji === emoji ? 'chip-tile ring-2 ring-cobalt-glaze/40' : 'hover:bg-muted/40'
           )}
         >
-          {emoji}
+          <ItemIcon emoji={emoji} label={label} className="text-xl" />
         </button>
       ))}
     </div>

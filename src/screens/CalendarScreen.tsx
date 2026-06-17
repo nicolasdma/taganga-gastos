@@ -131,7 +131,7 @@ export function CalendarScreen({
   const [currentMonth, setCurrentMonth] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const { view, direction, isTransitioning } = useExpenseView()
-  const scrollRef = useReportTabScroll('calendar')
+  const scrollRef = useReportTabScroll()
 
   return (
     <div

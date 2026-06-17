@@ -6,6 +6,7 @@ import { BottomSheet } from '@/components/BottomSheet'
 import { CraftKeyboardProvider, useCraftKeyboardFooterSlot } from '@/components/keyboard'
 import { CreateCustomItemForm } from '@/components/CreateCustomItemSheet'
 import { EmojiSuggestionGrid } from '@/components/items/EmojiSuggestionGrid'
+import { ItemIcon } from '@/components/items/ItemIcon'
 import {
   ItemPicker,
   type CreateItemRequest,
@@ -108,9 +109,11 @@ function ExpenseEditContent({
       <div className="pb-4">
         <p className="label-stitch mb-2 px-0.5">{selectedItem.itemLabel}</p>
         <div className="flex justify-center mb-4">
-          <span className="text-5xl leading-none" aria-hidden>
-            {selectedItem.itemEmoji}
-          </span>
+          <ItemIcon
+            emoji={selectedItem.itemEmoji}
+            label={selectedItem.itemLabel}
+            className="text-5xl leading-none"
+          />
         </div>
         <EmojiSuggestionGrid
           selectedEmoji={selectedItem.itemEmoji}
@@ -186,7 +189,7 @@ function ExpenseEditContent({
           className="text-2xl leading-none shrink-0 rounded-lg px-1 active:scale-95 transition-transform"
           aria-label="Cambiar emoji"
         >
-          {display.emoji}
+          <ItemIcon emoji={display.emoji} label={display.label} className="text-2xl leading-none" />
         </button>
         <button
           type="button"

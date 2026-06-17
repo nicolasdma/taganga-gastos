@@ -103,7 +103,7 @@ export function StatsScreen({ active = true }: { active?: boolean }) {
   const [month, setMonth] = useState(monthKey)
   const { view, direction, isTransitioning } = useExpenseView()
   const [statsMessage] = useState(() => pickStatsMessage())
-  const scrollRef = useReportTabScroll('stats')
+  const scrollRef = useReportTabScroll()
 
   return (
     <div

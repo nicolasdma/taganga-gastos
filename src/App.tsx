@@ -15,7 +15,7 @@ import { ReceiptScanSheet, type SaveReceiptResult } from '@/components/ReceiptSc
 import { CraftBootOverlay } from '@/components/craft/CraftBootOverlay'
 import { CraftBootScreen } from '@/components/craft/CraftBootScreen'
 import { CraftStatsFallback } from '@/components/craft/CraftLoading'
-import { TabScrollProvider, AppBrandmarkDock } from '@/components/editorial/AppBrandmarkDock'
+import { BrandmarkProvider } from '@/components/editorial/AppBrandmarkDock'
 import { TagangaBackground } from '@/components/TagangaBackground'
 import { Toast } from '@/components/Toast'
 import { useHomeFirstViewReady } from '@/hooks/useHomeFirstViewReady'
@@ -192,25 +192,22 @@ function AppShellInner() {
         : null
 
   return (
-    <TabScrollProvider>
-    <div
-      className={cn(
-        'app-shell flex flex-col bg-transparent',
-        bootOverlay !== 'gone' && 'app-shell--booting',
-        !contentRevealed && 'app-shell--content-hold',
-        contentRevealed && 'app-shell--content-revealed'
-      )}
+    <BrandmarkProvider
+      view={view}
+      onViewChange={setView}
+      pulseKey={pulseKey}
+      pendingCount={pendingCount}
+      hidden={keyboardOpen}
     >
-      <TagangaBackground />
-
-      <AppBrandmarkDock
-        tab={tab}
-        view={view}
-        onViewChange={setView}
-        pulseKey={pulseKey}
-        pendingCount={pendingCount}
-        hidden={!contentRevealed || keyboardOpen}
-      />
+      <div
+        className={cn(
+          'app-shell flex flex-col bg-transparent',
+          bootOverlay !== 'gone' && 'app-shell--booting',
+          !contentRevealed && 'app-shell--content-hold',
+          contentRevealed && 'app-shell--content-revealed'
+        )}
+      >
+        <TagangaBackground />
 
       <main
         className="relative z-10 flex-1 min-h-0 overflow-hidden"
@@ -285,8 +282,8 @@ function AppShellInner() {
           onExited={handleBootExited}
         />
       )}
-    </div>
-    </TabScrollProvider>
+      </div>
+    </BrandmarkProvider>
   )
 }
 

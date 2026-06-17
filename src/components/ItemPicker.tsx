@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { CraftTextField } from '@/components/keyboard/CraftTextField'
 import { CraftSkeletonChipGrid } from '@/components/craft/CraftLoading'
 import { ExpenseChip } from '@/components/ExpenseChip'
+import { ItemIcon } from '@/components/items/ItemIcon'
 import { ITEM_CATALOG, normalizeItemSearchText } from '@/lib/items'
 import { EMOJI_INLINE_LIMIT, loadEmojiSearchIndex, type EmojiSearchIndex } from '@/lib/emojiSearch'
 import { mergeCatalogWithCustom } from '@/lib/mergeCatalog'
@@ -178,9 +179,11 @@ export function ItemPicker({ onSelect, onRequestCreate }: ItemPickerProps) {
                       'btn-cobalt text-sm font-bold active:shadow-none active:translate-y-px'
                     )}
                   >
-                    <span className="text-lg leading-none">
-                      {activeCreateEmoji ?? createSuggestion.emoji}
-                    </span>
+                    <ItemIcon
+                      emoji={activeCreateEmoji ?? createSuggestion.emoji}
+                      label={createSuggestion.label}
+                      className="text-lg leading-none"
+                    />
                     Crear «{trimmedSearch}»
                   </button>
 
@@ -200,7 +203,7 @@ export function ItemPicker({ onSelect, onRequestCreate }: ItemPickerProps) {
                                 : 'hover:bg-muted/40 bg-muted/20'
                             )}
                           >
-                            {emoji}
+                            <ItemIcon emoji={emoji} label={label} className="text-xl" />
                           </button>
                         ))}
                       </div>
