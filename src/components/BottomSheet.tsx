@@ -270,7 +270,7 @@ export function BottomSheet({
   const sheet = (
     <div
       className={cn(
-        'sheet-root fixed inset-0 flex flex-col justify-end pointer-events-none',
+        'sheet-root fixed left-0 right-0 flex flex-col justify-end pointer-events-none',
         elevated ? 'z-[60]' : 'z-50'
       )}
       role="presentation"
@@ -352,7 +352,7 @@ export function BottomSheet({
         </div>
 
         {footer && (
-          <div className="sheet-footer shrink-0 overflow-hidden px-4 pt-2 pb-safe">
+          <div className="sheet-footer shrink-0 overflow-visible px-4 pt-2 pb-safe">
             {footer}
           </div>
         )}

@@ -589,6 +589,12 @@
     will-change: transform;
   }
 
+  .sheet-root {
+    top: var(--vv-offset-top, 0px);
+    bottom: auto;
+    height: var(--vv-height, 100dvh);
+  }
+
   .sheet-panel {
     max-height: min(90dvh, var(--vv-height, 100dvh));
     overflow: hidden;
