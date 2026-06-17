@@ -8,12 +8,10 @@ import { CreateCustomItemForm } from '@/components/CreateCustomItemSheet'
 import { EmojiSuggestionGrid } from '@/components/items/EmojiSuggestionGrid'
 import {
   ItemPicker,
-  itemPickerSubtitle,
-  itemPickerTitle,
-  parseCreateRequest,
   type CreateItemRequest,
   type SelectedItem,
 } from '@/components/ItemPicker'
+import { itemPickerSubtitle, itemPickerTitle, parseCreateRequest } from '@/components/itemPickerMeta'
 import { excludedNoticeClass, excludedRowClass } from '@/lib/expenseExcluded'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import type { EditableExpense } from '@/lib/expenseTypes'

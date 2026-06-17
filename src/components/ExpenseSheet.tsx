@@ -5,12 +5,10 @@ import { CraftKeyboardProvider, useCraftKeyboardFooterSlot } from '@/components/
 import { CreateCustomItemForm } from '@/components/CreateCustomItemSheet'
 import {
   ItemPicker,
-  itemPickerSubtitle,
-  itemPickerTitle,
-  parseCreateRequest,
   type CreateItemRequest,
   type SelectedItem,
 } from '@/components/ItemPicker'
+import { itemPickerSubtitle, itemPickerTitle, parseCreateRequest } from '@/components/itemPickerMeta'
 import { useExpenseSave, type SaveExpenseResult } from '@/hooks/useExpenseSave'
 import { useExpenseView } from '@/hooks/useExpenseView'
 import type { ExpenseScope } from '@/lib/expenseScope'

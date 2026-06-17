@@ -30,10 +30,13 @@ interface ItemPickerProps {
 const CREATE_CTA_MIN_QUERY = 2
 const CREATE_EMOJI_LIMIT = 12
 
-export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }: ItemPickerProps) {
+export function ItemPicker({ onSelect, onRequestCreate }: ItemPickerProps) {
   const [search, setSearch] = useState('')
   const [emojiIndex, setEmojiIndex] = useState<EmojiSearchIndex | null>(null)
-  const [selectedCreateEmoji, setSelectedCreateEmoji] = useState<string | null>(null)
+  const [selectedCreateEmoji, setSelectedCreateEmoji] = useState<{
+    query: string
+    emoji: string
+  } | null>(null)
   const { view } = useExpenseView()
   const customItems = useCustomItems(view)
   const householdAliases = useHouseholdItemAliases()
@@ -89,9 +92,10 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
   const sectionLabel = hasQuery ? 'Resultados' : 'Tus frecuentes primero'
   const isLoading = serverCounts === undefined || customItems === undefined
 
-  useEffect(() => {
-    setSelectedCreateEmoji(createSuggestion?.emoji ?? null)
-  }, [trimmedSearch, createSuggestion?.emoji])
+  const activeCreateEmoji =
+    selectedCreateEmoji?.query === trimmedSearch
+      ? selectedCreateEmoji.emoji
+      : createSuggestion?.emoji ?? null
 
   const createEmojiOptions = useMemo(() => {
     if (!createSuggestion) return []
@@ -104,16 +108,16 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
       options.push({ emoji, label })
     }
 
-    add(selectedCreateEmoji ?? createSuggestion.emoji, 'Seleccionado')
     add(createSuggestion.emoji, createSuggestion.label)
     for (const entry of searchResult.emojiSuggestions) add(entry.emoji, entry.label)
+    if (activeCreateEmoji) add(activeCreateEmoji, 'Seleccionado')
 
     return options.slice(0, CREATE_EMOJI_LIMIT)
-  }, [createSuggestion, searchResult.emojiSuggestions, selectedCreateEmoji])
+  }, [activeCreateEmoji, createSuggestion, searchResult.emojiSuggestions])
 
   const handleCreate = () => {
     if (!onRequestCreate || !trimmedSearch) return
-    onRequestCreate({ query: trimmedSearch, emoji: selectedCreateEmoji ?? createSuggestion?.emoji })
+    onRequestCreate({ query: trimmedSearch, emoji: activeCreateEmoji ?? createSuggestion?.emoji })
   }
 
   return (
@@ -162,7 +166,7 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
                     Sin ítems para “{trimmedSearch}”
                   </p>
                 )}
-                <div className="rounded-2xl border border-border/60 bg-card/70 p-3 shadow-sm space-y-3">
+                <div className="rounded-2xl border border-border/60 bg-card/70 p-3 shadow-sm space-y-2.5">
                   <button
                     type="button"
                     onClick={handleCreate}
@@ -172,26 +176,23 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
                     )}
                   >
                     <span className="text-lg leading-none">
-                      {selectedCreateEmoji ?? createSuggestion.emoji}
+                      {activeCreateEmoji ?? createSuggestion.emoji}
                     </span>
                     Crear «{trimmedSearch}»
                   </button>
 
                   {createEmojiOptions.length > 1 && (
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground px-0.5">
-                        Elegí el emoji
-                      </p>
+                    <div className="space-y-2">
                       <div className="grid grid-cols-6 gap-1.5">
                         {createEmojiOptions.map(({ emoji, label }) => (
                           <button
                             key={emoji}
                             type="button"
                             title={label}
-                            onClick={() => setSelectedCreateEmoji(emoji)}
+                            onClick={() => setSelectedCreateEmoji({ query: trimmedSearch, emoji })}
                             className={cn(
                               'h-10 rounded-xl text-xl flex items-center justify-center transition-all active:scale-95',
-                              (selectedCreateEmoji ?? createSuggestion.emoji) === emoji
+                              (activeCreateEmoji ?? createSuggestion.emoji) === emoji
                                 ? 'chip-tile ring-2 ring-cobalt-glaze/40'
                                 : 'hover:bg-muted/40 bg-muted/20'
                             )}
@@ -200,6 +201,9 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
                           </button>
                         ))}
                       </div>
+                      <p className="text-[11px] text-muted-foreground text-center font-medium">
+                        Tocá un emoji para cambiarlo antes de crear.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -224,19 +228,3 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
   )
 }
 
-/** Subtitle for the item-pick step header (e.g. receipt store context). */
-export function itemPickerSubtitle(storeName?: string): string | undefined {
-  if (storeName) return 'Elegí un ítem de la compra'
-  return undefined
-}
-
-/** Title for the item-pick step header. */
-export function itemPickerTitle(storeName?: string): string {
-  return storeName ? `🛒 ${storeName}` : '✏️ ¿Qué fue?'
-}
-
-function parseCreateRequest(request: CreateItemRequest): { query: string; emoji?: string } {
-  return typeof request === 'string' ? { query: request } : request
-}
-
-export { parseCreateRequest }
