@@ -53,16 +53,18 @@ async function findPersonalDuplicate(
   normalizedLabel: string,
   createdBy: Id<'users'>
 ) {
-  const personal = await ctx.db
+  const existing = await ctx.db
     .query('customItems')
-    .withIndex('by_household_and_createdBy', (q) =>
-      q.eq('householdId', householdId).eq('createdBy', createdBy)
+    .withIndex('by_household_createdBy_normalizedLabel', (q) =>
+      q
+        .eq('householdId', householdId)
+        .eq('createdBy', createdBy)
+        .eq('normalizedLabel', normalizedLabel)
     )
-    .collect()
+    .unique()
 
-  return personal.find(
-    (item) => item.scope === 'personal' && item.normalizedLabel === normalizedLabel
-  )
+  if (existing?.scope === 'personal') return existing
+  return undefined
 }
 
 export const listVisibleCustomItems = query({
@@ -99,6 +101,8 @@ export const createCustomItem = mutation({
   args: {
     label: v.string(),
     emoji: v.string(),
+    /** ID generado en cliente para creación optimista sin esperar round-trip. */
+    itemId: v.optional(v.string()),
   },
   returns: customItemValidator,
   handler: async (ctx, args) => {
@@ -117,7 +121,9 @@ export const createCustomItem = mutation({
       return toCustomItemResponse(existing)
     }
 
-    const itemId = `custom:${crypto.randomUUID()}`
+    const clientItemId = args.itemId?.trim()
+    const itemId =
+      clientItemId && clientItemId.startsWith('custom:') ? clientItemId : `custom:${crypto.randomUUID()}`
     const createdAt = Date.now()
 
     await ctx.db.insert('customItems', {

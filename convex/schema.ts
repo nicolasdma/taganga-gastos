@@ -66,6 +66,11 @@ export default defineSchema({
   })
     .index('by_household_and_scope', ['householdId', 'scope'])
     .index('by_household_and_createdBy', ['householdId', 'createdBy'])
+    .index('by_household_createdBy_normalizedLabel', [
+      'householdId',
+      'createdBy',
+      'normalizedLabel',
+    ])
     .index('by_itemId', ['itemId']),
 
   itemAliases: defineTable({

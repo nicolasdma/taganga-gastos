@@ -16,7 +16,7 @@ import {
 import { excludedNoticeClass, excludedRowClass } from '@/lib/expenseExcluded'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
 import type { EditableExpense } from '@/lib/expenseTypes'
-import { useCreateCustomItem } from '@/hooks/useCreateCustomItem'
+import { useCreateCustomItem, newCustomItemId } from '@/hooks/useCreateCustomItem'
 
 export type { EditableExpense }
 import { hapticSave } from '@/lib/haptics'
@@ -55,7 +55,6 @@ function ExpenseEditContent({
   const updateExpense = useMutation(api.expenses.updateExpense)
   const setExpenseExcluded = useMutation(api.expenses.setExpenseExcluded)
   const { createCustomItem } = useCreateCustomItem()
-  const [creatingInline, setCreatingInline] = useState(false)
 
   const [amount, setAmount] = useState(expense.amount)
   const [selectedItem, setSelectedItem] = useState<SelectedItem>({
@@ -112,13 +111,14 @@ function ExpenseEditContent({
         onRequestCreate={(request) => {
           const { query, emoji } = parseCreateRequest(request)
           if (emoji) {
-            setCreatingInline(true)
-            void createCustomItem({ label: query, emoji })
-              .then((item) => {
-                setSelectedItem(item)
-                onStepChange('edit')
-              })
-              .finally(() => setCreatingInline(false))
+            const itemId = newCustomItemId()
+            setSelectedItem({ itemId, itemEmoji: emoji, itemLabel: query })
+            onStepChange('edit')
+            void createCustomItem({ label: query, emoji, itemId }).then((item) => {
+              setSelectedItem((prev) =>
+                prev?.itemLabel === query && prev.itemEmoji === emoji ? item : prev
+              )
+            })
             return
           }
           onRequestCreate({ query, emoji })
@@ -139,10 +139,6 @@ function ExpenseEditContent({
         }}
       />
     )
-  }
-
-  if (creatingInline) {
-    return <p className="text-sm text-muted-foreground text-center py-10">Creando ítem…</p>
   }
 
   return (

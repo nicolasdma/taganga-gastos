@@ -8,12 +8,16 @@ export interface CreatedCustomItem {
   itemLabel: string
 }
 
+export function newCustomItemId(): string {
+  return `custom:${crypto.randomUUID()}`
+}
+
 export function useCreateCustomItem() {
   const createMutation = useMutation(api.customItems.createCustomItem)
   const [isCreating, setIsCreating] = useState(false)
 
   const createCustomItem = useCallback(
-    async (args: { label: string; emoji: string }) => {
+    async (args: { label: string; emoji: string; itemId?: string }) => {
       setIsCreating(true)
       try {
         const result = await createMutation(args)
