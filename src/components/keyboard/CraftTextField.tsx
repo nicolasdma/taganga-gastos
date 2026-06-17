@@ -221,8 +221,7 @@ export function CraftTextField({
     inputRef.current?.focus({ preventScroll: true })
   }
 
-  const displayValue = draftValue || placeholder || ''
-  const showPlaceholder = !draftValue && placeholder
+  const showPlaceholder = draftValue.length === 0 && Boolean(placeholder)
 
   return (
     <div className={cn('craft-text-field', className)}>
@@ -275,8 +274,16 @@ export function CraftTextField({
               variant === 'dashed' && showPlaceholder && 'text-sm'
             )}
           >
-            <span className={cn('truncate', showPlaceholder && 'italic')}>{displayValue}</span>
-            {isFocused && (
+            {isFocused && showPlaceholder && (
+              <span
+                className="inline-block w-0.5 h-[1.1em] bg-cobalt-glaze mr-px shrink-0 animate-pulse"
+                aria-hidden
+              />
+            )}
+            <span className={cn('truncate', showPlaceholder && 'italic')}>
+              {showPlaceholder ? placeholder : draftValue}
+            </span>
+            {isFocused && !showPlaceholder && (
               <span
                 className="inline-block w-0.5 h-[1.1em] bg-cobalt-glaze ml-px shrink-0 animate-pulse"
                 aria-hidden
