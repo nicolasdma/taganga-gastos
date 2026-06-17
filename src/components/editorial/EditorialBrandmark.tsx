@@ -3,7 +3,7 @@ import { KittySprite } from '@/components/craft/KittySprite'
 import { SyncPendingSticker } from '@/components/editorial/EditorialScreenHeader'
 import type { ExpenseView } from '@/lib/expenseScope'
 import { cn } from '@/lib/utils'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react'
 
 interface EditorialBrandmarkProps {
   view?: ExpenseView
@@ -29,25 +29,64 @@ export function EditorialBrandmark({
   view,
   onViewChange,
   pulseKey = 0,
-  size = 76,
+  size,
   pendingCount = 0,
   filterSkeleton = false,
   className,
 }: EditorialBrandmarkProps) {
-  const kittyStyle = { '--editorial-kitty-size': `${size}px` } as CSSProperties
+  const kittyStyle =
+    size === undefined ? undefined : ({ '--editorial-kitty-size': `${size}px` } as CSSProperties)
+  const canToggle = view !== undefined && onViewChange !== undefined
+  const nextView = view === 'shared' ? 'personal' : 'shared'
+  const toggleLabel =
+    view === 'shared' ? 'Cambiar a Míos' : 'Cambiar a Nosotros'
+
+  const toggleView = () => {
+    if (!canToggle) return
+    onViewChange(nextView)
+  }
+
+  const handleContainerClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (!canToggle) return
+    if (event.target instanceof Element && event.target.closest('button')) return
+    toggleView()
+  }
+
+  const handleKittiesKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    toggleView()
+  }
 
   return (
-    <div className={cn('editorial-brandmark flex flex-col items-end gap-1.5', className)} style={kittyStyle}>
+    <div
+      className={cn(
+        'editorial-brandmark flex flex-col items-end gap-1.5',
+        canToggle && 'editorial-brandmark--interactive',
+        className
+      )}
+      style={kittyStyle}
+      onClick={handleContainerClick}
+    >
       <div
         className={cn(
           'editorial-brandmark__kitties',
           view === 'shared' && 'editorial-brandmark__kitties--pair'
         )}
-        aria-hidden={view === undefined}
+        role={canToggle ? 'button' : undefined}
+        tabIndex={canToggle ? 0 : undefined}
+        aria-label={canToggle ? toggleLabel : undefined}
+        aria-hidden={view === undefined ? true : undefined}
+        onClick={(event) => {
+          event.stopPropagation()
+          toggleView()
+        }}
+        onKeyDown={handleKittiesKeyDown}
       >
         <div className="editorial-brandmark__kitty-slot editorial-brandmark__kitty-slot--lead">
           <KittySprite
             size={size}
+            inheritSize={size === undefined}
             pulseKey={pulseKey}
             flip
             className="kitty-sprite-wrap--rise opacity-95"
@@ -59,6 +98,7 @@ export function EditorialBrandmark({
         >
           <KittySprite
             size={size}
+            inheritSize={size === undefined}
             flip={false}
             playful
             className="kitty-sprite-wrap--rise opacity-[0.94]"

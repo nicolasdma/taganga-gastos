@@ -4,14 +4,11 @@ import {
   useContext,
   useMemo,
   useState,
-  type CSSProperties,
   type ReactNode,
 } from 'react'
 import type { TabId } from '@/components/BottomNav'
 import { EditorialBrandmark } from '@/components/editorial/EditorialBrandmark'
 import type { ExpenseView } from '@/lib/expenseScope'
-
-const KITTY_SIZE_STYLE = { '--editorial-kitty-size': '76px' } as CSSProperties
 
 const INITIAL_SCROLL: Record<TabId, number> = { home: 0, calendar: 0, stats: 0 }
 
@@ -44,9 +41,7 @@ export function useTabScroll() {
 
 /** Layout reservation — brandmark renders in AppBrandmarkDock (single instance). */
 export function BrandmarkSlot() {
-  return (
-    <div className="editorial-brandmark-slot shrink-0" style={KITTY_SIZE_STYLE} aria-hidden />
-  )
+  return <div className="editorial-brandmark-slot shrink-0" aria-hidden />
 }
 
 interface AppBrandmarkDockProps {

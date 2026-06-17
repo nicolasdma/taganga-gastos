@@ -6,6 +6,8 @@ export type KittyAnim = 'idle' | 'look' | 'nod' | 'stretch' | 'static'
 interface KittySpriteProps {
   className?: string
   size?: number
+  /** Inherit --kitty-size from parent CSS instead of setting an inline size. */
+  inheritSize?: boolean
   anim?: KittyAnim
   /** Cambia → nod rápido (guardar) */
   pulseKey?: number
@@ -35,6 +37,7 @@ const PLAYFUL: KittyAnim[] = ['look', 'nod', 'stretch']
 export function KittySprite({
   className,
   size = 64,
+  inheritSize = false,
   anim = 'idle',
   pulseKey = 0,
   flip = true,
@@ -123,7 +126,7 @@ export function KittySprite({
     }
   }, [playful, anim])
 
-  const wrapStyle = { '--kitty-size': `${size}px` } as CSSProperties
+  const wrapStyle = inheritSize ? undefined : ({ '--kitty-size': `${size}px` } as CSSProperties)
   const spriteStyle = { '--kitty-row': ROW[active] } as CSSProperties
 
   return (
