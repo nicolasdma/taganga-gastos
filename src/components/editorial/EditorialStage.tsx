@@ -34,7 +34,7 @@ export function EditorialStage({ pulseKey = 0, view, panelRole = 'active' }: Edi
                   {view === 'shared' ? 'Compartidos' : 'Tu libreta'}
                 </p>
                 <h1 className="editorial-stage__title type-editorial-title text-white editorial-text-shadow">
-                  Gastos
+                  Gatonomía
                 </h1>
               </div>
               {showBrandmark && <BrandmarkSlot />}
@@ -67,7 +67,7 @@ export function EditorialStage({ pulseKey = 0, view, panelRole = 'active' }: Edi
                 ) : null}
 
                 <p className="font-display italic text-sm text-muted-foreground mt-2 leading-snug">
-                  lo que salió de tu bolsillo hoy
+                  lo que salió del bolsillo hoy
                 </p>
               </div>
             </div>

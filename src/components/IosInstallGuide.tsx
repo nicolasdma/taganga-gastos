@@ -61,7 +61,7 @@ export function IosInstallGuide() {
       <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside leading-relaxed">
         <li>Tocá Compartir en Safari</li>
         <li>Elegí «Agregar a pantalla de inicio»</li>
-        <li>Abrí Gastos desde el ícono en tu inicio</li>
+        <li>Abrí Gatonomía desde el ícono en tu inicio</li>
       </ol>
     </div>
   )

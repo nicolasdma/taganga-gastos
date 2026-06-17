@@ -1,6 +1,6 @@
-# Gastos
+# Gatonomía
 
-App de gastos compartidos para 2 personas. Captura rápida, memoria de gastos en COP.
+App de gastos compartidos para 2 personas. Captura rápida, memoria de gastos en COP y una identidad editorial con gatos.
 
 **Stack:** Vite + React 19 + TypeScript + Tailwind + Convex + Vercel
 

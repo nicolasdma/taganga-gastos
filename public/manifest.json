@@ -1,7 +1,7 @@
 {
-  "name": "Gastos · Taganga",
-  "short_name": "Gastos",
-  "description": "Registro de gastos compartido",
+  "name": "Gatonomía · gastos en pareja",
+  "short_name": "Gatonomía",
+  "description": "Gastos compartidos para el hogar, rápidos y claros.",
   "id": "/",
   "scope": "/",
   "start_url": "/",

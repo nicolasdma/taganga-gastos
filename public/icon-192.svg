@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Gastos">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Gatonomía">
   <rect width="192" height="192" rx="42" fill="#0C2340"/>
   <circle cx="96" cy="86" r="48" fill="#0ea5b7"/>
   <text x="96" y="104" text-anchor="middle" font-size="56" fill="#fff" font-family="system-ui,sans-serif" font-weight="700">$</text>

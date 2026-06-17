@@ -90,7 +90,7 @@ export function ReceiptScanSheet({ open, onClose }: ReceiptScanSheetProps) {
             Escaneá tickets sin cargar ítem por ítem
           </h2>
           <p className="mx-auto max-w-[19rem] text-sm font-medium leading-relaxed text-muted-foreground">
-            Sacá una foto y Gastos arma el gasto con los productos detectados. Revisás y
+            Sacá una foto y Gatonomía arma el gasto con los productos detectados. Revisás y
             guardás.
           </p>
         </div>

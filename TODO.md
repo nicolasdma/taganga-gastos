@@ -1,4 +1,4 @@
-# TODO — Gastos (Taganga)
+# TODO — Gatonomía (Taganga)
 
 Estado al **2026-06-16**. Repo al día con auth, ítems flat, custom items, mobile PWA y vista Nosotros/Míos en la mayoría de pantallas.
 

@@ -7,7 +7,7 @@ export function useDisplayModeAnalytics() {
       window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true
     const mode = standalone ? 'standalone' : 'browser'
-    console.info('[gastos] display-mode:', mode, {
+    console.info('[gatonomia] display-mode:', mode, {
       width: window.innerWidth,
       height: window.innerHeight,
     })

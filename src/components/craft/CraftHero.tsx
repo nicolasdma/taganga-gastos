@@ -15,7 +15,7 @@ export function CraftHero({ pendingCount = 0 }: CraftHeroProps) {
         <div className="min-w-0">
           <div className="flex items-end gap-2">
             <h1 className="font-display craft-title text-[2.1rem] font-bold text-ink leading-[0.95] tracking-tight">
-              Gastos
+              Gatonomía
             </h1>
             <CraftCat variant="peek" className="w-12 h-9 -mb-0.5 animate-float-gentle shrink-0" />
           </div>
