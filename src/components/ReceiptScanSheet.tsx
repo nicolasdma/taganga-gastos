@@ -1,16 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useAction } from 'convex/react'
-import { CraftLoading } from '@/components/craft/CraftLoading'
-import { CraftKeyboardProvider, CraftSheetKeyboardFooter } from '@/components/keyboard'
-import { api } from '../../convex/_generated/api'
+import { useState } from 'react'
 import { BottomSheet } from '@/components/BottomSheet'
-import {
-  ReceiptReviewContent,
-  type ReceiptReviewFooterState,
-} from '@/components/ReceiptReviewSheet'
-import { resizeReceiptImage } from '@/lib/receiptImage'
+import { CameraFabIcon } from '@/components/CameraFabIcon'
 import type { SaveReceiptResult } from '@/hooks/useReceiptSave'
-import type { ReceiptScanResult } from '@/lib/receiptScan'
 import { Button } from '@/components/ui/button'
 
 export type { SaveReceiptResult }
@@ -21,160 +12,107 @@ interface ReceiptScanSheetProps {
   onSaved: (result: SaveReceiptResult) => void
 }
 
-type ScanPhase = 'idle' | 'loading' | 'error' | 'review'
+const scanBenefits = [
+  'Lee tickets de compra',
+  'Agrega los ítems automáticamente',
+  'Ahorra tiempo en compras largas',
+]
 
-export function ReceiptScanSheet({ open, onClose, onSaved }: ReceiptScanSheetProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const scanReceipt = useAction(api.receiptScan.scanReceipt)
-
-  const [phase, setPhase] = useState<ScanPhase>('idle')
-  const [error, setError] = useState<string | null>(null)
-  const [scanResult, setScanResult] = useState<ReceiptScanResult | null>(null)
-  const [reviewFooter, setReviewFooter] = useState<ReceiptReviewFooterState | null>(null)
-
-  const reset = () => {
-    setPhase('idle')
-    setError(null)
-    setScanResult(null)
-    setReviewFooter(null)
-  }
-
+export function ReceiptScanSheet({ open, onClose }: ReceiptScanSheetProps) {
+  const [showComingSoon, setShowComingSoon] = useState(false)
   const handleClose = () => {
-    reset()
+    setShowComingSoon(false)
     onClose()
   }
 
-  const openCamera = () => {
-    setError(null)
-    inputRef.current?.click()
-  }
-
-  useEffect(() => {
-    if (!open) return
-    const t = window.setTimeout(() => {
-      setPhase('idle')
-      setError(null)
-      setScanResult(null)
-      setReviewFooter(null)
-      inputRef.current?.click()
-    }, 50)
-    return () => clearTimeout(t)
-  }, [open])
-
-  const handleFile = async (file: File | undefined) => {
-    if (!file) {
-      handleClose()
-      return
-    }
-    setPhase('loading')
-    setError(null)
-
-    try {
-      const { base64, mimeType } = await resizeReceiptImage(file)
-      const result = await scanReceipt({ imageBase64: base64, mimeType })
-      setScanResult(result)
-      setPhase('review')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al leer el ticket')
-      setPhase('error')
-    }
-  }
-
-  const handleReviewFooterState = useCallback((state: ReceiptReviewFooterState) => {
-    setReviewFooter(state)
-  }, [])
-
-  const showSheet = open && (phase === 'loading' || phase === 'error' || phase === 'review')
-
-  const footer = (() => {
-    if (phase === 'error') {
-      return (
-        <Button className="w-full rounded-2xl" size="lg" onClick={openCamera}>
-          Reintentar
-        </Button>
-      )
-    }
-    if (phase === 'review' && reviewFooter) {
-      return (
-        <CraftSheetKeyboardFooter>
+  return (
+    <BottomSheet
+      open={open}
+      onClose={handleClose}
+      height="standard"
+      title="Por+"
+      headerAction="cancel"
+      footer={
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-cobalt-glaze/18 bg-cobalt-glaze/8 px-4 py-3">
+            <div className="min-w-0">
+              <p className="font-display text-xl font-bold leading-none text-ink">US$1/mes</p>
+              <p className="mt-1 text-[11px] font-semibold leading-snug text-muted-foreground">
+                Un upgrade simple para registrar más rápido.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full border border-stitch/45 bg-porcelain-cream px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-cobalt-glaze">
+              Por+
+            </span>
+          </div>
           <Button
             size="lg"
-            className="w-full rounded-2xl"
-            disabled={!reviewFooter.canSave || reviewFooter.saving}
-            onClick={reviewFooter.save}
+            className="btn-cobalt w-full rounded-2xl"
+            onClick={() => setShowComingSoon(true)}
           >
-            {reviewFooter.saving ? 'Guardando…' : 'Guardar'}
+            Activar Por+
           </Button>
-        </CraftSheetKeyboardFooter>
-      )
-    }
-    return undefined
-  })()
-
-  return (
-    <>
-      {phase === 'loading' && <div className="scan-flash" aria-hidden />}
-
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          e.target.value = ''
-          void handleFile(file)
-        }}
-      />
-
-      <CraftKeyboardProvider dock>
-        <BottomSheet
-          open={showSheet}
-          onClose={handleClose}
-          height="tall"
-          title={phase === 'review' ? 'Revisar ticket' : undefined}
-          headerAction="cancel"
-          footer={footer}
-          scrollKey={phase}
-        >
-        {phase === 'loading' && (
-          <div className="relative py-8">
-            <div className="craft-paw-collage absolute inset-0 pointer-events-none" aria-hidden />
-            <CraftLoading
-              variant="inline"
-              message="Leyendo ticket…"
-              showKitty
-              showPaws={false}
-              size="lg"
-            />
-            <p className="text-sm text-muted-foreground mt-1 text-center relative z-10">
-              Esto puede tardar unos segundos
-            </p>
-          </div>
-        )}
-
-        {phase === 'error' && (
-          <div className="py-8 text-center">
-            <div className="text-4xl mb-4">😕</div>
-            <p className="text-base font-bold text-foreground mb-2">No se pudo leer el ticket</p>
-            <p className="text-sm text-muted-foreground px-4">{error}</p>
-          </div>
-        )}
-
-        {phase === 'review' && scanResult && (
-          <ReceiptReviewContent
-            key={scanResult.items.map((i) => `${i.label}:${i.amount}`).join('|')}
-            scanResult={scanResult}
-            onSaved={(result) => {
-              handleClose()
-              onSaved(result)
-            }}
-            onFooterState={handleReviewFooterState}
+          <p className="px-2 text-center text-[11px] font-medium leading-snug text-muted-foreground">
+            {showComingSoon
+              ? 'Coming soon. Podés seguir cargando gastos manualmente.'
+              : 'Por ahora el escaneo está en camino.'}
+          </p>
+        </div>
+      }
+    >
+      <div className="space-y-5 pb-2">
+        <div className="relative overflow-hidden rounded-[1.55rem] border-2 border-stitch/35 bg-porcelain-cream/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+          <div
+            className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-cobalt-glaze/8"
+            aria-hidden
           />
-        )}
-        </BottomSheet>
-      </CraftKeyboardProvider>
-    </>
+          <div className="relative flex items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 border-cobalt-glaze/25 bg-white/60">
+              <CameraFabIcon className="h-10 w-10" />
+            </div>
+            <div className="min-w-0 text-left">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-cobalt-glaze">
+                Ticket detectado
+              </p>
+              <p className="mt-1 font-display text-lg font-bold leading-tight text-ink">
+                Leche, pan, café y 4 ítems más
+              </p>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">
+                Listos para revisar y guardar.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2 text-center">
+          <p className="label-stitch">Por+ escaneo</p>
+          <h2 className="font-display text-[1.65rem] font-bold leading-[1.05] tracking-tight text-ink">
+            Escaneá tickets sin cargar ítem por ítem
+          </h2>
+          <p className="mx-auto max-w-[19rem] text-sm font-medium leading-relaxed text-muted-foreground">
+            Sacá una foto y Gastos arma el gasto con los productos detectados. Revisás y
+            guardás.
+          </p>
+        </div>
+
+        <div className="space-y-2 rounded-[1.35rem] border border-border/55 bg-white/35 p-3">
+          {scanBenefits.map((benefit) => (
+            <div key={benefit} className="flex items-center gap-3 text-left">
+              <span
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-cobalt-glaze/25 bg-cobalt-glaze/10"
+                aria-hidden
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-cobalt-glaze" />
+              </span>
+              <p className="text-sm font-bold leading-snug text-foreground/85">{benefit}</p>
+            </div>
+          ))}
+        </div>
+
+        <p className="px-2 text-center text-[12px] font-medium leading-relaxed text-muted-foreground">
+          Ideal para supermercados, farmacias y compras con muchos productos.
+        </p>
+      </div>
+    </BottomSheet>
   )
 }
