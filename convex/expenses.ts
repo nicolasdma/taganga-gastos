@@ -2,7 +2,7 @@ import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import type { QueryCtx } from './_generated/server'
 import type { Doc, Id } from './_generated/dataModel'
-import { periodRange } from './dates'
+import { addDaysToDateKey, periodRange } from './dates'
 import {
   canModifyExpense,
   canViewExpense,
@@ -80,9 +80,7 @@ async function loadVisibleExpensesInRange(
 ): Promise<Doc<'expenses'>[]> {
   const expenses = await ctx.db
     .query('expenses')
-    .withIndex('by_household_and_createdAt', (q) =>
-      q.eq('householdId', householdId).gte('createdAt', start)
-    )
+    .withIndex('by_createdAt', (q) => q.gte('createdAt', start))
     .filter((q) => q.lt(q.field('createdAt'), end))
     .collect()
 
@@ -334,9 +332,7 @@ export const recentExpenses = query({
 
     const expenses = await ctx.db
       .query('expenses')
-      .withIndex('by_household_and_createdAt', (q) =>
-        q.eq('householdId', householdId).gte('createdAt', since)
-      )
+      .withIndex('by_createdAt', (q) => q.gte('createdAt', since))
       .order('desc')
       .collect()
 
@@ -535,9 +531,7 @@ export const frequentItems = query({
     const since = Date.now() - 90 * 24 * 60 * 60 * 1000
     let expenses = await ctx.db
       .query('expenses')
-      .withIndex('by_household_and_createdAt', (q) =>
-        q.eq('householdId', householdId).gte('createdAt', since)
-      )
+      .withIndex('by_createdAt', (q) => q.gte('createdAt', since))
       .collect()
 
     expenses = expenses.filter(
@@ -606,6 +600,16 @@ function dayKeyFromTs(ts: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+function formatInsightDayReference(dateKey: string, todayKey: string): string {
+  if (dateKey === todayKey) return 'hoy'
+  if (dateKey === addDaysToDateKey(todayKey, -1)) return 'ayer'
+
+  const [, year, month, day] = dateKey.match(/^(\d+)-(\d+)-(\d+)$/) ?? []
+  const date = new Date(Number(year), Number(month) - 1, Number(day))
+  const dayName = DAY_NAMES[date.getDay()]
+  return `el ${dayName} ${Number(day)}`
+}
+
 type InsightCandidate = { text: string; priority: number }
 
 async function loadMonthExpenses(
@@ -652,12 +656,14 @@ export const insights = query({
   args: {
     month: v.string(),
     view: v.optional(expenseViewValidator),
+    todayKey: v.optional(v.string()),
   },
   returns: v.array(v.string()),
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
     const view = args.view ?? 'personal'
     const now = Date.now()
+    const todayKey = args.todayKey ?? dayKeyFromTs(now)
     const expenses = await loadMonthExpenses(ctx, householdId, userId, args.month, view)
     const counted = expenses.filter(isCounted)
     if (counted.length === 0) return []
@@ -735,11 +741,9 @@ export const insights = query({
     const uniqueDays = Object.keys(byDay).length
     const priciestDay = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0]
     if (uniqueDays > 1 && priciestDay && priciestDay[1] >= 50_000) {
-      const [, year, month, day] = priciestDay[0].match(/^(\d+)-(\d+)-(\d+)$/) ?? []
-      const date = new Date(Number(year), Number(month) - 1, Number(day))
-      const dayName = DAY_NAMES[date.getDay()]
+      const dayReference = formatInsightDayReference(priciestDay[0], todayKey)
       candidates.push({
-        text: `Tu día más caro fue el ${dayName} ${Number(day)} (${formatCOP(priciestDay[1])})`,
+        text: `Tu día más caro fue ${dayReference} (${formatCOP(priciestDay[1])})`,
         priority: priciestDay[1] / 800,
       })
     }
@@ -748,8 +752,8 @@ export const insights = query({
     if (args.month === currentMonthKey) {
       const allRecent = await ctx.db
         .query('expenses')
-        .withIndex('by_household_and_createdAt', (q) =>
-          q.eq('householdId', householdId).gte('createdAt', now - 120 * 24 * 60 * 60 * 1000)
+        .withIndex('by_createdAt', (q) =>
+          q.gte('createdAt', now - 120 * 24 * 60 * 60 * 1000)
         )
         .collect()
 
