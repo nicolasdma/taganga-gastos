@@ -5,7 +5,6 @@ import type { Doc } from '../../convex/_generated/dataModel'
 import { BottomSheet } from '@/components/BottomSheet'
 import { CraftLoading } from '@/components/craft/CraftLoading'
 import { ReceiptGroupRow } from '@/components/ReceiptGroupRow'
-import { ItemIcon } from '@/components/items/ItemIcon'
 import { formatCOP } from '@/lib/currency'
 import { ExpenseTimeOfDaySectionHeader, ExpenseTimeStamp } from '@/components/ExpenseTimeMeta'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
@@ -95,7 +94,7 @@ function StandaloneRow({
       )}
     >
       <div className="flex items-center gap-2 min-w-0">
-        <ItemIcon emoji={emoji} label={label} className="text-xl shrink-0" />
+        <span className="text-xl shrink-0">{emoji}</span>
         <div className="min-w-0">
           <span className={cn('text-sm font-semibold truncate block', excludedLabelClass(excluded))}>
             {label}

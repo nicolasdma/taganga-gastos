@@ -13,12 +13,7 @@ interface HomeStatsSummaryProps {
 function StatsDecorPlaceholder() {
   return (
     <div className="stats-decor-placeholder illustration-placeholder" aria-hidden>
-      {/* Placeholder for future Gatonomía illustration asset. */}
-      <span className="stats-decor-placeholder__stem" />
-      <span className="stats-decor-placeholder__leaf stats-decor-placeholder__leaf--a" />
-      <span className="stats-decor-placeholder__leaf stats-decor-placeholder__leaf--b" />
-      <span className="stats-decor-placeholder__leaf stats-decor-placeholder__leaf--c" />
-      <span className="stats-decor-placeholder__pot" />
+      <img src="/planta.png" alt="" className="stats-decor-placeholder__image" draggable={false} />
     </div>
   )
 }

@@ -4,7 +4,6 @@ import { api } from '../../convex/_generated/api'
 import { ReceiptGroupRow } from '@/components/ReceiptGroupRow'
 import { CraftLoading } from '@/components/craft/CraftLoading'
 import { EmptyCraft } from '@/components/craft/EmptyCraft'
-import { ItemIcon } from '@/components/items/ItemIcon'
 import { formatCOP } from '@/lib/currency'
 import { ExpenseDaySectionHeader, ExpenseTimeStamp } from '@/components/ExpenseTimeMeta'
 import { formatExpenseLabel } from '@/lib/expenseDisplay'
@@ -234,7 +233,7 @@ export function RecentExpenses({
                   )}
                 >
                   <span className="recent-expense-row__icon" aria-hidden>
-                    <ItemIcon emoji={emoji} label={label} />
+                    {emoji}
                   </span>
 
                   <div className="recent-expense-row__copy">

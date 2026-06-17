@@ -1,4 +1,3 @@
-import { ItemIcon } from '@/components/items/ItemIcon'
 import { cn } from '@/lib/utils'
 
 interface EmojiResultRowProps {
@@ -33,7 +32,7 @@ export function EmojiResultRow({ emojis, onPick, layout = 'grid' }: EmojiResultR
               layout === 'grid' ? 'h-10' : 'h-11 min-w-11 px-2'
             )}
           >
-            <ItemIcon emoji={emoji} label={label} className="text-xl" />
+            {emoji}
           </button>
         ))}
       </div>

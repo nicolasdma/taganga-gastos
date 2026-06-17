@@ -193,14 +193,14 @@ export function EditorialStage({
       <div className="editorial-stage__body px-4 pt-1 relative z-10 pb-1">
         <div className="hero-total-sticky">
           <MotionReveal step={2}>
-            <div className="home-hero-wrap relative pt-4">
+            <div className="home-hero-wrap relative">
               <CollageSticker tone="sage" rotate="right" className="absolute top-1 left-5 z-20">
                 Hoy 🐾
               </CollageSticker>
-              {view && (
-                <HeroViewToggle value={view} onChange={setView} interactive={interactive} />
-              )}
               <div className="home-hero-card torn-sheet">
+                {view && (
+                  <HeroViewToggle value={view} onChange={setView} interactive={interactive} />
+                )}
                 <div className="home-hero-card__copy">
                   {editorial ? (
                     <div

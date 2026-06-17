@@ -7,7 +7,6 @@ import {
   useCraftKeyboardFooterSlot,
 } from '@/components/keyboard'
 import { EmojiSuggestionGrid } from '@/components/items/EmojiSuggestionGrid'
-import { ItemIcon } from '@/components/items/ItemIcon'
 import { useCreateCustomItem, type CreatedCustomItem } from '@/hooks/useCreateCustomItem'
 import { useUpdateCustomItem } from '@/hooks/useUpdateCustomItem'
 import { cn } from '@/lib/utils'
@@ -81,7 +80,9 @@ export function CreateCustomItemForm({
       <div className="mb-5">
         <span className="label-stitch mb-1.5 block">Emoji</span>
         <div className="flex justify-center mb-3">
-          <ItemIcon emoji={emoji} label={label || 'Ítem'} className="text-5xl leading-none" />
+          <span className="text-5xl leading-none" aria-hidden>
+            {emoji}
+          </span>
         </div>
         <EmojiSuggestionGrid
           selectedEmoji={emoji}

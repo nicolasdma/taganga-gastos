@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Delete } from 'lucide-react'
 import { formatItemDetail } from '@/lib/foodCatalog'
 import { ExpenseScopeToggle } from '@/components/ExpenseScopeToggle'
-import { ItemIcon } from '@/components/items/ItemIcon'
 import { CraftKeyboard } from '@/components/keyboard/CraftKeyboard'
 import { CraftKeyboardSlide } from '@/components/keyboard/CraftKeyboardSlide'
 import { CraftTextField } from '@/components/keyboard/CraftTextField'
@@ -198,14 +197,10 @@ export function AmountKeypad({
                 className="text-3xl leading-none shrink-0 rounded-xl px-1 active:scale-95 transition-transform"
                 aria-label="Cambiar emoji"
               >
-                <ItemIcon emoji={itemHeader.emoji} label={itemHeader.catalogLabel} className="text-3xl leading-none" />
+                {itemHeader.emoji}
               </button>
             ) : (
-              <ItemIcon
-                emoji={itemHeader.emoji}
-                label={itemHeader.catalogLabel}
-                className="text-3xl leading-none shrink-0"
-              />
+              <span className="text-3xl leading-none shrink-0">{itemHeader.emoji}</span>
             )}
             {editingLabel ? (
               <CraftTextField
