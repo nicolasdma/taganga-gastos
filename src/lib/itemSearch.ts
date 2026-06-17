@@ -18,6 +18,7 @@ import {
   suggestEmojiFromIndex,
   type EmojiSearchIndex,
 } from '@/lib/emojiSearch'
+import { lookupEmojiConcept } from '@/lib/emojiConcepts'
 
 export interface ItemSearchResult {
   catalogItems: CatalogItem[]
@@ -48,6 +49,9 @@ function resolveSuggestedEmoji(
 
   const staticAlias = lookupStaticAlias(trimmed)
   if (staticAlias) return staticAlias.emoji
+
+  const concept = lookupEmojiConcept(trimmed)
+  if (concept) return concept
 
   if (emojiIndex) {
     const cldr = suggestEmojiFromIndex(emojiIndex, trimmed)

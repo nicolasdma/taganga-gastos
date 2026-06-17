@@ -10,6 +10,12 @@ export interface CatalogItem {
 /** Ítems fuera del catálogo de comida/super. */
 const EXTRA_ITEMS: CatalogItem[] = [
   { id: 'lunch', emoji: '🍽️', label: 'Almuerzo', keywords: ['almuerzo', 'comida'] },
+  {
+    id: 'bbq',
+    emoji: '🍖',
+    label: 'Asado',
+    keywords: ['asado', 'barbacoa', 'parrilla', 'parrillada', 'churrasco', 'bbq', 'carne'],
+  },
   { id: 'dinner', emoji: '🌙', label: 'Cena', keywords: ['cena'] },
   { id: 'delivery', emoji: '🍕', label: 'Domicilio', keywords: ['domicilio', 'delivery', 'rappi'] },
   { id: 'bakery', emoji: '🥐', label: 'Panadería', keywords: ['panadería', 'panaderia'] },

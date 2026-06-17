@@ -26,6 +26,11 @@ export const STATIC_ITEM_ALIASES: Record<string, StaticItemAlias> = {
   cabify: { emoji: '🚕' },
   cafe: { emoji: '☕' },
   cerveza: { emoji: '🍺' },
+  asado: { emoji: '🍖', suggestedLabel: 'Asado' },
+  barbacoa: { emoji: '🍖', suggestedLabel: 'Barbacoa' },
+  parrilla: { emoji: '🍖' },
+  churrasco: { emoji: '🥩' },
+  comida: { emoji: '🍽️' },
 }
 
 export interface HouseholdItemAlias {

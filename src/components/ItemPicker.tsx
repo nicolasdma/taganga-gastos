@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CraftTextField } from '@/components/keyboard/CraftTextField'
 import { CraftSkeletonChipGrid } from '@/components/craft/CraftLoading'
 import { ExpenseChip } from '@/components/ExpenseChip'
-import { EmojiResultRow } from '@/components/items/EmojiResultRow'
-import { ITEM_CATALOG } from '@/lib/items'
+import { ITEM_CATALOG, normalizeItemSearchText } from '@/lib/items'
 import { EMOJI_INLINE_LIMIT, loadEmojiSearchIndex, type EmojiSearchIndex } from '@/lib/emojiSearch'
 import { mergeCatalogWithCustom } from '@/lib/mergeCatalog'
 import { searchItems } from '@/lib/itemSearch'
@@ -29,10 +28,12 @@ interface ItemPickerProps {
 }
 
 const CREATE_CTA_MIN_QUERY = 2
+const CREATE_EMOJI_LIMIT = 12
 
 export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }: ItemPickerProps) {
   const [search, setSearch] = useState('')
   const [emojiIndex, setEmojiIndex] = useState<EmojiSearchIndex | null>(null)
+  const [selectedCreateEmoji, setSelectedCreateEmoji] = useState<string | null>(null)
   const { view } = useExpenseView()
   const customItems = useCustomItems(view)
   const householdAliases = useHouseholdItemAliases()
@@ -69,19 +70,50 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
     return sortCatalogByUsage(searchResult.catalogItems, serverCounts)
   }, [searchResult.catalogItems, serverCounts, customItems])
 
+  const hasExactItemLabelMatch = useMemo(() => {
+    const normalizedSearch = normalizeItemSearchText(trimmedSearch)
+    if (!normalizedSearch) return false
+    return searchResult.catalogItems.some(
+      (item) => normalizeItemSearchText(item.label) === normalizedSearch
+    )
+  }, [searchResult.catalogItems, trimmedSearch])
+
   const showCreateCta =
     onRequestCreate !== undefined &&
     customItems !== undefined &&
     serverCounts !== undefined &&
-    trimmedSearch.length >= CREATE_CTA_MIN_QUERY
+    trimmedSearch.length >= CREATE_CTA_MIN_QUERY &&
+    !hasExactItemLabelMatch
 
   const createSuggestion = searchResult.createSuggestion
   const sectionLabel = hasQuery ? 'Resultados' : 'Tus frecuentes primero'
   const isLoading = serverCounts === undefined || customItems === undefined
 
-  const handleEmojiPick = (emoji: string) => {
+  useEffect(() => {
+    setSelectedCreateEmoji(createSuggestion?.emoji ?? null)
+  }, [trimmedSearch, createSuggestion?.emoji])
+
+  const createEmojiOptions = useMemo(() => {
+    if (!createSuggestion) return []
+
+    const seen = new Set<string>()
+    const options: Array<{ emoji: string; label: string }> = []
+    const add = (emoji: string, label: string) => {
+      if (seen.has(emoji)) return
+      seen.add(emoji)
+      options.push({ emoji, label })
+    }
+
+    add(selectedCreateEmoji ?? createSuggestion.emoji, 'Seleccionado')
+    add(createSuggestion.emoji, createSuggestion.label)
+    for (const entry of searchResult.emojiSuggestions) add(entry.emoji, entry.label)
+
+    return options.slice(0, CREATE_EMOJI_LIMIT)
+  }, [createSuggestion, searchResult.emojiSuggestions, selectedCreateEmoji])
+
+  const handleCreate = () => {
     if (!onRequestCreate || !trimmedSearch) return
-    onRequestCreate({ query: trimmedSearch, emoji })
+    onRequestCreate({ query: trimmedSearch, emoji: selectedCreateEmoji ?? createSuggestion?.emoji })
   }
 
   return (
@@ -123,36 +155,54 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
               </div>
             )}
 
-            {hasQuery && searchResult.emojiSuggestions.length > 0 && (
-              <EmojiResultRow
-                emojis={searchResult.emojiSuggestions}
-                onPick={(emoji) => handleEmojiPick(emoji)}
-                layout="grid"
-              />
-            )}
-
             {showCreateCta && createSuggestion && (
-              <div className={cn(displayItems.length === 0 && searchResult.emojiSuggestions.length === 0 && 'pt-4')}>
-                {displayItems.length === 0 && searchResult.emojiSuggestions.length === 0 && (
+              <div className={cn(displayItems.length === 0 && 'pt-2')}>
+                {displayItems.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center mb-4">
                     Sin ítems para “{trimmedSearch}”
                   </p>
                 )}
-                <button
-                  type="button"
-                  onClick={() =>
-                    onRequestCreate({
-                      query: trimmedSearch,
-                      emoji: createSuggestion.emoji,
-                    })
-                  }
-                  className={cn(
-                    'w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl',
-                    'btn-cobalt text-sm font-bold active:shadow-none active:translate-y-px'
+                <div className="rounded-2xl border border-border/60 bg-card/70 p-3 shadow-sm space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleCreate}
+                    className={cn(
+                      'w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl',
+                      'btn-cobalt text-sm font-bold active:shadow-none active:translate-y-px'
+                    )}
+                  >
+                    <span className="text-lg leading-none">
+                      {selectedCreateEmoji ?? createSuggestion.emoji}
+                    </span>
+                    Crear «{trimmedSearch}»
+                  </button>
+
+                  {createEmojiOptions.length > 1 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground px-0.5">
+                        Elegí el emoji
+                      </p>
+                      <div className="grid grid-cols-6 gap-1.5">
+                        {createEmojiOptions.map(({ emoji, label }) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            title={label}
+                            onClick={() => setSelectedCreateEmoji(emoji)}
+                            className={cn(
+                              'h-10 rounded-xl text-xl flex items-center justify-center transition-all active:scale-95',
+                              (selectedCreateEmoji ?? createSuggestion.emoji) === emoji
+                                ? 'chip-tile ring-2 ring-cobalt-glaze/40'
+                                : 'hover:bg-muted/40 bg-muted/20'
+                            )}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                >
-                  {createSuggestion.emoji} Agregar «{trimmedSearch}»
-                </button>
+                </div>
               </div>
             )}
 
@@ -162,7 +212,6 @@ export function ItemPicker({ storeName: _storeName, onSelect, onRequestCreate }:
 
             {hasQuery &&
               displayItems.length === 0 &&
-              searchResult.emojiSuggestions.length === 0 &&
               !showCreateCta && (
                 <p className="text-sm text-muted-foreground text-center py-10">
                   Sin resultados para “{trimmedSearch}”

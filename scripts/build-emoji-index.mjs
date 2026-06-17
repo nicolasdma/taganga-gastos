@@ -2,7 +2,7 @@
  * Build-time: compact CLDR emoji index for lazy runtime load (~50–150 KB).
  * Reads emojibase-data (devDependency only — not shipped in app bundle).
  */
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
@@ -74,6 +74,26 @@ for (const entry of entries) {
   const enRow = enCompact.find((r) => (r.unicode ?? r.emoji) === entry.emoji)
   for (const tag of esRow?.tags ?? []) addAlias(tag, entry.emoji)
   for (const tag of enRow?.tags ?? []) addAlias(tag, entry.emoji)
+}
+
+// Keep the offline JSON in sync with the runtime LATAM concept layer without
+// shipping emojibase-data. The TS file is deliberately regular enough to parse.
+const conceptsPath = join(root, 'src/lib/emojiConcepts.ts')
+const conceptsSource = readFileSync(conceptsPath, 'utf8')
+const conceptGroupRegex = /aliases:\s*\[([\s\S]*?)\],\s*emojis:\s*\[([\s\S]*?)\]/g
+const stringRegex = /'((?:\\'|[^'])*)'/g
+
+/** @param {string} source */
+function parseStringArray(source) {
+  return [...source.matchAll(stringRegex)].map((match) => match[1].replace(/\\'/g, "'"))
+}
+
+for (const match of conceptsSource.matchAll(conceptGroupRegex)) {
+  const aliasesForConcept = parseStringArray(match[1])
+  const emojisForConcept = parseStringArray(match[2])
+  for (const alias of aliasesForConcept) {
+    for (const emoji of emojisForConcept) addAlias(alias, emoji)
+  }
 }
 
 const index = {
