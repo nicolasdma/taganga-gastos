@@ -69,9 +69,14 @@ export function CraftTextField({
   const [uppercase, setUppercase] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const didAutoFocus = useRef(false)
+  const valueRef = useRef(value)
 
   const useDock = Boolean(ctx?.dock)
   const showInlineKeyboard = showKeyboard && isFocused && !useDock
+
+  useEffect(() => {
+    valueRef.current = value
+  }, [value])
 
   useEffect(() => {
     if (!autoFocus || didAutoFocus.current) return
@@ -81,17 +86,22 @@ export function CraftTextField({
 
   const appendChar = useCallback(
     (char: string) => {
-      if (value.length >= maxLength) return
+      const current = valueRef.current
+      if (current.length >= maxLength) return
       const next =
-        layout === 'alphanumeric' ? value + char.toUpperCase() : value + char
-      onChange(next.slice(0, maxLength))
+        layout === 'alphanumeric' ? current + char.toUpperCase() : current + char
+      const bounded = next.slice(0, maxLength)
+      valueRef.current = bounded
+      onChange(bounded)
     },
-    [value, maxLength, layout, onChange]
+    [maxLength, layout, onChange]
   )
 
   const handleBackspace = useCallback(() => {
-    onChange(value.slice(0, -1))
-  }, [value, onChange])
+    const next = valueRef.current.slice(0, -1)
+    valueRef.current = next
+    onChange(next)
+  }, [onChange])
 
   const handleDone = useCallback(() => {
     onDone?.()
@@ -111,11 +121,13 @@ export function CraftTextField({
       const text = await navigator.clipboard.readText()
       if (!text) return
       const trimmed = layout === 'alphanumeric' ? text.toUpperCase() : text
-      onChange((value + trimmed).slice(0, maxLength))
+      const next = (valueRef.current + trimmed).slice(0, maxLength)
+      valueRef.current = next
+      onChange(next)
     } catch {
       // clipboard denied or unavailable
     }
-  }, [layout, maxLength, onChange, value])
+  }, [layout, maxLength, onChange])
 
   const showShift = enableShift && (layout === 'text' || layout === 'search')
 
