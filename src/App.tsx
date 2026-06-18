@@ -260,7 +260,6 @@ function AppShellInner() {
         onClose={() => setScanOpen(false)}
         onSaved={handleReceiptSaved}
       />
-
       <ExpenseEditSheet
         expense={editExpense}
         onClose={() => setEditExpense(null)}
