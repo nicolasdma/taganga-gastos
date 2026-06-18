@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { AMOUNT_PRESETS, formatCOP } from '@/lib/currency'
+import { formatCOP } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Delete } from 'lucide-react'
 import { formatItemDetail } from '@/lib/foodCatalog'
-import { ExpenseScopeToggle } from '@/components/ExpenseScopeToggle'
 import { CraftKeyboard } from '@/components/keyboard/CraftKeyboard'
 import { CraftKeyboardSlide } from '@/components/keyboard/CraftKeyboardSlide'
 import { CraftTextField } from '@/components/keyboard/CraftTextField'
 import { useCraftKeyboardContext } from '@/components/keyboard/useCraftKeyboard'
-import type { ExpenseScope } from '@/lib/expenseScope'
 
 const DETAIL_FIELD_ID = 'amount-keypad-detail'
 
@@ -32,12 +30,8 @@ interface AmountKeypadProps {
   onCancel?: () => void
   onBack?: () => void
   saving?: boolean
-  autoSaveOnPreset?: boolean
-  onPresetSelect?: (amount: number) => void
   primaryAction?: 'save' | 'continue'
   primaryLabel?: string
-  scope?: ExpenseScope
-  onScopeChange?: (scope: ExpenseScope) => void
   /** Hide cancel/back row — sheet header owns navigation. */
   hideNav?: boolean
 }
@@ -53,12 +47,8 @@ export function AmountKeypad({
   onCancel,
   onBack,
   saving,
-  autoSaveOnPreset,
-  onPresetSelect,
   primaryAction = 'save',
   primaryLabel,
-  scope,
-  onScopeChange,
   hideNav = false,
 }: AmountKeypadProps) {
   const keyboardCtx = useCraftKeyboardContext()
@@ -136,15 +126,7 @@ export function AmountKeypad({
     onChange(Math.floor(value / 10))
   }
 
-  const handlePreset = (amount: number) => {
-    onChange(amount)
-    if (autoSaveOnPreset && onPresetSelect) {
-      onPresetSelect(amount)
-    }
-  }
-
   const canProceed = value > 0 && !saving
-  const showSaveButton = !autoSaveOnPreset || value > 0
 
   const headerLabel = itemHeader
     ? itemHeader.detail.trim() || itemHeader.catalogLabel
@@ -237,10 +219,6 @@ export function AmountKeypad({
         </p>
       </div>
 
-      {scope && onScopeChange && (
-        <ExpenseScopeToggle value={scope} onChange={onScopeChange} className="mb-3" />
-      )}
-
       {editingLabel && !keyboardDock ? (
         <CraftKeyboardSlide visible className="mt-1">
           <CraftKeyboard
@@ -257,61 +235,36 @@ export function AmountKeypad({
           />
         </CraftKeyboardSlide>
       ) : !editingLabel ? (
-        <>
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            {AMOUNT_PRESETS.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => handlePreset(preset)}
-                className={cn(
-                  'h-11 rounded-xl text-xs font-bold transition-all active:translate-y-px',
-                  value === preset ? 'btn-cobalt active:shadow-none' : 'chip-tile'
-                )}
-              >
-                {formatCOP(preset)}
-              </button>
-            ))}
+        <div className="grid grid-cols-3 gap-2">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
             <button
+              key={digit}
               type="button"
-              onClick={() => onChange(0)}
-              className="h-11 rounded-xl text-xs font-bold chip-tile text-muted-foreground active:translate-y-px"
+              onClick={() => appendDigit(digit)}
+              className="h-12 rounded-2xl chip-tile text-xl font-bold text-foreground active:translate-y-0.5 active:shadow-none"
             >
-              Limpiar
+              {digit}
             </button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
-              <button
-                key={digit}
-                type="button"
-                onClick={() => appendDigit(digit)}
-                className="h-12 rounded-2xl chip-tile text-xl font-bold text-foreground active:translate-y-0.5 active:shadow-none"
-              >
-                {digit}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={backspace}
-              className="h-12 rounded-2xl chip-tile flex items-center justify-center active:translate-y-0.5 active:shadow-none"
-              aria-label="Borrar"
-            >
-              <Delete className="h-5 w-5 text-muted-foreground" />
-            </button>
-            <button
-              type="button"
-              onClick={() => appendDigit(0)}
-              className="h-12 rounded-2xl chip-tile text-xl font-bold text-foreground active:translate-y-0.5 active:shadow-none col-span-2"
-            >
-              0
-            </button>
-          </div>
-        </>
+          ))}
+          <button
+            type="button"
+            onClick={backspace}
+            className="h-12 rounded-2xl chip-tile flex items-center justify-center active:translate-y-0.5 active:shadow-none"
+            aria-label="Borrar"
+          >
+            <Delete className="h-5 w-5 text-muted-foreground" />
+          </button>
+          <button
+            type="button"
+            onClick={() => appendDigit(0)}
+            className="h-12 rounded-2xl chip-tile text-xl font-bold text-foreground active:translate-y-0.5 active:shadow-none col-span-2"
+          >
+            0
+          </button>
+        </div>
       ) : null}
 
-      {showSaveButton && !editingLabel && (
+      {!editingLabel && (
         <Button
           size="lg"
           className="w-full mt-4 rounded-2xl"

@@ -29,5 +29,3 @@ export function formatCOPShort(amount: number): string {
   }
   return String(amount)
 }
-
-export const AMOUNT_PRESETS = [5_000, 10_000, 20_000, 50_000, 100_000] as const
