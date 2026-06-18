@@ -7,7 +7,7 @@ export interface CatalogItem {
   keywords?: string[]
 }
 
-/** Ítems fuera del catálogo de comida/super. */
+/** Ítems fuera de catálogo de comida/super. */
 const EXTRA_ITEMS: CatalogItem[] = [
   { id: 'lunch', emoji: '🍽️', label: 'Almuerzo', keywords: ['almuerzo', 'comida'] },
   {
