@@ -102,7 +102,6 @@ function AmountStep({
 }
 
 interface ExpenseSheetContentProps {
-  intent: SheetIntent
   step: Step
   selectedItem: SelectedItem | null
   createQuery: string
@@ -115,7 +114,6 @@ interface ExpenseSheetContentProps {
 }
 
 function ExpenseSheetContent({
-  intent,
   step,
   selectedItem,
   createQuery,
@@ -304,7 +302,6 @@ function ExpenseSheetPanel({
     >
       {intent && (
         <ExpenseSheetContent
-          intent={intent}
           step={step}
           selectedItem={selectedItem}
           createQuery={createQuery}
