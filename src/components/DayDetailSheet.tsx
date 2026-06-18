@@ -18,6 +18,7 @@ import {
 } from '@/lib/expenseExcluded'
 import type { EditableExpense } from '@/lib/expenseTypes'
 import { groupExpensesForList, type ReceiptItemLike } from '@/lib/receiptGroups'
+import { useLocalToday } from '@/hooks/useLocalToday'
 import { formatDisplayDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -115,9 +116,10 @@ function StandaloneRow({
 }
 
 export function DayDetailSheet({ date, view, onClose, onEditExpense }: DayDetailSheetProps) {
+  const { tzOffsetMinutes } = useLocalToday()
   const expenses = useQuery(
     api.expenses.expensesForDay,
-    date ? { date, view } : 'skip'
+    date ? { date, view, tzOffsetMinutes } : 'skip'
   )
 
   const dayTotal = useMemo(

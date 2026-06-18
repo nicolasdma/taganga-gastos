@@ -19,6 +19,7 @@ function StatsViewPanel({
   active,
   month,
   todayKey,
+  tzOffsetMinutes,
   onPrevMonth,
   onNextMonth,
   nextDisabled,
@@ -29,6 +30,7 @@ function StatsViewPanel({
   active: boolean
   month: string
   todayKey: string
+  tzOffsetMinutes: number
   onPrevMonth: () => void
   onNextMonth: () => void
   nextDisabled: boolean
@@ -36,11 +38,11 @@ function StatsViewPanel({
 }) {
   const byItemLive = useQuery(
     api.expenses.expensesByItem,
-    active ? { month, view: panelView } : 'skip'
+    active ? { month, view: panelView, tzOffsetMinutes } : 'skip'
   )
   const insightsLive = useQuery(
     api.expenses.insights,
-    active ? { month, view: panelView, todayKey } : 'skip'
+    active ? { month, view: panelView, todayKey, tzOffsetMinutes } : 'skip'
   )
 
   const { value: byItem, isStale: byItemStale } = useStaleWhileLoading(byItemLive, panelView)
@@ -107,7 +109,7 @@ export function StatsScreen({ active = true }: { active?: boolean }) {
   const { view, direction, isTransitioning } = useExpenseView()
   const [statsMessage] = useState(() => pickStatsMessage())
   const scrollRef = useReportTabScroll()
-  const { todayKey } = useLocalToday()
+  const { todayKey, tzOffsetMinutes } = useLocalToday()
 
   return (
     <div
@@ -128,6 +130,7 @@ export function StatsScreen({ active = true }: { active?: boolean }) {
             active={active}
             month={month}
             todayKey={todayKey}
+            tzOffsetMinutes={tzOffsetMinutes}
             onPrevMonth={() => setMonth((m) => shiftMonthKey(m, -1))}
             onNextMonth={() => setMonth((m) => shiftMonthKey(m, 1))}
             nextDisabled={month >= monthKey()}

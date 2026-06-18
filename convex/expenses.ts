@@ -2,7 +2,7 @@ import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import type { QueryCtx } from './_generated/server'
 import type { Doc, Id } from './_generated/dataModel'
-import { addDaysToDateKey, periodRange } from './dates'
+import { addDaysToDateKey, localMidnightUtc, parseDateKey, periodRange } from './dates'
 import {
   canModifyExpense,
   canViewExpense,
@@ -17,17 +17,21 @@ import { resolveCustomItemForSharedExpense } from './lib/customItemPromotion'
 const expenseScopeValidator = v.union(v.literal('shared'), v.literal('personal'))
 const expenseViewValidator = v.union(v.literal('shared'), v.literal('personal'))
 
-function monthRange(monthKey: string): { start: number; end: number } {
-  const [year, month] = monthKey.split('-').map(Number)
-  const start = new Date(year, month - 1, 1).getTime()
-  const end = new Date(year, month, 1).getTime()
+function monthRange(monthKey: string, tzOffsetMinutes = 0): { start: number; end: number } {
+  const { year, month } = parseDateKey(`${monthKey}-01`)
+  const endMonth = month === 12 ? 1 : month + 1
+  const endYear = month === 12 ? year + 1 : year
+  const start = localMidnightUtc(year, month, 1, tzOffsetMinutes)
+  const end = localMidnightUtc(endYear, endMonth, 1, tzOffsetMinutes)
   return { start, end }
 }
 
-function dayRange(dateKey: string): { start: number; end: number } {
-  const [year, month, day] = dateKey.split('-').map(Number)
-  const start = new Date(year, month - 1, day).getTime()
-  const end = new Date(year, month - 1, day + 1).getTime()
+function dayRange(dateKey: string, tzOffsetMinutes = 0): { start: number; end: number } {
+  const { year, month, day } = parseDateKey(dateKey)
+  const endKey = addDaysToDateKey(dateKey, 1)
+  const endParts = parseDateKey(endKey)
+  const start = localMidnightUtc(year, month, day, tzOffsetMinutes)
+  const end = localMidnightUtc(endParts.year, endParts.month, endParts.day, tzOffsetMinutes)
   return { start, end }
 }
 
@@ -387,11 +391,13 @@ export const expensesByDay = query({
   args: {
     month: v.string(),
     view: v.optional(expenseViewValidator),
+    tzOffsetMinutes: v.optional(v.number()),
   },
   returns: v.record(v.string(), dayItemSummaryValidator),
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
-    const { start, end } = monthRange(args.month)
+    const tzOffsetMinutes = args.tzOffsetMinutes ?? 0
+    const { start, end } = monthRange(args.month, tzOffsetMinutes)
     const expenses = await loadVisibleExpensesInRange(
       ctx,
       householdId,
@@ -408,8 +414,8 @@ export const expensesByDay = query({
 
     for (const e of expenses) {
       if (!isCounted(e)) continue
-      const d = new Date(e.createdAt)
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const d = new Date(e.createdAt - tzOffsetMinutes * 60_000)
+      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
       if (!byDay[key]) byDay[key] = { total: 0, items: {} }
 
       const display = expenseDisplayFields(e)
@@ -435,10 +441,11 @@ export const expensesForDay = query({
   args: {
     date: v.string(),
     view: v.optional(expenseViewValidator),
+    tzOffsetMinutes: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
-    const { start, end } = dayRange(args.date)
+    const { start, end } = dayRange(args.date, args.tzOffsetMinutes ?? 0)
     const expenses = await loadVisibleExpensesInRange(
       ctx,
       householdId,
@@ -455,6 +462,7 @@ export const expensesByItem = query({
   args: {
     month: v.string(),
     view: v.optional(expenseViewValidator),
+    tzOffsetMinutes: v.optional(v.number()),
   },
   returns: v.array(
     v.object({
@@ -466,7 +474,7 @@ export const expensesByItem = query({
   ),
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
-    const { start, end } = monthRange(args.month)
+    const { start, end } = monthRange(args.month, args.tzOffsetMinutes ?? 0)
     const expenses = await loadVisibleExpensesInRange(
       ctx,
       householdId,
@@ -597,9 +605,9 @@ function daysElapsedInMonth(monthKey: string, now: number): number {
   return new Date(year, month, 0).getDate()
 }
 
-function dayKeyFromTs(ts: number): string {
-  const d = new Date(ts)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+function dayKeyFromTs(ts: number, tzOffsetMinutes = 0): string {
+  const d = new Date(ts - tzOffsetMinutes * 60_000)
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
 }
 
 function formatInsightDayReference(dateKey: string, todayKey: string): string {
@@ -619,9 +627,10 @@ async function loadMonthExpenses(
   householdId: Id<'households'>,
   userId: Id<'users'>,
   month: string,
-  view: ExpenseView
+  view: ExpenseView,
+  tzOffsetMinutes = 0
 ) {
-  const { start, end } = monthRange(month)
+  const { start, end } = monthRange(month, tzOffsetMinutes)
   return await loadVisibleExpensesInRange(ctx, householdId, userId, start, end, view)
 }
 
@@ -659,14 +668,23 @@ export const insights = query({
     month: v.string(),
     view: v.optional(expenseViewValidator),
     todayKey: v.optional(v.string()),
+    tzOffsetMinutes: v.optional(v.number()),
   },
   returns: v.array(v.string()),
   handler: async (ctx, args) => {
     const { userId, householdId } = await requireAuthContext(ctx)
     const view = args.view ?? 'personal'
+    const tzOffsetMinutes = args.tzOffsetMinutes ?? 0
     const now = Date.now()
-    const todayKey = args.todayKey ?? dayKeyFromTs(now)
-    const expenses = await loadMonthExpenses(ctx, householdId, userId, args.month, view)
+    const todayKey = args.todayKey ?? dayKeyFromTs(now, tzOffsetMinutes)
+    const expenses = await loadMonthExpenses(
+      ctx,
+      householdId,
+      userId,
+      args.month,
+      view,
+      tzOffsetMinutes
+    )
     const counted = expenses.filter(isCounted)
     if (counted.length === 0) return []
 
@@ -698,7 +716,14 @@ export const insights = query({
     }
 
     const prevKey = previousMonthKey(args.month)
-    const prevExpenses = await loadMonthExpenses(ctx, householdId, userId, prevKey, view)
+    const prevExpenses = await loadMonthExpenses(
+      ctx,
+      householdId,
+      userId,
+      prevKey,
+      view,
+      tzOffsetMinutes
+    )
     if (prevExpenses.length > 0) {
       const prevByItem = aggregateByItem(prevExpenses)
       let bestCompare: InsightCandidate | null = null
@@ -736,7 +761,7 @@ export const insights = query({
 
     const byDay: Record<string, number> = {}
     for (const e of counted) {
-      const key = dayKeyFromTs(e.createdAt)
+      const key = dayKeyFromTs(e.createdAt, tzOffsetMinutes)
       byDay[key] = (byDay[key] ?? 0) + e.amount
     }
 
@@ -750,7 +775,8 @@ export const insights = query({
       })
     }
 
-    const currentMonthKey = `${new Date(now).getFullYear()}-${String(new Date(now).getMonth() + 1).padStart(2, '0')}`
+    const nowLocal = new Date(now - tzOffsetMinutes * 60_000)
+    const currentMonthKey = `${nowLocal.getUTCFullYear()}-${String(nowLocal.getUTCMonth() + 1).padStart(2, '0')}`
     if (args.month === currentMonthKey) {
       const allRecent = await ctx.db
         .query('expenses')
@@ -765,16 +791,18 @@ export const insights = query({
           matchesView(expense, userId, view)
       )
 
-      const daysWithExpenses = new Set(visibleRecent.map((e) => dayKeyFromTs(e.createdAt)))
+      const daysWithExpenses = new Set(
+        visibleRecent.map((e) => dayKeyFromTs(e.createdAt, tzOffsetMinutes))
+      )
       let streak = 0
       const cursor = new Date(now)
       cursor.setHours(0, 0, 0, 0)
 
-      if (!daysWithExpenses.has(dayKeyFromTs(cursor.getTime()))) {
+      if (!daysWithExpenses.has(dayKeyFromTs(cursor.getTime(), tzOffsetMinutes))) {
         cursor.setDate(cursor.getDate() - 1)
       }
 
-      while (daysWithExpenses.has(dayKeyFromTs(cursor.getTime()))) {
+      while (daysWithExpenses.has(dayKeyFromTs(cursor.getTime(), tzOffsetMinutes))) {
         streak += 1
         cursor.setDate(cursor.getDate() - 1)
       }
