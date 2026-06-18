@@ -9,6 +9,7 @@
     "build:emoji-index": "node scripts/build-emoji-index.mjs",
     "prebuild": "npm run build:emoji-index",
     "build": "tsc -b && vite build",
+    "check:dates": "node --experimental-strip-types --test scripts/date-context-check.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

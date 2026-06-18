@@ -7,7 +7,7 @@ import { EditorialScreenHeader } from '@/components/editorial/EditorialScreenHea
 import { ExpenseViewTransition } from '@/components/editorial/ExpenseViewTransition'
 import { monthKey, shiftMonthKey } from '@/lib/month'
 import { useExpenseView } from '@/hooks/useExpenseView'
-import { useLocalToday } from '@/hooks/useLocalToday'
+import { useDateContextArgs } from '@/hooks/useLocalToday'
 import { useReportTabScroll } from '@/hooks/useReportTabScroll'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
@@ -109,7 +109,7 @@ export function StatsScreen({ active = true }: { active?: boolean }) {
   const { view, direction, isTransitioning } = useExpenseView()
   const [statsMessage] = useState(() => pickStatsMessage())
   const scrollRef = useReportTabScroll()
-  const { todayKey, tzOffsetMinutes } = useLocalToday()
+  const dateContext = useDateContextArgs()
 
   return (
     <div
@@ -129,8 +129,8 @@ export function StatsScreen({ active = true }: { active?: boolean }) {
             panelRole={panelRole}
             active={active}
             month={month}
-            todayKey={todayKey}
-            tzOffsetMinutes={tzOffsetMinutes}
+            todayKey={dateContext.todayKey}
+            tzOffsetMinutes={dateContext.tzOffsetMinutes}
             onPrevMonth={() => setMonth((m) => shiftMonthKey(m, -1))}
             onNextMonth={() => setMonth((m) => shiftMonthKey(m, 1))}
             nextDisabled={month >= monthKey()}

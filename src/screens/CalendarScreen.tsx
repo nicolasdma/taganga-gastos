@@ -10,7 +10,7 @@ import { ExpenseMonthGrid } from '@/components/ExpenseMonthGrid'
 import type { EditableExpense } from '@/lib/expenseTypes'
 import { formatCOP } from '@/lib/currency'
 import { useExpenseView } from '@/hooks/useExpenseView'
-import { useLocalToday } from '@/hooks/useLocalToday'
+import { useDateContextArgs } from '@/hooks/useLocalToday'
 import { useReportTabScroll } from '@/hooks/useReportTabScroll'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
@@ -49,17 +49,17 @@ function CalendarViewPanel({
   selectedDate,
   onDaySelect,
 }: CalendarViewPanelProps) {
-  const { tzOffsetMinutes } = useLocalToday()
+  const dateContext = useDateContextArgs()
   const monthKeyStr = formatMonthKey(currentMonth)
   const prevMonthKeyStr = formatMonthKey(subMonths(currentMonth, 1))
 
   const byDayLive = useQuery(
     api.expenses.expensesByDay,
-    active ? { month: monthKeyStr, view: panelView, tzOffsetMinutes } : 'skip'
+    active ? { month: monthKeyStr, view: panelView, tzOffsetMinutes: dateContext.tzOffsetMinutes } : 'skip'
   )
   const prevByDayLive = useQuery(
     api.expenses.expensesByDay,
-    active ? { month: prevMonthKeyStr, view: panelView, tzOffsetMinutes } : 'skip'
+    active ? { month: prevMonthKeyStr, view: panelView, tzOffsetMinutes: dateContext.tzOffsetMinutes } : 'skip'
   )
 
   const { value: byDay, isStale: byDayStale, isInitialLoad: byDayInitial } =

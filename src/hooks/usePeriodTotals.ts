@@ -3,7 +3,7 @@ import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { isTimestampInPeriod } from '@/lib/dates'
 import { loadOutbox, loadReceiptOutbox, OUTBOX_CHANGED } from '@/lib/outbox'
-import { useLocalToday } from '@/hooks/useLocalToday'
+import { useDateContextArgs } from '@/hooks/useLocalToday'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import { DEFAULT_EXPENSE_SCOPE, DEFAULT_EXPENSE_VIEW, type ExpenseView } from '@/lib/expenseScope'
 
@@ -41,7 +41,7 @@ function pendingAmountForPeriod(
 }
 
 export function usePeriodTotals(view: ExpenseView = DEFAULT_EXPENSE_VIEW) {
-  const { todayKey, tzOffsetMinutes } = useLocalToday()
+  const { todayKey, tzOffsetMinutes } = useDateContextArgs()
   const [outboxTick, setOutboxTick] = useState(0)
 
   useEffect(() => {

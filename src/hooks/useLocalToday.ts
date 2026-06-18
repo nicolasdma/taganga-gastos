@@ -18,3 +18,8 @@ export function useLocalToday() {
 
   return { todayKey, tzOffsetMinutes }
 }
+
+/** Date context required by Convex queries that bucket or label days/months. */
+export function useDateContextArgs() {
+  return useLocalToday()
+}

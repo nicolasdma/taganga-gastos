@@ -1,23 +1,18 @@
 import { internalMutation, mutation, type MutationCtx } from './_generated/server'
 import { v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
+import { dayRange } from './dates'
 import { requireAuthContext } from './lib/auth'
 import { resolveItemFields } from './lib/items'
-
-function dayRange(dateKey: string): { start: number; end: number } {
-  const [year, month, day] = dateKey.split('-').map(Number)
-  const start = new Date(year, month - 1, day).getTime()
-  const end = new Date(year, month - 1, day + 1).getTime()
-  return { start, end }
-}
 
 async function markDayAsShared(
   ctx: MutationCtx,
   targetHouseholdId: Id<'households'>,
   dateKey: string,
+  tzOffsetMinutes: number,
   dryRun: boolean | undefined
 ) {
-  const { start, end } = dayRange(dateKey)
+  const { start, end } = dayRange(dateKey, tzOffsetMinutes)
   let scanned = 0
   let matchedHousehold = 0
   let matchedOrphan = 0
@@ -118,6 +113,7 @@ export const markExpensesForDayAsShared = internalMutation({
   args: {
     targetHouseholdId: v.id('households'),
     dateKey: v.string(),
+    tzOffsetMinutes: v.number(),
     dryRun: v.optional(v.boolean()),
   },
   returns: v.object({
@@ -129,13 +125,20 @@ export const markExpensesForDayAsShared = internalMutation({
     updated: v.number(),
   }),
   handler: async (ctx, args) => {
-    return await markDayAsShared(ctx, args.targetHouseholdId, args.dateKey, args.dryRun)
+    return await markDayAsShared(
+      ctx,
+      args.targetHouseholdId,
+      args.dateKey,
+      args.tzOffsetMinutes,
+      args.dryRun
+    )
   },
 })
 
 export const markMyHouseholdExpensesForDayAsShared = mutation({
   args: {
     dateKey: v.string(),
+    tzOffsetMinutes: v.number(),
     dryRun: v.optional(v.boolean()),
   },
   returns: v.object({
@@ -148,6 +151,6 @@ export const markMyHouseholdExpensesForDayAsShared = mutation({
   }),
   handler: async (ctx, args) => {
     const { householdId } = await requireAuthContext(ctx)
-    return await markDayAsShared(ctx, householdId, args.dateKey, args.dryRun)
+    return await markDayAsShared(ctx, householdId, args.dateKey, args.tzOffsetMinutes, args.dryRun)
   },
 })

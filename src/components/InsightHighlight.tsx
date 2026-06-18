@@ -1,7 +1,7 @@
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { monthKey } from '@/lib/month'
-import { useLocalToday } from '@/hooks/useLocalToday'
+import { useDateContextArgs } from '@/hooks/useLocalToday'
 import { useStaleWhileLoading } from '@/hooks/useStaleWhileLoading'
 import type { ExpenseView } from '@/lib/expenseScope'
 import type { ExpenseViewPanelRole } from '@/components/editorial/expenseViewPanelRole'
@@ -20,8 +20,12 @@ export function InsightHighlight({
   pulseKey = 0,
   panelRole = 'active',
 }: InsightHighlightProps) {
-  const { todayKey } = useLocalToday()
-  const insightsLive = useQuery(api.expenses.insights, { month: monthKey(), view, todayKey })
+  const dateContext = useDateContextArgs()
+  const insightsLive = useQuery(api.expenses.insights, {
+    month: monthKey(),
+    view,
+    ...dateContext,
+  })
   const { value: insights, isStale, isInitialLoad } = useStaleWhileLoading(insightsLive, view)
 
   const top = insights && insights.length > 0 ? insights[0] : null
